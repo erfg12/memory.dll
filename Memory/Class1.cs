@@ -291,7 +291,6 @@ namespace Memory
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
-            string LCode = LoadCode(code, file);
 
             if (!LoadCode(code, file).Contains(","))
                 theCode = LoadUIntPtrCode(code, file);
