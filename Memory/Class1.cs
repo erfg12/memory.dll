@@ -166,10 +166,10 @@ namespace Memory
             return 0; //if we fail to find it
         }
 
-        private string LoadCode(string name, string path)
+        public string LoadCode(string name, string file)
         {
             StringBuilder returnCode = new StringBuilder(1024);
-            uint read_ini_result = GetPrivateProfileString("codes", name, "", returnCode, (uint)path.Length, path);
+            uint read_ini_result = GetPrivateProfileString("codes", name, "", returnCode, (uint)file.Length, file);
             return returnCode.ToString();
         }
 
@@ -219,7 +219,7 @@ namespace Memory
         private IntPtr dpvsModule;
         private IntPtr dsetupModule;
 
-        public string CutString(string mystring)
+        /*public string CutString(string mystring)
         {
             char[] chArray = mystring.ToCharArray();
             string str = "";
@@ -236,17 +236,28 @@ namespace Memory
                 str = str + chArray[i].ToString();
             }
             return mystring.TrimEnd(new char[] { '0' });
-        }
+        }*/
 
-        public string RemoveSpecialCharacters(string str)
+        public string CutString(string str)
         {
             StringBuilder sb = new StringBuilder();
             foreach (char c in str)
             {
-                if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z'))
+                if (c >= ' ' && c <= '~')
                     sb.Append(c);
                 else
                     break;
+            }
+            return sb.ToString();
+        }
+
+        public string sanitizeString(string str)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (char c in str)
+            {
+                if (c >= ' ' && c <= '~')
+                    sb.Append(c);
             }
             return sb.ToString();
         }
@@ -282,9 +293,18 @@ namespace Memory
                 theCode = getCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memoryNormal, (UIntPtr)32, IntPtr.Zero))
-                return CutString(System.Text.Encoding.UTF8.GetString(memoryNormal));
+                return System.Text.Encoding.UTF8.GetString(memoryNormal);
             else
                 return "";
+        }
+
+        public int readUIntPtr(UIntPtr code)
+        {
+            byte[] memory = new byte[4];
+            if (ReadProcessMemory(pHandle, code, memory, (UIntPtr)4, IntPtr.Zero))
+                return BitConverter.ToInt32(memory, 0);
+            else
+                return 0;
         }
 
         public int readInt(string code, string file)
