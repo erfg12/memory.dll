@@ -123,16 +123,17 @@ namespace Memory
 
         Process procs = null;
 
-        public void OpenGameProcess(string eqgameID)
+        public bool OpenGameProcess(int procID)
         {
-            Int32 ProcID = Convert.ToInt32(eqgameID);
-            procs = Process.GetProcessById(ProcID);
-            //IntPtr hProcess = (IntPtr)OpenProcess(0x1F0FFF, 1, ProcID);
+            if (procID != 0) //getProcIDFromName returns 0 if there was a problem
+                procs = Process.GetProcessById(procID);
+            else
+                return false;
 
             if (procs.Responding == false)
-                return;
+                return false;
 
-            pHandle = OpenProcess(0x1F0FFF, 1, ProcID);
+            pHandle = OpenProcess(0x1F0FFF, 1, procID);
             mainModule = procs.MainModule;
             foreach (ProcessModule Module in procs.Modules)
             {
@@ -141,6 +142,7 @@ namespace Memory
                 if (Module.ModuleName.Contains("DSETUP"))
                     dsetupModule = Module.BaseAddress;
             }
+            return true;
         }
 
         public void setFocus()
@@ -164,14 +166,14 @@ namespace Memory
             return 0; //if we fail to find it
         }
 
-        public string LoadCode(string name, string path)
+        private string LoadCode(string name, string path)
         {
             StringBuilder returnCode = new StringBuilder(1024);
             uint read_ini_result = GetPrivateProfileString("codes", name, "", returnCode, (uint)path.Length, path);
             return returnCode.ToString();
         }
 
-        public Int32 LoadIntCode(string name, string path)
+        private Int32 LoadIntCode(string name, string path)
         {
             int intValue = Convert.ToInt32(LoadCode(name, path), 16);
             if (intValue >= 0)
@@ -198,7 +200,7 @@ namespace Memory
             }
         }
 
-        public UIntPtr LoadUIntPtrCode(string name, string path)
+        private UIntPtr LoadUIntPtrCode(string name, string path)
         {
             string theCode = LoadCode(name, path);
             UIntPtr uintValue;
@@ -213,9 +215,9 @@ namespace Memory
             return (UIntPtr)uintValue;
         }
 
-        public ProcessModule mainModule;
-        public IntPtr dpvsModule;
-        public IntPtr dsetupModule;
+        private ProcessModule mainModule;
+        private IntPtr dpvsModule;
+        private IntPtr dsetupModule;
 
         public string CutString(string mystring)
         {
@@ -281,22 +283,6 @@ namespace Memory
 
             if (ReadProcessMemory(pHandle, theCode, memoryNormal, (UIntPtr)32, IntPtr.Zero))
                 return CutString(System.Text.Encoding.UTF8.GetString(memoryNormal));
-            else
-                return "";
-        }
-
-        public string readBigString(string code, string file)
-        {
-            byte[] memoryNormal = new byte[20];
-            UIntPtr theCode;
-
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
-                theCode = getCode(code, file);
-
-            if (ReadProcessMemory(pHandle, theCode, memoryNormal, (UIntPtr)20, IntPtr.Zero))
-                return System.Text.Encoding.UTF8.GetString(memoryNormal);
             else
                 return "";
         }
@@ -425,15 +411,6 @@ namespace Memory
                 return 0;
         }
 
-        public int readUInt(UIntPtr code)
-        {
-            byte[] memory = new byte[4];
-            if (ReadProcessMemory(pHandle, code, memory, (UIntPtr)4, IntPtr.Zero))
-                return BitConverter.ToInt32(memory, 0);
-            else
-                return 0;
-        }
-
         public float readPFloat(UIntPtr address, string code, string file)
         {
             byte[] memory = new byte[4];
@@ -463,42 +440,13 @@ namespace Memory
             else
                 return "";
         }
-
-        public float readUintPtrFloat(string code, string file)
-        {
-            byte[] memory = new byte[4];
-            if (ReadProcessMemory(pHandle, LoadUIntPtrCode(code, file), memory, (UIntPtr)4, IntPtr.Zero))
-            {
-                float spawn = BitConverter.ToSingle(memory, 0);
-                return (float)Math.Round(spawn, 2);
-            }
-            else
-                return 0;
-        }
-
-        public int readUIntPtr(string code, string file)
-        {
-            byte[] memory = new byte[4];
-            if (ReadProcessMemory(pHandle, LoadUIntPtrCode(code, file), memory, (UIntPtr)4, IntPtr.Zero))
-                return BitConverter.ToInt32(memory, 0);
-            else
-                return 0;
-        }
-
-        public string readUIntPtrStr(string code, string file)
-        {
-            byte[] memoryNormal = new byte[32];
-            if (ReadProcessMemory(pHandle, LoadUIntPtrCode(code, file), memoryNormal, (UIntPtr)32, IntPtr.Zero))
-                return System.Text.Encoding.ASCII.GetString(memoryNormal);
-            else
-                return "";
-        }
         #endregion
 
         #region writeMemory
-        public void writeMemory(string code, string file, string type, string write)
+        public bool writeMemory(string code, string file, string type, string write)
         {
             byte[] memory = new byte[4];
+            int size = 4;
 
             UIntPtr theCode;
             if (!LoadCode(code, file).Contains(","))
@@ -507,18 +455,32 @@ namespace Memory
                 theCode = getCode(code, file);
 
             if (type == "float")
+            {
                 memory = BitConverter.GetBytes(Convert.ToSingle(write));
-            else if (type == "int" || type == "byte")
+                size = 4;
+            }
+            else if (type == "int")
+            {
                 memory = BitConverter.GetBytes(Convert.ToInt32(write));
-            else if (type == "string")
-                memory = System.Text.Encoding.UTF8.GetBytes(write);
-
-            if (type == "float" || type == "int")
-                WriteProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero);
+                size = 4;
+            }
             else if (type == "byte")
-                WriteProcessMemory(pHandle, theCode, memory, (UIntPtr)1, IntPtr.Zero);
+            {
+                memory = new byte[1];
+                memory = BitConverter.GetBytes(Convert.ToInt32(write));
+                size = 1;
+            }
             else if (type == "string")
-                WriteProcessMemory(pHandle, theCode, memory, (UIntPtr)write.Length, IntPtr.Zero);
+            {
+                memory = new byte[write.Length];
+                memory = System.Text.Encoding.UTF8.GetBytes(write);
+                size = write.Length;
+            }
+
+            if (WriteProcessMemory(pHandle, theCode, memory, (UIntPtr)size, IntPtr.Zero))
+                return true;
+            else
+                return false;
         }
 
         public void writeUIntPtr(string code, string file, byte[] write)
@@ -532,7 +494,7 @@ namespace Memory
         }
         #endregion
 
-        public UIntPtr getCode(string name, string path, int size = 4)
+        private UIntPtr getCode(string name, string path, int size = 4)
         {
             string theCode = LoadCode(name, path);
             if (theCode == "")
