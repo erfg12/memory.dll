@@ -166,7 +166,7 @@ namespace Memory
             return 0; //if we fail to find it
         }
 
-        public string LoadCode(string name, string file)
+        public string LoadCode(string name, string file/*, bool isString*/) //version 1.0.4 added isString
         {
             StringBuilder returnCode = new StringBuilder(1024);
             uint read_ini_result = GetPrivateProfileString("codes", name, "", returnCode, (uint)file.Length, file);
@@ -497,6 +497,48 @@ namespace Memory
             }
 
             if (WriteProcessMemory(pHandle, theCode, memory, (UIntPtr)size, IntPtr.Zero))
+                return true;
+            else
+                return false;
+        }
+
+        public bool writeMove(string code, string file, string type, string write, int moveQty) //version v1.0.3
+        {
+            byte[] memory = new byte[4];
+            int size = 4;
+
+            UIntPtr theCode;
+            if (!LoadCode(code, file).Contains(","))
+                theCode = LoadUIntPtrCode(code, file);
+            else
+                theCode = getCode(code, file);
+
+            if (type == "float")
+            {
+                memory = BitConverter.GetBytes(Convert.ToSingle(write));
+                size = 4;
+            }
+            else if (type == "int")
+            {
+                memory = BitConverter.GetBytes(Convert.ToInt32(write));
+                size = 4;
+            }
+            else if (type == "byte")
+            {
+                memory = new byte[1];
+                memory = BitConverter.GetBytes(Convert.ToInt32(write));
+                size = 1;
+            }
+            else if (type == "string")
+            {
+                memory = new byte[write.Length];
+                memory = System.Text.Encoding.UTF8.GetBytes(write);
+                size = write.Length;
+            }
+
+            UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
+
+            if (WriteProcessMemory(pHandle, newCode, memory, (UIntPtr)size, IntPtr.Zero))
                 return true;
             else
                 return false;
