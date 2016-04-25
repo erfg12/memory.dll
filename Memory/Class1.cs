@@ -123,6 +123,8 @@ namespace Memory
 
         Process procs = null;
 
+        
+
         public bool OpenGameProcess(int procID)
         {
             if (procID != 0) //getProcIDFromName returns 0 if there was a problem
@@ -137,10 +139,12 @@ namespace Memory
             mainModule = procs.MainModule;
             foreach (ProcessModule Module in procs.Modules)
             {
-                if (Module.ModuleName.Contains("dpvs"))
-                    dpvsModule = Module.BaseAddress;
+                /*if (Module.ModuleName.Contains("dpvs"))
+                    altModule = Module.BaseAddress;
                 if (Module.ModuleName.Contains("DSETUP"))
-                    dsetupModule = Module.BaseAddress;
+                    dsetupModule = Module.BaseAddress;*/
+                if (Module.ModuleName != "" && Module.ModuleName != null && !modules.ContainsKey(Module.ModuleName))
+                    modules.Add(Module.ModuleName, Module.BaseAddress);
             }
             return true;
         }
@@ -181,6 +185,8 @@ namespace Memory
             else
                 return 0;
         }
+        
+        public Dictionary<string, IntPtr> modules = new Dictionary<string, IntPtr>();
 
         public void ThreadStartClient(object obj)
         {
@@ -200,6 +206,8 @@ namespace Memory
             }
         }
 
+        private ProcessModule mainModule;
+
         private UIntPtr LoadUIntPtrCode(string name, string path)
         {
             string theCode = LoadCode(name, path);
@@ -211,13 +219,13 @@ namespace Memory
                 uintValue = (UIntPtr)((int)mainModule.BaseAddress + Convert.ToInt32(newOffset, 16));
             else
                 uintValue = (UIntPtr)Convert.ToInt32(newOffset, 16);
-
+             
             return (UIntPtr)uintValue;
         }
-
-        private ProcessModule mainModule;
-        private IntPtr dpvsModule;
-        private IntPtr dsetupModule;
+        
+        //private ProcessModule dpvsModule;
+        //private ProcessModule dsetupModule;
+        //private IntPtr altModule;
 
         /*public string CutString(string mystring)
         {
@@ -560,18 +568,18 @@ namespace Memory
             string theCode = LoadCode(name, path);
             if (theCode == "")
                 return UIntPtr.Zero;
-            bool main = false;
+            /*bool main = false;
             bool dpvs = false;
-            bool dsetup = false;
+            bool dsetup = false;*/
             string newOffsets = theCode;
-            if (theCode.Contains("base") || theCode.Contains("dpvs") || theCode.Contains("dsetup"))
+            if (theCode.Contains("+") /* || theCode.Contains("dpvs") || theCode.Contains("dsetup")*/)
                 newOffsets = theCode.Substring(theCode.IndexOf('+') + 1);
-            if (theCode.Contains("base") )
+            /*if (theCode.Contains("base") )
                 main = true;
             else if (theCode.Contains("dpvs"))
                 dpvs = true;
             else if (theCode.Contains("dsetup"))
-                dsetup = true;
+                dsetup = true;*/
 
             byte[] memoryAddress = new byte[size];
 
@@ -586,12 +594,13 @@ namespace Memory
                 }
                 int[] offsets = offsetsList.ToArray();
 
-                if (main == true)
+                if (theCode.Contains("base") || theCode.Contains("main"))
                     ReadProcessMemory(pHandle, (UIntPtr)((int)mainModule.BaseAddress + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                else if (dpvs == true)
-                    ReadProcessMemory(pHandle, (UIntPtr)((int)dpvsModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                else if (dsetup == true)
-                    ReadProcessMemory(pHandle, (UIntPtr)((int)dsetupModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+")) {
+                    string[] moduleName = theCode.Split('+');
+                    IntPtr altModule = modules[moduleName[0]];
+                    ReadProcessMemory(pHandle, (UIntPtr)((int)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                }
                 else
                     ReadProcessMemory(pHandle, (UIntPtr)(offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
@@ -610,12 +619,23 @@ namespace Memory
             else
             {
                 int trueCode = Convert.ToInt32(newOffsets, 16);
-                if (main == true)
+                /*if (main == true)
                     ReadProcessMemory(pHandle, (UIntPtr)((int)mainModule.BaseAddress + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
                 else if (dpvs == true)
                     ReadProcessMemory(pHandle, (UIntPtr)((int)dpvsModule + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
                 else if (dsetup == true)
                     ReadProcessMemory(pHandle, (UIntPtr)((int)dsetupModule + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                else
+                    ReadProcessMemory(pHandle, (UIntPtr)(trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);*/
+
+                if (theCode.Contains("base") || theCode.Contains("main"))
+                    ReadProcessMemory(pHandle, (UIntPtr)((int)mainModule.BaseAddress + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
+                {
+                    string[] moduleName = theCode.Split('+');
+                    IntPtr altModule = modules[moduleName[0]];
+                    ReadProcessMemory(pHandle, (UIntPtr)((int)altModule + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                }
                 else
                     ReadProcessMemory(pHandle, (UIntPtr)(trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
