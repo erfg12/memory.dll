@@ -7,6 +7,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
+using System.Globalization;
 
 namespace Memory
 {
@@ -265,6 +266,31 @@ namespace Memory
                     sb.Append(c);
             }
             return sb.ToString();
+        }
+
+        public IntPtr AoBScan(int min, int length, string code, string file)
+        {
+            string[] stringByteArray = LoadCode(code, file).Split(' ');
+            byte[] myPattern = new byte[stringByteArray.Length];
+            string mask = "";
+            int i = 0;
+            foreach (string ba in stringByteArray)
+            {
+                if (ba == "??")
+                {
+                    myPattern[i] = 0xFF;
+                    mask += "?";
+                }
+                else
+                {
+                    myPattern[i] = Byte.Parse(ba, NumberStyles.HexNumber);
+                    mask += "x";
+                }
+                i++;
+            }
+            SigScan _sigScan = new SigScan(procs, new IntPtr(min), length);
+            IntPtr pAddr = _sigScan.FindPattern(myPattern, mask, 0);
+            return pAddr;
         }
 
         #region readMemory
