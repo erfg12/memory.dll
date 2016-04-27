@@ -137,10 +137,6 @@ namespace Memory
             mainModule = procs.MainModule;
             foreach (ProcessModule Module in procs.Modules)
             {
-                /*if (Module.ModuleName.Contains("dpvs"))
-                    altModule = Module.BaseAddress;
-                if (Module.ModuleName.Contains("DSETUP"))
-                    dsetupModule = Module.BaseAddress;*/
                 if (Module.ModuleName != "" && Module.ModuleName != null && !modules.ContainsKey(Module.ModuleName))
                     modules.Add(Module.ModuleName, Module.BaseAddress);
             }
@@ -171,7 +167,11 @@ namespace Memory
         public string LoadCode(string name, string file/*, bool isString*/) //version 1.0.4 added isString
         {
             StringBuilder returnCode = new StringBuilder(1024);
-            uint read_ini_result = GetPrivateProfileString("codes", name, "", returnCode, (uint)file.Length, file);
+            uint read_ini_result;
+            if (file != "")
+                read_ini_result = GetPrivateProfileString("codes", name, "", returnCode, (uint)file.Length, file);
+            else
+                returnCode.Append(name);
             return returnCode.ToString();
         }
 
@@ -206,7 +206,7 @@ namespace Memory
 
         private ProcessModule mainModule;
 
-        private UIntPtr LoadUIntPtrCode(string name, string path)
+        private UIntPtr LoadUIntPtrCode(string name, string path = "")
         {
             string theCode = LoadCode(name, path);
             UIntPtr uintValue;
@@ -220,29 +220,6 @@ namespace Memory
 
             return (UIntPtr)uintValue;
         }
-
-        //private ProcessModule dpvsModule;
-        //private ProcessModule dsetupModule;
-        //private IntPtr altModule;
-
-        /*public string CutString(string mystring)
-        {
-            char[] chArray = mystring.ToCharArray();
-            string str = "";
-            for (int i = 0; i < mystring.Length; i++)
-            {
-                if ((chArray[i] == ' ') && (chArray[i + 1] == ' '))
-                {
-                    return str;
-                }
-                if (chArray[i] == '\0')
-                {
-                    return str;
-                }
-                str = str + chArray[i].ToString();
-            }
-            return mystring.TrimEnd(new char[] { '0' });
-        }*/
 
         public string CutString(string str)
         {
@@ -268,7 +245,7 @@ namespace Memory
             return sb.ToString();
         }
 
-        public IntPtr AoBScan(int min, int length, string code, string file)
+        public IntPtr AoBScan(int min, int length, string code, string file = "")
         {
             string[] stringByteArray = LoadCode(code, file).Split(' ');
             byte[] myPattern = new byte[stringByteArray.Length];
@@ -294,7 +271,7 @@ namespace Memory
         }
 
         #region readMemory
-        public float readFloat(string code, string file)
+        public float readFloat(string code, string file = "")
         {
             byte[] memory = new byte[4];
 
@@ -313,7 +290,7 @@ namespace Memory
                 return 0;
         }
 
-        public string readString(string code, string file)
+        public string readString(string code, string file = "")
         {
             byte[] memoryNormal = new byte[32];
             UIntPtr theCode;
@@ -338,7 +315,7 @@ namespace Memory
                 return 0;
         }
 
-        public int readInt(string code, string file)
+        public int readInt(string code, string file = "")
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
@@ -354,7 +331,7 @@ namespace Memory
                 return 0;
         }
 
-        public uint readUInt(string code, string file)
+        public uint readUInt(string code, string file = "")
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
@@ -369,7 +346,7 @@ namespace Memory
                 return 0;
         }
 
-        public int read2ByteMove(string code, string file, int moveQty)
+        public int read2ByteMove(string code, int moveQty, string file = "")
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
@@ -386,7 +363,7 @@ namespace Memory
                 return 0;
         }
 
-        public int readIntMove(string code, string file, int moveQty)
+        public int readIntMove(string code, int moveQty, string file = "")
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
@@ -420,7 +397,7 @@ namespace Memory
                 return 0;
         }
 
-        public int read2Byte(string code, string file)
+        public int read2Byte(string code, string file = "")
         {
             byte[] memoryTiny = new byte[4];
 
@@ -436,7 +413,7 @@ namespace Memory
                 return 0;
         }
 
-        public int readByte(string code, string file)
+        public int readByte(string code, string file = "")
         {
             byte[] memoryTiny = new byte[4];
 
@@ -452,7 +429,7 @@ namespace Memory
                 return 0;
         }
 
-        public int readPByte(UIntPtr address, string code, string file)
+        public int readPByte(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[4];
             if (ReadProcessMemory(pHandle, address + LoadIntCode(code, file), memory, (UIntPtr)1, IntPtr.Zero))
@@ -461,7 +438,7 @@ namespace Memory
                 return 0;
         }
 
-        public float readPFloat(UIntPtr address, string code, string file)
+        public float readPFloat(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[4];
             if (ReadProcessMemory(pHandle, address + LoadIntCode(code, file), memory, (UIntPtr)4, IntPtr.Zero))
@@ -473,7 +450,7 @@ namespace Memory
                 return 0;
         }
 
-        public int readPInt(UIntPtr address, string code, string file)
+        public int readPInt(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[4];
             if (ReadProcessMemory(pHandle, address + LoadIntCode(code, file), memory, (UIntPtr)4, IntPtr.Zero))
@@ -482,7 +459,7 @@ namespace Memory
                 return 0;
         }
 
-        public string readPString(UIntPtr address, string code, string file)
+        public string readPString(UIntPtr address, string code, string file = "")
         {
             byte[] memoryNormal = new byte[32];
             if (ReadProcessMemory(pHandle, address + LoadIntCode(code, file), memoryNormal, (UIntPtr)32, IntPtr.Zero))
@@ -493,7 +470,7 @@ namespace Memory
         #endregion
 
         #region writeMemory
-        public bool writeMemory(string code, string file, string type, string write)
+        public bool writeMemory(string code, string type, string write, string file = "")
         {
             byte[] memory = new byte[4];
             int size = 4;
@@ -533,7 +510,7 @@ namespace Memory
                 return false;
         }
 
-        public bool writeMove(string code, string file, string type, string write, int moveQty) //version v1.0.3
+        public bool writeMove(string code, string type, string write, int moveQty, string file = "") //version v1.0.3
         {
             byte[] memory = new byte[4];
             int size = 4;
@@ -575,7 +552,7 @@ namespace Memory
                 return false;
         }
 
-        public void writeUIntPtr(string code, string file, byte[] write)
+        public void writeUIntPtr(string code, byte[] write, string file = "")
         {
             WriteProcessMemory(pHandle, LoadUIntPtrCode(code, file), write, (UIntPtr)write.Length, IntPtr.Zero);
         }
@@ -591,18 +568,9 @@ namespace Memory
             string theCode = LoadCode(name, path);
             if (theCode == "")
                 return UIntPtr.Zero;
-            /*bool main = false;
-            bool dpvs = false;
-            bool dsetup = false;*/
             string newOffsets = theCode;
-            if (theCode.Contains("+") /* || theCode.Contains("dpvs") || theCode.Contains("dsetup")*/)
+            if (theCode.Contains("+"))
                 newOffsets = theCode.Substring(theCode.IndexOf('+') + 1);
-            /*if (theCode.Contains("base") )
-                main = true;
-            else if (theCode.Contains("dpvs"))
-                dpvs = true;
-            else if (theCode.Contains("dsetup"))
-                dsetup = true;*/
 
             byte[] memoryAddress = new byte[size];
 
@@ -643,14 +611,6 @@ namespace Memory
             else
             {
                 int trueCode = Convert.ToInt32(newOffsets, 16);
-                /*if (main == true)
-                    ReadProcessMemory(pHandle, (UIntPtr)((int)mainModule.BaseAddress + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                else if (dpvs == true)
-                    ReadProcessMemory(pHandle, (UIntPtr)((int)dpvsModule + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                else if (dsetup == true)
-                    ReadProcessMemory(pHandle, (UIntPtr)((int)dsetupModule + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                else
-                    ReadProcessMemory(pHandle, (UIntPtr)(trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);*/
 
                 if (theCode.Contains("base") || theCode.Contains("main"))
                     ReadProcessMemory(pHandle, (UIntPtr)((int)mainModule.BaseAddress + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
@@ -664,15 +624,9 @@ namespace Memory
                     ReadProcessMemory(pHandle, (UIntPtr)(trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
                 uint num1 = BitConverter.ToUInt32(memoryAddress, 0);
-
-                //UIntPtr base1 = (UIntPtr)0;
-
-                //for (int i = 1; i < 0; i++)
-                //{
+                
                 UIntPtr base1 = new UIntPtr(num1);
-                //ReadProcessMemory(pHandle, base1, memoryAddress, (UIntPtr)size, IntPtr.Zero);
                 num1 = BitConverter.ToUInt32(memoryAddress, 0);
-                //}
                 return base1;
             }
         }
