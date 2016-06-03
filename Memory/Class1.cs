@@ -213,10 +213,18 @@ namespace Memory
 
             string newOffset = theCode.Substring(theCode.IndexOf('+') + 1);
 
+            if (String.IsNullOrEmpty(newOffset))
+                return (UIntPtr)0;
+
+            int intToUint = 0;
+
+            if (Convert.ToInt32(newOffset, 16) > 0)
+                intToUint = Convert.ToInt32(newOffset, 16);
+
             if (theCode.Contains("base"))
-                uintValue = (UIntPtr)((int)mainModule.BaseAddress + Convert.ToInt32(newOffset, 16));
+                uintValue = (UIntPtr)((int)mainModule.BaseAddress + intToUint);
             else
-                uintValue = (UIntPtr)Convert.ToInt32(newOffset, 16);
+                uintValue = (UIntPtr)intToUint;
 
             return (UIntPtr)uintValue;
         }
@@ -284,7 +292,11 @@ namespace Memory
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
             {
                 float address = BitConverter.ToSingle(memory, 0);
-                return (float)Math.Round(address, 2);
+                float returnValue = (float)Math.Round(address, 2);
+                if (returnValue < 0)
+                    return 0;
+                else
+                    return returnValue;
             }
             else
                 return 0;
