@@ -293,7 +293,7 @@ namespace Memory
             {
                 float address = BitConverter.ToSingle(memory, 0);
                 float returnValue = (float)Math.Round(address, 2);
-                if (returnValue < 0)
+                if (returnValue < -99999 || returnValue > 99999)
                     return 0;
                 else
                     return returnValue;
