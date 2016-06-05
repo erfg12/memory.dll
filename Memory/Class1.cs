@@ -273,7 +273,7 @@ namespace Memory
             return sb.ToString();
         }
 
-        public IntPtr AoBScan(int min, int length, string code, string file = "")
+        public IntPtr AoBScan(uint min, int length, string code, string file = "")
         {
             string[] stringByteArray = LoadCode(code, file).Split(' ');
             byte[] myPattern = new byte[stringByteArray.Length];
@@ -293,7 +293,7 @@ namespace Memory
                 }
                 i++;
             }
-            SigScan _sigScan = new SigScan(procs, new IntPtr(min), length);
+            SigScan _sigScan = new SigScan(procs, new UIntPtr(min), length);
             IntPtr pAddr = _sigScan.FindPattern(myPattern, mask, 0);
             return pAddr;
         }
@@ -736,7 +736,7 @@ namespace Memory
             [DllImport("kernel32.dll", SetLastError = true)]
             private static extern bool ReadProcessMemory(
                 IntPtr hProcess,
-                IntPtr lpBaseAddress,
+                UIntPtr lpBaseAddress,
                 [Out] byte[] lpBuffer,
                 int dwSize,
                 out int lpNumberOfBytesRead
@@ -744,17 +744,17 @@ namespace Memory
 
             private byte[] m_vDumpedRegion;
             private Process m_vProcess;
-            private IntPtr m_vAddress;
+            private UIntPtr m_vAddress;
             private Int32 m_vSize;
 
             public SigScan()
             {
                 this.m_vProcess = null;
-                this.m_vAddress = IntPtr.Zero;
+                this.m_vAddress = UIntPtr.Zero;
                 this.m_vSize = 0;
                 this.m_vDumpedRegion = null;
             }
-            public SigScan(Process proc, IntPtr addr, int size)
+            public SigScan(Process proc, UIntPtr addr, int size)
             {
                 this.m_vProcess = proc;
                 this.m_vAddress = addr;
@@ -778,7 +778,7 @@ namespace Memory
                         return false;
                     if (this.m_vProcess.HasExited)
                         return false;
-                    if (this.m_vAddress == IntPtr.Zero)
+                    if (this.m_vAddress == UIntPtr.Zero)
                         return false;
                     if (this.m_vSize == 0)
                         return false;
@@ -887,7 +887,7 @@ namespace Memory
                 get { return this.m_vProcess; }
                 set { this.m_vProcess = value; }
             }
-            public IntPtr Address
+            public UIntPtr Address
             {
                 get { return this.m_vAddress; }
                 set { this.m_vAddress = value; }
