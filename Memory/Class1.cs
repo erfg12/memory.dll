@@ -135,12 +135,21 @@ namespace Memory
 
             pHandle = OpenProcess(0x1F0FFF, 1, procID);
             mainModule = procs.MainModule;
+            getModules();
+            return true;
+        }
+
+        public void getModules()
+        {
+            if (procs == null)
+                return;
+
+            modules.Clear();
             foreach (ProcessModule Module in procs.Modules)
             {
                 if (Module.ModuleName != "" && Module.ModuleName != null && !modules.ContainsKey(Module.ModuleName))
                     modules.Add(Module.ModuleName, Module.BaseAddress);
             }
-            return true;
         }
 
         public void setFocus()
@@ -221,8 +230,19 @@ namespace Memory
             if (Convert.ToInt32(newOffset, 16) > 0)
                 intToUint = Convert.ToInt32(newOffset, 16);
 
-            if (theCode.Contains("base"))
+            if (theCode.Contains("base") || theCode.Contains("main"))
                 uintValue = (UIntPtr)((int)mainModule.BaseAddress + intToUint);
+            else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
+            {
+                string[] moduleName = theCode.Split('+');
+
+                if (modules.Count == 0 || !modules.ContainsKey(moduleName[0]))
+                    getModules();
+
+                Debug.WriteLine("module=" + moduleName[0]);
+                IntPtr altModule = modules[moduleName[0]];
+                uintValue = (UIntPtr)((int)altModule + intToUint);
+            }
             else
                 uintValue = (UIntPtr)intToUint;
 
