@@ -195,9 +195,9 @@ namespace Memory
 
         public Dictionary<string, IntPtr> modules = new Dictionary<string, IntPtr>();
 
-        public void ThreadStartClient(object obj)
+        public void ThreadStartClient(string func)
         {
-            ManualResetEvent SyncClientServer = (ManualResetEvent)obj;
+            //ManualResetEvent SyncClientServer = (ManualResetEvent)obj;
             using (NamedPipeClientStream pipeStream = new NamedPipeClientStream("EQTPipe"))
             {
                 if (!pipeStream.IsConnected)
