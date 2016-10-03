@@ -208,7 +208,7 @@ namespace Memory
                 {
                     if (sw.AutoFlush == false)
                         sw.AutoFlush = true;
-                    sw.WriteLine("warp");
+                    sw.WriteLine(func);
                 }
             }
         }
