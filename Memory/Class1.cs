@@ -125,18 +125,21 @@ namespace Memory
 
         public bool OpenGameProcess(int procID)
         {
-            if (procID != 0) //getProcIDFromName returns 0 if there was a problem
-                procs = Process.GetProcessById(procID);
-            else
-                return false;
+            try
+            {
+                if (procID != 0) //getProcIDFromName returns 0 if there was a problem
+                    procs = Process.GetProcessById(procID);
+                else
+                    return false;
 
-            if (procs.Responding == false)
-                return false;
+                if (procs.Responding == false)
+                    return false;
 
-            pHandle = OpenProcess(0x1F0FFF, 1, procID);
-            mainModule = procs.MainModule;
-            getModules();
-            return true;
+                pHandle = OpenProcess(0x1F0FFF, 1, procID);
+                mainModule = procs.MainModule;
+                getModules();
+                return true;
+            } catch { return false; }
         }
 
         public void getModules()
@@ -363,6 +366,22 @@ namespace Memory
                 return 0;
         }
 
+        public long readLong(string code, string file = "")
+        {
+            byte[] memory = new byte[16];
+            UIntPtr theCode;
+
+            if (!LoadCode(code, file).Contains(","))
+                theCode = LoadUIntPtrCode(code, file);
+            else
+                theCode = getCode(code, file);
+
+            if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)16, IntPtr.Zero))
+                return BitConverter.ToInt64(memory, 0);
+            else
+                return 0;
+        }
+
         public uint readUInt(string code, string file = "")
         {
             byte[] memory = new byte[4];
@@ -528,6 +547,11 @@ namespace Memory
                 memory = new byte[1];
                 memory = BitConverter.GetBytes(Convert.ToInt32(write));
                 size = 1;
+            }
+            else if (type == "long")
+            {
+                memory = BitConverter.GetBytes(Convert.ToInt64(write));
+                size = 16;
             }
             else if (type == "string")
             {
