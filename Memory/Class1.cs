@@ -137,7 +137,7 @@ namespace Memory
                 if (procs.Responding == false)
                     return false;
 
-                pHandle = OpenProcess(0x0010|0x0020, 1, procID);
+                pHandle = OpenProcess(0x1F0FFF, 1, procID);
 
                 if (pHandle == IntPtr.Zero)
                 {
@@ -533,9 +533,19 @@ namespace Memory
             }
             else if (type == "bytes")
             {
-                memory = new byte[write.Length];
-                memory = BitConverter.GetBytes(Convert.ToInt32(write));
-                size = write.Length;
+                string[] script_instruction_value_split = write.Split(' ');
+                int num_bytes = script_instruction_value_split.Length;
+                byte[] write_bytes = new byte[num_bytes];
+                long script_instruction_value_int = 0;
+                byte[] script_instruction_value_bytes;
+                for (int i = 0; i < num_bytes; i++)
+                {
+                    script_instruction_value_int = Int32.Parse(script_instruction_value_split[i], NumberStyles.AllowHexSpecifier);
+                    script_instruction_value_bytes = BitConverter.GetBytes(script_instruction_value_int);
+                    write_bytes[i] = script_instruction_value_bytes[0];
+                }
+                writeByte(theCode, write_bytes, num_bytes);
+                return true;
             }
             else if (type == "long")
             {
