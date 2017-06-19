@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Memory
 {
@@ -127,6 +128,7 @@ namespace Memory
         {
             try
             {
+                Process.EnterDebugMode();
                 if (procID != 0) //getProcIDFromName returns 0 if there was a problem
                     procs = Process.GetProcessById(procID);
                 else
@@ -135,7 +137,13 @@ namespace Memory
                 if (procs.Responding == false)
                     return false;
 
-                pHandle = OpenProcess(0x1F0FFF, 1, procID);
+                pHandle = OpenProcess(0x0010|0x0020, 1, procID);
+
+                if (pHandle == IntPtr.Zero)
+                {
+                    var eCode = Marshal.GetLastWin32Error();
+                }
+
                 mainModule = procs.MainModule;
                 getModules();
                 return true;
@@ -274,31 +282,6 @@ namespace Memory
                     sb.Append(c);
             }
             return sb.ToString();
-        }
-
-        public IntPtr AoBScan(uint min, int length, string code, string file = "")
-        {
-            string[] stringByteArray = LoadCode(code, file).Split(' ');
-            byte[] myPattern = new byte[stringByteArray.Length];
-            string mask = "";
-            int i = 0;
-            foreach (string ba in stringByteArray)
-            {
-                if (ba == "??")
-                {
-                    myPattern[i] = 0xFF;
-                    mask += "?";
-                }
-                else
-                {
-                    myPattern[i] = Byte.Parse(ba, NumberStyles.HexNumber);
-                    mask += "x";
-                }
-                i++;
-            }
-            SigScan _sigScan = new SigScan(procs, new UIntPtr(min), length);
-            IntPtr pAddr = _sigScan.FindPattern(myPattern, mask, 0);
-            return pAddr;
         }
 
         #region readMemory
@@ -733,196 +716,116 @@ namespace Memory
             return;
         }
 
-        /** 
-        * sigScan C# Implementation - Written by atom0s [aka Wiccaan] 
-        * Class Version: 2.0.0 
-        * 
-        * [ CHANGE LOG ] ------------------------------------------------------------------------- 
-        * 
-        *      2.0.0 
-        *          - Updated to no longer require unsafe or fixed code. 
-        *          - Removed unneeded methods and code. 
-        *          
-        *      1.0.0 
-        *          - First version written and release. 
-        *          
-        * [ CREDITS ] ---------------------------------------------------------------------------- 
-        * 
-        *      sigScan is based on the FindPattern code written by 
-        *      dom1n1k and Patrick at GameDeception.net 
-        *      
-        *      Full credit to them for the purpose of this code. I, atom0s, simply 
-        *      take credit for converting it to C#. 
-        * 
-        */
-        public class SigScan
+        public IntPtr AoBScan(uint min, int length, string code, string file = "")
         {
-            [DllImport("kernel32.dll", SetLastError = true)]
-            private static extern bool ReadProcessMemory(
-                IntPtr hProcess,
-                UIntPtr lpBaseAddress,
-                [Out] byte[] lpBuffer,
-                int dwSize,
-                out int lpNumberOfBytesRead
-                );
-
-            private byte[] m_vDumpedRegion;
-            private Process m_vProcess;
-            private UIntPtr m_vAddress;
-            private Int32 m_vSize;
-
-            public SigScan()
+            string[] stringByteArray = LoadCode(code, file).Split(' ');
+            byte[] myPattern = new byte[stringByteArray.Length];
+            string mask = "";
+            int i = 0;
+            foreach (string ba in stringByteArray)
             {
-                this.m_vProcess = null;
-                this.m_vAddress = UIntPtr.Zero;
-                this.m_vSize = 0;
-                this.m_vDumpedRegion = null;
-            }
-            public SigScan(Process proc, UIntPtr addr, int size)
-            {
-                this.m_vProcess = proc;
-                this.m_vAddress = addr;
-                this.m_vSize = size;
-            }
-
-            #region "sigScan Class Private Methods" 
-            /// <summary> 
-            /// DumpMemory 
-            ///  
-            ///     Internal memory dump function that uses the set class 
-            ///     properties to dump a memory region. 
-            /// </summary> 
-            /// <returns>Boolean based on RPM results and valid properties.</returns> 
-            private bool DumpMemory()
-            {
-                try
+                if (ba == "??")
                 {
-                    // Checks to ensure we have valid data. 
-                    if (this.m_vProcess == null)
-                        return false;
-                    if (this.m_vProcess.HasExited)
-                        return false;
-                    if (this.m_vAddress == UIntPtr.Zero)
-                        return false;
-                    if (this.m_vSize == 0)
-                        return false;
-
-                    // Create the region space to dump into. 
-                    this.m_vDumpedRegion = new byte[this.m_vSize];
-
-                    int nBytesRead;
-
-                    // Dump the memory. 
-                    var ret = ReadProcessMemory(
-                        this.m_vProcess.Handle, this.m_vAddress, this.m_vDumpedRegion, this.m_vSize, out nBytesRead
-                        );
-
-                    // Validation checks. 
-                    return ret && nBytesRead == this.m_vSize;
+                    myPattern[i] = 0xFF;
+                    mask += "?";
                 }
-                catch (Exception)
+                else if (Char.IsLetterOrDigit(ba[0]) && ba[1] == '?') //partial match
                 {
-                    return false;
+                    myPattern[i] = Encoding.ASCII.GetBytes("0x" + ba[0] + "F")[0];
+                    mask += "?"; //show it's still a wildcard of some kind
                 }
-            }
-
-            /// <summary> 
-            /// MaskCheck 
-            ///  
-            ///     Compares the current pattern byte to the current memory dump 
-            ///     byte to check for a match. Uses wildcards to skip bytes that 
-            ///     are deemed unneeded in the compares. 
-            /// </summary> 
-            /// <param name="nOffset">Offset in the dump to start at.</param> 
-            /// <param name="btPattern">Pattern to scan for.</param> 
-            /// <param name="strMask">Mask to compare against.</param> 
-            /// <returns>Boolean depending on if the pattern was found.</returns> 
-            private bool MaskCheck(int nOffset, IEnumerable<byte> btPattern, string strMask)
-            {
-                // Loop the pattern and compare to the mask and dump. 
-                return !btPattern.Where((t, x) => strMask[x] != '?' && ((strMask[x] == 'x') && (t != this.m_vDumpedRegion[nOffset + x]))).Any();
-
-                // The loop was successful so we found the pattern. 
-            }
-
-            #endregion
-
-            #region "sigScan Class Public Methods" 
-            /// <summary> 
-            /// FindPattern 
-            ///  
-            ///     Attempts to locate the given pattern inside the dumped memory region 
-            ///     compared against the given mask. If the pattern is found, the offset 
-            ///     is added to the located address and returned to the user. 
-            /// </summary> 
-            /// <param name="btPattern">Byte pattern to look for in the dumped region.</param> 
-            /// <param name="strMask">The mask string to compare against.</param> 
-            /// <param name="nOffset">The offset added to the result address.</param> 
-            /// <returns>IntPtr - zero if not found, address if found.</returns> 
-            public IntPtr FindPattern(byte[] btPattern, string strMask, int nOffset)
-            {
-                try
+                else if (Char.IsLetterOrDigit(ba[1]) && ba[0] == '?') //partial match
                 {
-                    // Dump the memory region if we have not dumped it yet. 
-                    if (this.m_vDumpedRegion == null || this.m_vDumpedRegion.Length == 0)
-                    {
-                        if (!this.DumpMemory())
-                            return IntPtr.Zero;
-                    }
+                    myPattern[i] = Encoding.ASCII.GetBytes("0xF" + ba[1])[0];
+                    mask += "?"; //show it's still a wildcard of some kind
+                }
+                else
+                {
+                    myPattern[i] = Byte.Parse(ba, NumberStyles.HexNumber);
+                    mask += "x";
+                }
+                i++;
+            }
 
-                    // Ensure the mask and pattern lengths match. 
-                    if (strMask.Length != btPattern.Length)
-                        return IntPtr.Zero;
+            DumpMemory((UIntPtr)min,length);
+            IntPtr pAddr = FindPattern(myPattern, mask, 0);
+            return pAddr;
+        }
 
-                    // Loop the region and look for the pattern. 
-                    for (int x = 0; x < this.m_vDumpedRegion.Length; x++)
-                    {
-                        if (this.MaskCheck(x, btPattern, strMask))
+        byte[] dumpRegion = null;
+        UIntPtr dumpAddress = (UIntPtr)0x00000000;
+
+        private bool DumpMemory(UIntPtr addr, Int32 size)
+        {
+            dumpAddress = addr;
+            try
+            {
+                dumpRegion = new byte[size];
+                var ret = ReadProcessMemory(pHandle, dumpAddress, dumpRegion, (UIntPtr)size, IntPtr.Zero);
+                return ret;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private bool MaskCheck(int nOffset, byte[] btPattern, string strMask)
+        {
+            // Loop the pattern and compare to the mask and dump.
+            for (int x = 0; x < btPattern.Length; x++)
+            {
+                // If the mask char is a wildcard.
+                if (strMask[x] == '?')
+                {
+                    if (btPattern[x] == 0xFF) //100% wildcard
+                        continue;
+                    else
+                    { //50% wildcard
+                        if (dumpRegion[nOffset + x].ToString("X").Length == 2) //byte must be 2 characters long
                         {
-                            // The pattern was found, return it. 
-                            return new IntPtr((int)this.m_vAddress + (x + nOffset));
+                            if (btPattern[x].ToString("X")[0] == '?') { //ex: ?5
+                                if (dumpRegion[nOffset + x].ToString("X")[1] != btPattern[x].ToString("X")[1])
+                                    return false;
+                            }
+                            else if (btPattern[x].ToString("X")[1] == '?') //ex: 5?
+                            {
+                                if (dumpRegion[nOffset + x].ToString("X")[0] != btPattern[x].ToString("X")[0])
+                                    return false;
+                            }
                         }
                     }
-
-                    // Pattern was not found. 
-                    return IntPtr.Zero;
                 }
-                catch (Exception)
+
+                // If the mask char is not a wildcard, ensure a match is made in the pattern.
+                if ((strMask[x] == 'x') && (btPattern[x] != dumpRegion[nOffset + x]))
+                    return false;
+            }
+
+            // The loop was successful so we found 1 pattern match.
+            return true;
+        }
+
+        public IntPtr FindPattern(byte[] btPattern, string strMask, int nOffset)
+        {
+            try
+            {
+                if (strMask.Length != btPattern.Length)
+                    return IntPtr.Zero;
+                
+                for (int x = 0; x < dumpRegion.Length; x++)
                 {
-                    return IntPtr.Zero;
+                    if (MaskCheck(x, btPattern, strMask))
+                    {
+                        return new IntPtr((int)dumpAddress + (x + nOffset));
+                    }
                 }
+                return IntPtr.Zero;
             }
-
-            /// <summary> 
-            /// ResetRegion 
-            ///  
-            ///     Resets the memory dump array to nothing to allow 
-            ///     the class to redump the memory. 
-            /// </summary> 
-            public void ResetRegion()
+            catch (Exception)
             {
-                this.m_vDumpedRegion = null;
+                return IntPtr.Zero;
             }
-            #endregion
-
-            #region "sigScan Class Properties" 
-            public Process Process
-            {
-                get { return this.m_vProcess; }
-                set { this.m_vProcess = value; }
-            }
-            public UIntPtr Address
-            {
-                get { return this.m_vAddress; }
-                set { this.m_vAddress = value; }
-            }
-            public Int32 Size
-            {
-                get { return this.m_vSize; }
-                set { this.m_vSize = value; }
-            }
-            #endregion
-
         }
     }
 }
