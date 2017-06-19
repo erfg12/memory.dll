@@ -531,6 +531,12 @@ namespace Memory
                 memory = BitConverter.GetBytes(Convert.ToInt32(write));
                 size = 1;
             }
+            else if (type == "bytes")
+            {
+                memory = new byte[write.Length];
+                memory = BitConverter.GetBytes(Convert.ToInt32(write));
+                size = write.Length;
+            }
             else if (type == "long")
             {
                 memory = BitConverter.GetBytes(Convert.ToInt64(write));
