@@ -16,6 +16,8 @@ using Memory;
 public Mem MemLib = new Mem();
 ```
 Now you can use Mem.FUNCTIONS(); in our project! See sample projects below.
+
+<a href="https://github.com/erfg12/memory.dll/wiki">All functions are listed in the wiki docs. Click here to visit the page.</a>
 <hr>
 # [](#header-1)Sample Projects
 
