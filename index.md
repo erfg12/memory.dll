@@ -18,7 +18,7 @@ public Mem MemLib = new Mem();
 
 <b>IMPORTANT:</b> Your program must run with admin privileges! <a href="https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges">Click here to learn how.</a>
 
-Now you can use Mem.FUNCTIONS(); in our project! See sample projects below.
+Now you can use MemLib.FUNCTIONS(); in our project! See sample projects below.
 
 <a href="https://github.com/erfg12/memory.dll/wiki">All functions are listed in the wiki docs. Click here to visit the page.</a>
 <hr>
