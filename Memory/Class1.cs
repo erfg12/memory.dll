@@ -10,6 +10,7 @@ using System.Threading;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using System.Security.Principal;
 
 namespace Memory
 {
@@ -127,6 +128,12 @@ namespace Memory
 
         public bool OpenGameProcess(int procID)
         {
+            if (isAdmin() == false)
+            {
+                Debug.Write("WARNING: You are NOT running this program as admin!! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
+                MessageBox.Show("WARNING: You are NOT running this program as admin!!" + Environment.NewLine + "Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
+            }
+
             try
             {
                 Process.EnterDebugMode();
@@ -149,6 +156,15 @@ namespace Memory
                 getModules();
                 return true;
             } catch { return false; }
+        }
+
+        public bool isAdmin()
+        {
+            using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+            {
+                WindowsPrincipal principal = new WindowsPrincipal(identity);
+                return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
         }
 
         public void getModules()
@@ -259,7 +275,7 @@ namespace Memory
                 else
                 {
                     Debug.WriteLine("ERROR! Module " + moduleName[0] + " not found! Visit https://github.com/erfg12/memory.dll/wiki/List-Modules");
-                    MessageBox.Show("ERROR! Module " + moduleName[0] + " not found! Visit https://github.com/erfg12/memory.dll/wiki/List-Modules");
+                    MessageBox.Show("ERROR! Module " + moduleName[0] + " not found!" + Environment.NewLine + "Visit https://github.com/erfg12/memory.dll/wiki/List-Modules");
                     return (UIntPtr)0;
                 }
             }
