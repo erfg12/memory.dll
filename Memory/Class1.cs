@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
 
 namespace Memory
 {
@@ -250,9 +251,17 @@ namespace Memory
                 if (modules.Count == 0 || !modules.ContainsKey(moduleName[0]))
                     getModules();
 
-                Debug.WriteLine("module=" + moduleName[0]);
-                IntPtr altModule = modules[moduleName[0]];
-                uintValue = (UIntPtr)((int)altModule + intToUint);
+                if (modules.ContainsKey(moduleName[0]))
+                {
+                    IntPtr altModule = modules[moduleName[0]];
+                    uintValue = (UIntPtr)((int)altModule + intToUint);
+                }
+                else
+                {
+                    Debug.WriteLine("ERROR! Module " + moduleName[0] + " not found! Visit https://github.com/erfg12/memory.dll/wiki/List-Modules");
+                    MessageBox.Show("ERROR! Module " + moduleName[0] + " not found! Visit https://github.com/erfg12/memory.dll/wiki/List-Modules");
+                    return (UIntPtr)0;
+                }
             }
             else
                 uintValue = (UIntPtr)intToUint;
