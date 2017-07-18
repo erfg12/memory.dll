@@ -14,6 +14,9 @@ using System.Security.Principal;
 
 namespace Memory
 {
+    /// <summary>
+    /// Memory.dll class. Full documentation at https://github.com/erfg12/memory.dll/wiki
+    /// </summary>
     public class Mem
     {
         #region DllImports
@@ -126,6 +129,11 @@ namespace Memory
         public static IntPtr pHandle;
         public Process procs = null;
 
+        /// <summary>
+        /// Open the PC game process with all security and access rights.
+        /// </summary>
+        /// <param name="procID">You can use the getProcIDFromName function to get this.</param>
+        /// <returns></returns>
         public bool OpenGameProcess(int procID)
         {
             if (isAdmin() == false)
@@ -158,6 +166,10 @@ namespace Memory
             } catch { return false; }
         }
 
+        /// <summary>
+        /// Check if program is running with administrative privileges. Read about it here: https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges
+        /// </summary>
+        /// <returns></returns>
         public bool isAdmin()
         {
             using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
@@ -167,6 +179,9 @@ namespace Memory
             }
         }
 
+        /// <summary>
+        /// Builds the process modules dictionary (names with addresses).
+        /// </summary>
         public void getModules()
         {
             if (procs == null)
@@ -188,6 +203,11 @@ namespace Memory
             SetForegroundWindow(procs.MainWindowHandle);
         }
 
+        /// <summary>
+        /// Get the process ID number by process name.
+        /// </summary>
+        /// <param name="name">Example: "eqgame". Use task manager to find the name. Do not include .exe</param>
+        /// <returns></returns>
         public int getProcIDFromName(string name) //new 1.0.2 function
         {
             Process[] processlist = Process.GetProcesses();
@@ -201,6 +221,12 @@ namespace Memory
             return 0; //if we fail to find it
         }
 
+        /// <summary>
+        /// Get code from ini file.
+        /// </summary>
+        /// <param name="name">label for address or code</param>
+        /// <param name="file">path and name of ini file</param>
+        /// <returns></returns>
         public string LoadCode(string name, string file/*, bool isString*/) //version 1.0.4 added isString
         {
             StringBuilder returnCode = new StringBuilder(1024);
@@ -223,10 +249,15 @@ namespace Memory
 
         public Dictionary<string, IntPtr> modules = new Dictionary<string, IntPtr>();
 
-        public void ThreadStartClient(string func)
+        /// <summary>
+        /// Make a named pipe (if not already made) and call to a remote function.
+        /// </summary>
+        /// <param name="func">remote function to call</param>
+        /// <param name="name">name of the thread</param>
+        public void ThreadStartClient(string func, string name)
         {
             //ManualResetEvent SyncClientServer = (ManualResetEvent)obj;
-            using (NamedPipeClientStream pipeStream = new NamedPipeClientStream("EQTPipe"))
+            using (NamedPipeClientStream pipeStream = new NamedPipeClientStream(name))
             {
                 if (!pipeStream.IsConnected)
                     pipeStream.Connect();
@@ -285,6 +316,11 @@ namespace Memory
             return (UIntPtr)uintValue;
         }
 
+        /// <summary>
+        /// Cut a string that goes on for too long or one that is possibly merged with another string.
+        /// </summary>
+        /// <param name="str">The string you want to cut.</param>
+        /// <returns></returns>
         public string CutString(string str)
         {
             StringBuilder sb = new StringBuilder();
@@ -298,6 +334,11 @@ namespace Memory
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Clean up a string that has bad characters in it.
+        /// </summary>
+        /// <param name="str">The string you want to sanitize.</param>
+        /// <returns></returns>
         public string sanitizeString(string str)
         {
             StringBuilder sb = new StringBuilder();
@@ -310,6 +351,12 @@ namespace Memory
         }
 
         #region readMemory
+        /// <summary>
+        /// Read a float value from an address.
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        /// <returns></returns>
         public float readFloat(string code, string file = "")
         {
             byte[] memory = new byte[4];
@@ -333,6 +380,12 @@ namespace Memory
                 return 0;
         }
 
+        /// <summary>
+        /// Read a string value from an address.
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        /// <returns></returns>
         public string readString(string code, string file = "")
         {
             byte[] memoryNormal = new byte[32];
@@ -358,6 +411,12 @@ namespace Memory
                 return 0;
         }
 
+        /// <summary>
+        /// Read an integer from an address.
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        /// <returns></returns>
         public int readInt(string code, string file = "")
         {
             byte[] memory = new byte[4];
@@ -374,6 +433,12 @@ namespace Memory
                 return 0;
         }
 
+        /// <summary>
+        /// Read a long value from an address.
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        /// <returns></returns>
         public long readLong(string code, string file = "")
         {
             byte[] memory = new byte[16];
@@ -390,6 +455,12 @@ namespace Memory
                 return 0;
         }
 
+        /// <summary>
+        /// Read a UInt value from address.
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        /// <returns></returns>
         public uint readUInt(string code, string file = "")
         {
             byte[] memory = new byte[4];
@@ -405,6 +476,13 @@ namespace Memory
                 return 0;
         }
 
+        /// <summary>
+        /// Reads a 2 byte value from an address and moves the address.
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="moveQty">Quantity to move.</param>
+        /// <param name="file">path and name of ini file (OPTIONAL)</param>
+        /// <returns></returns>
         public int read2ByteMove(string code, int moveQty, string file = "")
         {
             byte[] memory = new byte[4];
@@ -422,6 +500,13 @@ namespace Memory
                 return 0;
         }
 
+        /// <summary>
+        /// Reads an integer value from address and moves the address.
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="moveQty">Quantity to move.</param>
+        /// <param name="file">path and name of ini file (OPTIONAL)</param>
+        /// <returns></returns>
         public int readIntMove(string code, int moveQty, string file = "")
         {
             byte[] memory = new byte[4];
@@ -439,7 +524,14 @@ namespace Memory
                 return 0;
         }
 
-        public ulong readUIntMove(string code, string file, int moveQty)
+        /// <summary>
+        /// Get UInt and move to another address by moveQty. Use in a for loop.
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="moveQty">Quantity to move.</param>
+        /// <param name="file">path and name of ini file (OPTIONAL)</param>
+        /// <returns></returns>
+        public ulong readUIntMove(string code, int moveQty, string file = "")
         {
             byte[] memory = new byte[8];
             UIntPtr theCode;
@@ -456,6 +548,12 @@ namespace Memory
                 return 0;
         }
 
+        /// <summary>
+        /// Read a 2 byte value from an address. Returns an integer.
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="file">path and file name to ini file. (OPTIONAL)</param>
+        /// <returns></returns>
         public int read2Byte(string code, string file = "")
         {
             byte[] memoryTiny = new byte[4];
@@ -472,6 +570,12 @@ namespace Memory
                 return 0;
         }
 
+        /// <summary>
+        /// Read 1 byte from address.
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="file">path and file name of ini file. (OPTIONAL)</param>
+        /// <returns></returns>
         public int readByte(string code, string file = "")
         {
             byte[] memoryTiny = new byte[4];
@@ -529,6 +633,13 @@ namespace Memory
         #endregion
 
         #region writeMemory
+        ///<summary>
+        ///Write to memory address. See https://github.com/erfg12/memory.dll/wiki/writeMemory() for more information.
+        ///</summary>
+        ///<param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        ///<param name="type">byte, bytes, float, int, string or long.</param>
+        ///<param name="write">value to write to address.</param>
+        ///<param name="file">path and name of .ini file (OPTIONAL)</param>
         public bool writeMemory(string code, string type, string write, string file = "")
         {
             byte[] memory = new byte[4];
@@ -569,7 +680,7 @@ namespace Memory
                     script_instruction_value_bytes = BitConverter.GetBytes(script_instruction_value_int);
                     write_bytes[i] = script_instruction_value_bytes[0];
                 }
-                writeByte(theCode, write_bytes, num_bytes);
+                writeBytes(theCode.ToString(), write_bytes);
                 return true;
             }
             else if (type == "long")
@@ -590,6 +701,15 @@ namespace Memory
                 return false;
         }
 
+        /// <summary>
+        /// Write to address and move by moveQty. Good for byte arrays. See https://github.com/erfg12/memory.dll/wiki/Writing-a-Byte-Array for more information.
+        /// </summary>
+        ///<param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        ///<param name="type">byte, bytes, float, int, string or long.</param>
+        /// <param name="write">byte to write</param>
+        /// <param name="moveQty">quantity to move</param>
+        /// <param name="file">path and name of .ini file (OPTIONAL)</param>
+        /// <returns></returns>
         public bool writeMove(string code, string type, string write, int moveQty, string file = "") //version v1.0.3
         {
             byte[] memory = new byte[4];
@@ -632,17 +752,30 @@ namespace Memory
                 return false;
         }
 
-        public void writeUIntPtr(string code, byte[] write, string file = "")
+        /// <summary>
+        /// Write byte array to addresses.
+        /// </summary>
+        /// <param name="code">address to write to</param>
+        /// <param name="write">byte array to write</param>
+        /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        public void writeBytes(string code, byte[] write, string file = "")
         {
-            WriteProcessMemory(pHandle, LoadUIntPtrCode(code, file), write, (UIntPtr)write.Length, IntPtr.Zero);
-        }
-
-        public void writeByte(UIntPtr code, byte[] write, int size)
-        {
-            WriteProcessMemory(pHandle, code, write, (UIntPtr)size, IntPtr.Zero);
+            UIntPtr theCode;
+            if (!LoadCode(code, file).Contains(","))
+                theCode = LoadUIntPtrCode(code, file);
+            else
+                theCode = getCode(code, file);
+            WriteProcessMemory(pHandle, theCode, write, (UIntPtr)write.Length, IntPtr.Zero);
         }
         #endregion
 
+        /// <summary>
+        /// Get code from ini file.
+        /// </summary>
+        /// <param name="name">label in ini file</param>
+        /// <param name="path">path to ini file</param>
+        /// <param name="size">size of address (default is 4)</param>
+        /// <returns></returns>
         private UIntPtr getCode(string name, string path, int size = 4)
         {
             string theCode = LoadCode(name, path);
@@ -711,11 +844,18 @@ namespace Memory
             }
         }
 
+        /// <summary>
+        /// Close the process when finished.
+        /// </summary>
         public void closeProcess()
         {
             CloseHandle(pHandle);
         }
 
+        /// <summary>
+        /// Inject a DLL file.
+        /// </summary>
+        /// <param name="strDLLName">path and name of DLL file.</param>
         public void InjectDLL(String strDLLName)
         {
             IntPtr bytesout;
@@ -757,6 +897,14 @@ namespace Memory
             return;
         }
 
+        /// <summary>
+        /// Array of Bytes scan to find address. Returns IntPtr address. See https://github.com/erfg12/memory.dll/wiki/sigScan-(AoB-Scanning) for more information.
+        /// </summary>
+        /// <param name="min">address to start the scan</param>
+        /// <param name="length">length of scan</param>
+        /// <param name="code">array of bytes to look for. Can include partial masks. This can also be a ini file label.</param>
+        /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        /// <returns></returns>
         public IntPtr AoBScan(uint min, int length, string code, string file = "")
         {
             string[] stringByteArray = LoadCode(code, file).Split(' ');
