@@ -27,6 +27,16 @@ namespace Memory
             Int32 dwProcessId
             );
 
+        [DllImport("dbghelp.dll")]
+        static extern bool MiniDumpWriteDump(
+            IntPtr hProcess,
+            Int32 ProcessId,
+            IntPtr hFile,
+            Int32 DumpType,
+            IntPtr ExceptionParam,
+            IntPtr UserStreamParam,
+            IntPtr CallackParam);
+
         [DllImport("user32.dll", SetLastError = true)]
         static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 
@@ -1026,6 +1036,40 @@ namespace Memory
                     hex.AppendFormat("{0:x2} ", b);
             }
             return hex.ToString();
+        }
+
+        public static string ByteArrayToHexString(byte[] ba)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            int i = 1;
+            foreach (byte b in ba)
+            {
+                if (i == 16)
+                {
+                    hex.AppendFormat("{0:x2}{1}", b, Environment.NewLine);
+                    i = 0;
+                }
+                else
+                    hex.AppendFormat("{0:x2} ", b);
+                i++;
+            }
+            return hex.ToString();
+        }
+
+        public static void DumpToFile(String fileToDump)
+        {
+            FileStream fsToDump = null;
+            if (File.Exists(fileToDump))
+                fsToDump = File.Open(fileToDump, FileMode.Append);
+            else
+                fsToDump = File.Create(fileToDump);
+            Process thisProcess = Process.GetCurrentProcess();
+            MiniDumpWriteDump(thisProcess.Handle, thisProcess.Id, fsToDump.SafeFileHandle.DangerousGetHandle(), 0x00000000, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+            fsToDump.Close();
+            byte[] bytes = File.ReadAllBytes(fileToDump);
+            var str = ByteArrayToHexString(bytes);
+            File.Delete(fileToDump);
+            File.WriteAllText(fileToDump, str);
         }
 
         public IntPtr FindPattern(byte[] btPattern, string strMask, int nOffset)
