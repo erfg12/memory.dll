@@ -142,8 +142,8 @@ namespace Memory
                 MessageBox.Show("WARNING: You are NOT running this program as admin!!" + Environment.NewLine + "Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
             }
 
-            try
-            {
+            /*try
+            {*/
                 Process.EnterDebugMode();
                 if (procID != 0) //getProcIDFromName returns 0 if there was a problem
                     procs = Process.GetProcessById(procID);
@@ -163,7 +163,7 @@ namespace Memory
                 mainModule = procs.MainModule;
                 getModules();
                 return true;
-            } catch { return false; }
+            //} catch { return false; }
         }
 
         /// <summary>
@@ -907,6 +907,7 @@ namespace Memory
         /// <returns></returns>
         public IntPtr AoBScan(uint min, int length, string code, string file = "")
         {
+            scanSize = length;
             string[] stringByteArray = LoadCode(code, file).Split(' ');
             byte[] myPattern = new byte[stringByteArray.Length];
             string mask = "";
@@ -935,31 +936,40 @@ namespace Memory
                 }
                 i++;
             }
-
-            DumpMemory((UIntPtr)min,length);
-            IntPtr pAddr = FindPattern(myPattern, mask, 0);
+            IntPtr pAddr = (IntPtr)0;
+            //DumpMemory((UIntPtr)min, length);
+            dumpAddress = (UIntPtr)min;
+            pAddr = FindPattern(myPattern, mask, 0);
             return pAddr;
         }
-
-        byte[] dumpRegion = null;
+        
         UIntPtr dumpAddress = (UIntPtr)0x00000000;
+        int scanSize = 0;
 
-        private bool DumpMemory(UIntPtr addr, Int32 size)
+        private byte[] DumpMemory(UIntPtr addr, Int32 size)
         {
+            scanSize = size;
             dumpAddress = addr;
-            try
-            {
-                dumpRegion = new byte[size];
-                var ret = ReadProcessMemory(pHandle, dumpAddress, dumpRegion, (UIntPtr)size, IntPtr.Zero);
-                return ret;
-            }
+            /*try
+            {*/
+                byte[] dumpRegion = new byte[size];
+                IntPtr numBytes = (IntPtr)0;
+                UIntPtr theSize = (UIntPtr)size;
+                Debug.Write("[DEBUG] AoB scan starts at 0x" + String.Format("{0:x8}", Convert.ToUInt32(dumpAddress.ToString())) + Environment.NewLine);
+                Debug.Write("[DEBUG] AoB scan length is 0x" + String.Format("{0:x8}", Convert.ToUInt32(theSize.ToString())) + Environment.NewLine);
+                Debug.Write("[DEBUG] AoB scan ends at 0x" + String.Format("{0:x8}", Convert.ToUInt32(UIntPtr.Add(dumpAddress, size).ToString())) + Environment.NewLine);
+                ReadProcessMemory(pHandle, dumpAddress, dumpRegion, (UIntPtr)size, numBytes);
+                Debug.Write("[DEBUG] AoB scan dumpRegion length is " + dumpRegion.Length.ToString() + Environment.NewLine);
+            Debug.Write("[DEBUG] AoB scan number of bytes read is " + numBytes.ToString() + Environment.NewLine);
+            return dumpRegion;
+            /*}
             catch (Exception)
             {
                 return false;
-            }
+            }*/
         }
 
-        private bool MaskCheck(int nOffset, byte[] btPattern, string strMask)
+        private bool MaskCheck(int nOffset, byte[] btPattern, string strMask, byte[] dumpRegion)
         {
             // Loop the pattern and compare to the mask and dump.
             for (int x = 0; x < btPattern.Length; x++)
@@ -986,35 +996,64 @@ namespace Memory
                     }
                 }
 
-                // If the mask char is not a wildcard, ensure a match is made in the pattern.
-                if ((strMask[x] == 'x') && (btPattern[x] != dumpRegion[nOffset + x]))
-                    return false;
+                //if ((nOffset + x) < btPattern.Length) //prevent going out of index range
+                //{
+                    // If the mask char is not a wildcard, ensure a match is made in the pattern.
+                    if ((strMask[x] == 'x') && (btPattern[x] != dumpRegion[nOffset + x]))
+                    {
+                        Debug.Write("[DEBUG] AoB scan comparing " + String.Format("0x{0:x2}", Convert.ToUInt32(btPattern[x].ToString())) + " and " + String.Format("0x{0:x2}", Convert.ToUInt32(dumpRegion[nOffset + x].ToString())) + " at " + String.Format("0x{0:x8}", Convert.ToUInt32((dumpAddress + nOffset + x).ToString())) + " nOffset:" + nOffset.ToString() + " x:" + x.ToString() + Environment.NewLine);
+                        return false;
+                    }
+                //}
+                //else
+                //{
+                    //return false; //we are attempting to go outside of the range, so that means we didn't find it.
+                //}
             }
 
             // The loop was successful so we found 1 pattern match.
             return true;
         }
 
+        public static string ByteArrayToString(byte[] ba)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            foreach (byte b in ba)
+            {
+                if (b == 255)
+                    hex.Append("?? ");
+                else
+                    hex.AppendFormat("{0:x2} ", b);
+            }
+            return hex.ToString();
+        }
+
         public IntPtr FindPattern(byte[] btPattern, string strMask, int nOffset)
         {
-            try
-            {
+            /*try
+            {*/
                 if (strMask.Length != btPattern.Length)
                     return IntPtr.Zero;
-                
-                for (int x = 0; x < dumpRegion.Length; x++)
+
+                Debug.Write("[DEBUG] AoB mask is " + strMask + Environment.NewLine);
+                Debug.Write("[DEBUG] AoB pattern is " + ByteArrayToString(btPattern) + Environment.NewLine);
+
+            //Debug.Write("[DEBUG] memory dump (" + dumpRegion.Length + ") = " + ByteArrayToString(dumpRegion));
+            byte[] dumpRegion = DumpMemory(dumpAddress, scanSize);
+
+            for (int x = 0; x < scanSize; x++)
                 {
-                    if (MaskCheck(x, btPattern, strMask))
+                    if (MaskCheck(x, btPattern, strMask, dumpRegion))
                     {
                         return new IntPtr((int)dumpAddress + (x + nOffset));
                     }
                 }
                 return IntPtr.Zero;
-            }
+            /*}
             catch (Exception)
             {
                 return IntPtr.Zero;
-            }
+            }*/
         }
     }
 }
