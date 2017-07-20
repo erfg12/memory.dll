@@ -27,6 +27,12 @@ namespace Memory
             Int32 dwProcessId
             );
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION lpBuffer, uint dwLength);
+
+        [DllImport("kernel32.dll")]
+        static extern void GetSystemInfo(out SYSTEM_INFO lpSystemInfo);
+
         [DllImport("dbghelp.dll")]
         static extern bool MiniDumpWriteDump(
             IntPtr hProcess,
@@ -51,6 +57,9 @@ namespace Memory
             UIntPtr nSize,
             out IntPtr lpNumberOfBytesWritten
         );
+
+        [DllImport("kernel32.dll")]
+        static extern int GetProcessId(IntPtr handle);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
         static extern uint GetPrivateProfileString(
@@ -136,7 +145,11 @@ namespace Memory
         const uint PAGE_READWRITE = 4;
         #endregion
 
+        /// <summary>
+        /// The process handle that was opened. (Use OpenProcess function to populate this variable)
+        /// </summary>
         public static IntPtr pHandle;
+
         public Process procs = null;
 
         /// <summary>
@@ -144,7 +157,7 @@ namespace Memory
         /// </summary>
         /// <param name="procID">You can use the getProcIDFromName function to get this.</param>
         /// <returns></returns>
-        public bool OpenGameProcess(int procID)
+        public bool OpenProcess(int procID)
         {
             if (isAdmin() == false)
             {
@@ -152,8 +165,8 @@ namespace Memory
                 MessageBox.Show("WARNING: You are NOT running this program as admin!!" + Environment.NewLine + "Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
             }
 
-            /*try
-            {*/
+            try
+            {
                 Process.EnterDebugMode();
                 if (procID != 0) //getProcIDFromName returns 0 if there was a problem
                     procs = Process.GetProcessById(procID);
@@ -173,7 +186,7 @@ namespace Memory
                 mainModule = procs.MainModule;
                 getModules();
                 return true;
-            //} catch { return false; }
+            } catch { return false; }
         }
 
         /// <summary>
@@ -907,18 +920,17 @@ namespace Memory
             return;
         }
 
+        byte[] dumpBytes;
+
         /// <summary>
         /// Array of Bytes scan to find address. Returns IntPtr address. See https://github.com/erfg12/memory.dll/wiki/sigScan-(AoB-Scanning) for more information.
         /// </summary>
-        /// <param name="min">address to start the scan</param>
-        /// <param name="length">length of scan</param>
-        /// <param name="code">array of bytes to look for. Can include partial masks. This can also be a ini file label.</param>
+        /// <param name="search">array of bytes to look for. Can include partial masks. This can also be a ini file label.</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <returns></returns>
-        public IntPtr AoBScan(uint min, int length, string code, string file = "")
+        public IntPtr AoBScan(string search, string file = "")
         {
-            scanSize = length;
-            string[] stringByteArray = LoadCode(code, file).Split(' ');
+            string[] stringByteArray = LoadCode(search, file).Split(' ');
             byte[] myPattern = new byte[stringByteArray.Length];
             string mask = "";
             int i = 0;
@@ -946,37 +958,57 @@ namespace Memory
                 }
                 i++;
             }
-            IntPtr pAddr = (IntPtr)0;
-            //DumpMemory((UIntPtr)min, length);
-            dumpAddress = (UIntPtr)min;
-            pAddr = FindPattern(myPattern, mask, 0);
-            return pAddr;
-        }
-        
-        UIntPtr dumpAddress = (UIntPtr)0x00000000;
-        int scanSize = 0;
 
-        private byte[] DumpMemory(UIntPtr addr, Int32 size)
+            //DumpMemory(0);
+            byte[] test = new byte[procs.VirtualMemorySize];
+            ReadProcessMemory(pHandle, (UIntPtr)0, test, (UIntPtr)procs.PrivateMemorySize, IntPtr.Zero);
+            File.WriteAllBytes("test.txt", test);
+            return (IntPtr)FindPattern(test, myPattern, mask);
+        }
+
+        /// <summary>
+        /// Quickly scans only a section of memory, instead of the entire thing like AoBScan does.
+        /// </summary>
+        /// <param name="start">starting address</param>
+        /// <param name="length">length to scan</param>
+        /// <param name="search">array of bytes to look for. Can include partial masks. This can also be a ini file label.</param>
+        /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        /// <returns></returns>
+        public IntPtr AoBScanFast(int start, int length, string search, string file = "")
         {
-            scanSize = size;
-            dumpAddress = addr;
-            /*try
-            {*/
-                byte[] dumpRegion = new byte[size];
-                IntPtr numBytes = (IntPtr)0;
-                UIntPtr theSize = (UIntPtr)size;
-                Debug.Write("[DEBUG] AoB scan starts at 0x" + String.Format("{0:x8}", Convert.ToUInt32(dumpAddress.ToString())) + Environment.NewLine);
-                Debug.Write("[DEBUG] AoB scan length is 0x" + String.Format("{0:x8}", Convert.ToUInt32(theSize.ToString())) + Environment.NewLine);
-                Debug.Write("[DEBUG] AoB scan ends at 0x" + String.Format("{0:x8}", Convert.ToUInt32(UIntPtr.Add(dumpAddress, size).ToString())) + Environment.NewLine);
-                ReadProcessMemory(pHandle, dumpAddress, dumpRegion, (UIntPtr)size, numBytes);
-                Debug.Write("[DEBUG] AoB scan dumpRegion length is " + dumpRegion.Length.ToString() + Environment.NewLine);
-            Debug.Write("[DEBUG] AoB scan number of bytes read is " + numBytes.ToString() + Environment.NewLine);
-            return dumpRegion;
-            /*}
-            catch (Exception)
+            string[] stringByteArray = LoadCode(search, file).Split(' ');
+            byte[] myPattern = new byte[stringByteArray.Length];
+            string mask = "";
+            int i = 0;
+            foreach (string ba in stringByteArray)
             {
-                return false;
-            }*/
+                if (ba == "??")
+                {
+                    myPattern[i] = 0xFF;
+                    mask += "?";
+                }
+                else if (Char.IsLetterOrDigit(ba[0]) && ba[1] == '?') //partial match
+                {
+                    myPattern[i] = Encoding.ASCII.GetBytes("0x" + ba[0] + "F")[0];
+                    mask += "?"; //show it's still a wildcard of some kind
+                }
+                else if (Char.IsLetterOrDigit(ba[1]) && ba[0] == '?') //partial match
+                {
+                    myPattern[i] = Encoding.ASCII.GetBytes("0xF" + ba[1])[0];
+                    mask += "?"; //show it's still a wildcard of some kind
+                }
+                else
+                {
+                    myPattern[i] = Byte.Parse(ba, NumberStyles.HexNumber);
+                    mask += "x";
+                }
+                i++;
+            }
+
+            //DumpMemory(0);
+            byte[] test = new byte[procs.VirtualMemorySize];
+            ReadProcessMemory(pHandle, (UIntPtr)0x10000, test, (UIntPtr)2, IntPtr.Zero);
+            return (IntPtr)FindPattern(test, myPattern, mask, start, length);
         }
 
         private bool MaskCheck(int nOffset, byte[] btPattern, string strMask, byte[] dumpRegion)
@@ -1005,20 +1037,10 @@ namespace Memory
                         }
                     }
                 }
+                //Debug.Write("[DEBUG] AoB scan comparing " + String.Format("0x{0:x2}", Convert.ToUInt32(btPattern[x].ToString())) + " and " + String.Format("0x{0:x2}", Convert.ToUInt32(dumpRegion[nOffset + x].ToString())) + " at " + String.Format("0x{0:x8}", Convert.ToUInt32((nOffset + x).ToString())) + " nOffset:" + nOffset.ToString() + " x:" + x.ToString() + Environment.NewLine);
 
-                //if ((nOffset + x) < btPattern.Length) //prevent going out of index range
-                //{
-                    // If the mask char is not a wildcard, ensure a match is made in the pattern.
-                    if ((strMask[x] == 'x') && (btPattern[x] != dumpRegion[nOffset + x]))
-                    {
-                        Debug.Write("[DEBUG] AoB scan comparing " + String.Format("0x{0:x2}", Convert.ToUInt32(btPattern[x].ToString())) + " and " + String.Format("0x{0:x2}", Convert.ToUInt32(dumpRegion[nOffset + x].ToString())) + " at " + String.Format("0x{0:x8}", Convert.ToUInt32((dumpAddress + nOffset + x).ToString())) + " nOffset:" + nOffset.ToString() + " x:" + x.ToString() + Environment.NewLine);
-                        return false;
-                    }
-                //}
-                //else
-                //{
-                    //return false; //we are attempting to go outside of the range, so that means we didn't find it.
-                //}
+                if ((strMask[x] == 'x') && (btPattern[x] != dumpRegion[nOffset + x]))
+                    return false;
             }
 
             // The loop was successful so we found 1 pattern match.
@@ -1038,6 +1060,11 @@ namespace Memory
             return hex.ToString();
         }
 
+        /// <summary>
+        /// Convert a byte array to hex values in a string.
+        /// </summary>
+        /// <param name="ba">your byte array to convert</param>
+        /// <returns></returns>
         public static string ByteArrayToHexString(byte[] ba)
         {
             StringBuilder hex = new StringBuilder(ba.Length * 2);
@@ -1056,48 +1083,109 @@ namespace Memory
             return hex.ToString();
         }
 
-        public static void DumpToFile(String fileToDump)
+        public int FindPattern(byte[] haystack, byte[] needle, string strMask, int start = 0, int length = 0)
         {
-            FileStream fsToDump = null;
-            if (File.Exists(fileToDump))
-                fsToDump = File.Open(fileToDump, FileMode.Append);
-            else
-                fsToDump = File.Create(fileToDump);
-            Process thisProcess = Process.GetCurrentProcess();
-            MiniDumpWriteDump(thisProcess.Handle, thisProcess.Id, fsToDump.SafeFileHandle.DangerousGetHandle(), 0x00000000, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
-            fsToDump.Close();
-            byte[] bytes = File.ReadAllBytes(fileToDump);
-            var str = ByteArrayToHexString(bytes);
-            File.Delete(fileToDump);
-            File.WriteAllText(fileToDump, str);
+            if (length == 0)
+                length = (haystack.Length - start);
+
+            Debug.Write("[DEBUG] starting AoB scan at " + start + " and going " + length + " length.");
+            Debug.Write("[DEBUG] AoB mask is " + strMask + Environment.NewLine);
+            Debug.Write("[DEBUG] AoB pattern is " + ByteArrayToString(needle) + Environment.NewLine);
+            Debug.Write("[DEBUG] memory dump (" + haystack.Length + ")");
+            
+            for (int x = start; x < (start + length); x++)
+            {
+                if (MaskCheck(x, needle, strMask, haystack))
+                {
+                    //string total = (x + diff).ToString("x8");
+                    Debug.Write("[DEBUG] base address is " + procs.MainModule.BaseAddress.ToString("x8") + " and resulting offset is " + x.ToString("x8") + " min address is " + getMinAddress().ToString("x8") + Environment.NewLine);
+                    return (x);
+                }
+            }
+
+            return 0;
         }
 
-        public IntPtr FindPattern(byte[] btPattern, string strMask, int nOffset)
+        public struct SYSTEM_INFO
+{
+    public ushort processorArchitecture;
+    ushort reserved;
+    public uint pageSize;
+    public IntPtr minimumApplicationAddress;  // minimum address
+    public IntPtr maximumApplicationAddress;  // maximum address
+    public IntPtr activeProcessorMask;
+    public uint numberOfProcessors;
+    public uint processorType;
+    public uint allocationGranularity;
+    public ushort processorLevel;
+    public ushort processorRevision;
+}
+
+        public struct MEMORY_BASIC_INFORMATION
         {
-            /*try
-            {*/
-                if (strMask.Length != btPattern.Length)
-                    return IntPtr.Zero;
+            public ulong BaseAddress;
+            public ulong AllocationBase;
+            public int AllocationProtect;
+            public ulong RegionSize;
+            public int State;
+            public ulong Protect;
+            public ulong Type;
+        }
 
-                Debug.Write("[DEBUG] AoB mask is " + strMask + Environment.NewLine);
-                Debug.Write("[DEBUG] AoB pattern is " + ByteArrayToString(btPattern) + Environment.NewLine);
+        public ulong getMinAddress()
+        {
+            SYSTEM_INFO SI;
+            GetSystemInfo(out SI);
+            return (ulong)SI.minimumApplicationAddress;
+        }
 
-            //Debug.Write("[DEBUG] memory dump (" + dumpRegion.Length + ") = " + ByteArrayToString(dumpRegion));
-            byte[] dumpRegion = DumpMemory(dumpAddress, scanSize);
+        int diff = 0;
 
-            for (int x = 0; x < scanSize; x++)
-                {
-                    if (MaskCheck(x, btPattern, strMask, dumpRegion))
-                    {
-                        return new IntPtr((int)dumpAddress + (x + nOffset));
-                    }
-                }
-                return IntPtr.Zero;
-            /*}
-            catch (Exception)
+        /// <summary>
+        /// dumps process memory to file
+        /// </summary>
+        /// <param name="type">0 = dump to variable dumpBytes, 1 = raw dump file, 2 = hex in text file, 3 = both raw dump and hex in text</param>
+        public void DumpMemory(int type = 0)
+        {
+            int procID = GetProcessId(pHandle);
+            var str = "";
+            string rawFile = Process.GetProcessById(procID).ProcessName + ".DMP";
+            string txtFile = Process.GetProcessById(procID).ProcessName + ".TXT";
+            //Debug.Write("[DEBUG] Now dumping process ID:" + procID.ToString() + " (" + Process.GetProcessById(procID).ProcessName + ")" + Environment.NewLine);
+
+            FileStream fsToDump = null;
+            if (File.Exists(rawFile))
+                fsToDump = File.Open(rawFile, FileMode.Append);
+            else
+                fsToDump = File.Create(rawFile);
+
+            //Debug.Write("[DEBUG] writing raw values to dump file.." + Environment.NewLine);
+            Process thisProcess = Process.GetCurrentProcess();
+            MiniDumpWriteDump(pHandle, procID, fsToDump.SafeFileHandle.DangerousGetHandle(), 0x001fffff, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+            fsToDump.Close();
+
+            if (type == 0)
             {
-                return IntPtr.Zero;
-            }*/
+                dumpBytes = File.ReadAllBytes(rawFile);
+                diff = Convert.ToInt32(procs.WorkingSet) - dumpBytes.Length;
+                MessageBox.Show(diff.ToString() + " 0x" + diff.ToString("x8"));
+            }
+
+            if (type == 1)
+            {
+                //Debug.Write("[DEBUG] converting raw values to hex string values, this can take a while..." + Environment.NewLine);
+                byte[] bytes = File.ReadAllBytes(rawFile);
+                str = ByteArrayToHexString(bytes);
+            }
+
+            if (type < 2)
+                File.Delete(rawFile);
+
+            if (type == 1)
+            {
+                //Debug.Write("[DEBUG] deleting raw dump file and writing hex string values to text file..." + Environment.NewLine);
+                File.WriteAllText(txtFile, str);
+            }
         }
     }
 }
