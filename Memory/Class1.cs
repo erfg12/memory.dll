@@ -31,6 +31,13 @@ namespace Memory
         static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION lpBuffer, uint dwLength);
 
         [DllImport("kernel32.dll")]
+        static extern IntPtr OpenThread(ThreadAccess dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
+        [DllImport("kernel32.dll")]
+        static extern uint SuspendThread(IntPtr hThread);
+        [DllImport("kernel32.dll")]
+        static extern int ResumeThread(IntPtr hThread);
+
+        [DllImport("kernel32.dll")]
         static extern void GetSystemInfo(out SYSTEM_INFO lpSystemInfo);
 
         [DllImport("dbghelp.dll")]
@@ -38,7 +45,7 @@ namespace Memory
             IntPtr hProcess,
             Int32 ProcessId,
             IntPtr hFile,
-            Int32 DumpType,
+            MINIDUMP_TYPE DumpType,
             IntPtr ExceptionParam,
             IntPtr UserStreamParam,
             IntPtr CallackParam);
@@ -151,32 +158,55 @@ namespace Memory
         public static IntPtr pHandle;
 
         public Process procs = null;
+        public int procID = 0;
+
+        internal enum MINIDUMP_TYPE
+        {
+            MiniDumpNormal = 0x00000000,
+            MiniDumpWithDataSegs = 0x00000001,
+            MiniDumpWithFullMemory = 0x00000002,
+            MiniDumpWithHandleData = 0x00000004,
+            MiniDumpFilterMemory = 0x00000008,
+            MiniDumpScanMemory = 0x00000010,
+            MiniDumpWithUnloadedModules = 0x00000020,
+            MiniDumpWithIndirectlyReferencedMemory = 0x00000040,
+            MiniDumpFilterModulePaths = 0x00000080,
+            MiniDumpWithProcessThreadData = 0x00000100,
+            MiniDumpWithPrivateReadWriteMemory = 0x00000200,
+            MiniDumpWithoutOptionalData = 0x00000400,
+            MiniDumpWithFullMemoryInfo = 0x00000800,
+            MiniDumpWithThreadInfo = 0x00001000,
+            MiniDumpWithCodeSegs = 0x00002000
+        }
 
         /// <summary>
         /// Open the PC game process with all security and access rights.
         /// </summary>
         /// <param name="procID">You can use the getProcIDFromName function to get this.</param>
         /// <returns></returns>
-        public bool OpenProcess(int procID)
+        public bool OpenProcess(int id)
         {
             if (isAdmin() == false)
             {
                 Debug.Write("WARNING: You are NOT running this program as admin!! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
-                MessageBox.Show("WARNING: You are NOT running this program as admin!!" + Environment.NewLine + "Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
+                MessageBox.Show("WARNING: You are NOT running this program as admin!!");
             }
 
             try
             {
                 Process.EnterDebugMode();
-                if (procID != 0) //getProcIDFromName returns 0 if there was a problem
-                    procs = Process.GetProcessById(procID);
+                if (id != 0)
+                { //getProcIDFromName returns 0 if there was a problem
+                    procs = Process.GetProcessById(id);
+                    procID = id;
+                }
                 else
                     return false;
 
                 if (procs.Responding == false)
                     return false;
 
-                pHandle = OpenProcess(0x1F0FFF, 1, procID);
+                pHandle = OpenProcess(0x1F0FFF, 1, id);
 
                 if (pHandle == IntPtr.Zero)
                 {
@@ -329,7 +359,7 @@ namespace Memory
                 else
                 {
                     Debug.WriteLine("ERROR! Module " + moduleName[0] + " not found! Visit https://github.com/erfg12/memory.dll/wiki/List-Modules");
-                    MessageBox.Show("ERROR! Module " + moduleName[0] + " not found!" + Environment.NewLine + "Visit https://github.com/erfg12/memory.dll/wiki/List-Modules");
+                    MessageBox.Show("ERROR! Module " + moduleName[0] + " not found!");
                     return (UIntPtr)0;
                 }
             }
@@ -922,10 +952,63 @@ namespace Memory
 
         byte[] dumpBytes;
 
+        [Flags]
+        public enum ThreadAccess : int
+        {
+            TERMINATE = (0x0001),
+            SUSPEND_RESUME = (0x0002),
+            GET_CONTEXT = (0x0008),
+            SET_CONTEXT = (0x0010),
+            SET_INFORMATION = (0x0020),
+            QUERY_INFORMATION = (0x0040),
+            SET_THREAD_TOKEN = (0x0080),
+            IMPERSONATE = (0x0100),
+            DIRECT_IMPERSONATION = (0x0200)
+        }
+
+        private static void SuspendProcess(int pid)
+        {
+            var process = Process.GetProcessById(pid);
+
+            if (process.ProcessName == string.Empty)
+                return;
+
+            foreach (ProcessThread pT in process.Threads)
+            {
+                IntPtr pOpenThread = OpenThread(ThreadAccess.SUSPEND_RESUME, false, (uint)pT.Id);
+                if (pOpenThread == IntPtr.Zero)
+                    continue;
+
+                SuspendThread(pOpenThread);
+                CloseHandle(pOpenThread);
+            }
+        }
+
+        public static void ResumeProcess(int pid)
+        {
+            var process = Process.GetProcessById(pid);
+            if (process.ProcessName == string.Empty)
+                return;
+
+            foreach (ProcessThread pT in process.Threads)
+            {
+                IntPtr pOpenThread = OpenThread(ThreadAccess.SUSPEND_RESUME, false, (uint)pT.Id);
+                if (pOpenThread == IntPtr.Zero)
+                    continue;
+
+                var suspendCount = 0;
+                do
+                {
+                    suspendCount = ResumeThread(pOpenThread);
+                } while (suspendCount > 0);
+                CloseHandle(pOpenThread);
+            }
+        }
+
         /// <summary>
         /// Array of Bytes scan to find address. Returns IntPtr address. See https://github.com/erfg12/memory.dll/wiki/sigScan-(AoB-Scanning) for more information.
         /// </summary>
-        /// <param name="search">array of bytes to look for. Can include partial masks. This can also be a ini file label.</param>
+        /// <param name="search">array of bytes to look for. Can be full masks or partial masks. This can also be a ini file label.</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <returns></returns>
         public IntPtr AoBScan(string search, string file = "")
@@ -961,8 +1044,11 @@ namespace Memory
 
             //DumpMemory(0);
             byte[] test = new byte[procs.VirtualMemorySize];
-            ReadProcessMemory(pHandle, (UIntPtr)0, test, (UIntPtr)procs.PrivateMemorySize, IntPtr.Zero);
-            File.WriteAllBytes("test.txt", test);
+            SuspendProcess(procID);
+            UIntPtr procMod = (UIntPtr)((int)mainModule.BaseAddress);
+            ReadProcessMemory(pHandle, procMod, test, (UIntPtr)procs.PrivateMemorySize, IntPtr.Zero);
+            //Debug.Write("[DEBUG] ReadProcessMemory Length=" + test.Length.ToString() + " Dump Length=" + dumpBytes.Length + " (2)");
+            //File.WriteAllBytes("test.txt", test);
             return (IntPtr)FindPattern(test, myPattern, mask);
         }
 
@@ -1005,9 +1091,10 @@ namespace Memory
                 i++;
             }
 
-            //DumpMemory(0);
             byte[] test = new byte[procs.VirtualMemorySize];
-            ReadProcessMemory(pHandle, (UIntPtr)0x10000, test, (UIntPtr)2, IntPtr.Zero);
+            SuspendProcess(procID);
+            UIntPtr procMod = (UIntPtr)((int)mainModule.BaseAddress);
+            ReadProcessMemory(pHandle, procMod, test, (UIntPtr)2, IntPtr.Zero);
             return (IntPtr)FindPattern(test, myPattern, mask, start, length);
         }
 
@@ -1092,17 +1179,17 @@ namespace Memory
             Debug.Write("[DEBUG] AoB mask is " + strMask + Environment.NewLine);
             Debug.Write("[DEBUG] AoB pattern is " + ByteArrayToString(needle) + Environment.NewLine);
             Debug.Write("[DEBUG] memory dump (" + haystack.Length + ")");
-            
             for (int x = start; x < (start + length); x++)
             {
                 if (MaskCheck(x, needle, strMask, haystack))
                 {
                     //string total = (x + diff).ToString("x8");
-                    Debug.Write("[DEBUG] base address is " + procs.MainModule.BaseAddress.ToString("x8") + " and resulting offset is " + x.ToString("x8") + " min address is " + getMinAddress().ToString("x8") + Environment.NewLine);
-                    return (x);
+                    //Debug.Write("[DEBUG] base address is " + procs.MainModule.BaseAddress.ToString("x8") + " and resulting offset is " + x.ToString("x8") + " min address is " + getMinAddress().ToString("x8") + Environment.NewLine);
+                    ResumeProcess(procID);
+                    return (x + (int)mainModule.BaseAddress);
                 }
             }
-
+            ResumeProcess(procID);
             return 0;
         }
 
@@ -1161,14 +1248,19 @@ namespace Memory
 
             //Debug.Write("[DEBUG] writing raw values to dump file.." + Environment.NewLine);
             Process thisProcess = Process.GetCurrentProcess();
-            MiniDumpWriteDump(pHandle, procID, fsToDump.SafeFileHandle.DangerousGetHandle(), 0x001fffff, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+            MiniDumpWriteDump(pHandle, procID, fsToDump.SafeFileHandle.DangerousGetHandle(),
+                /*MINIDUMP_TYPE.MiniDumpNormal |*/ MINIDUMP_TYPE.MiniDumpWithDataSegs | MINIDUMP_TYPE.MiniDumpWithFullMemory | MINIDUMP_TYPE.MiniDumpWithHandleData | MINIDUMP_TYPE.MiniDumpFilterMemory
+            | MINIDUMP_TYPE.MiniDumpScanMemory | MINIDUMP_TYPE.MiniDumpWithUnloadedModules | MINIDUMP_TYPE.MiniDumpWithIndirectlyReferencedMemory | MINIDUMP_TYPE.MiniDumpFilterModulePaths
+            | MINIDUMP_TYPE.MiniDumpWithProcessThreadData | MINIDUMP_TYPE.MiniDumpWithPrivateReadWriteMemory /*| MINIDUMP_TYPE.MiniDumpWithoutOptionalData*/ | MINIDUMP_TYPE.MiniDumpWithFullMemoryInfo
+            | MINIDUMP_TYPE.MiniDumpWithThreadInfo | MINIDUMP_TYPE.MiniDumpWithCodeSegs, 
+                IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
             fsToDump.Close();
 
             if (type == 0)
             {
                 dumpBytes = File.ReadAllBytes(rawFile);
                 diff = Convert.ToInt32(procs.WorkingSet) - dumpBytes.Length;
-                MessageBox.Show(diff.ToString() + " 0x" + diff.ToString("x8"));
+                //MessageBox.Show(diff.ToString() + " 0x" + diff.ToString("x8"));
             }
 
             if (type == 1)
