@@ -11,6 +11,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Security.Principal;
+using System.Threading.Tasks;
 
 namespace Memory
 {
@@ -182,7 +183,7 @@ namespace Memory
         /// <summary>
         /// Open the PC game process with all security and access rights.
         /// </summary>
-        /// <param name="procID">You can use the getProcIDFromName function to get this.</param>
+        /// <param name="id">You can use the getProcIDFromName function to get this.</param>
         /// <returns></returns>
         public bool OpenProcess(int id)
         {
@@ -343,7 +344,7 @@ namespace Memory
                 intToUint = Convert.ToInt32(newOffset, 16);
 
             if (theCode.Contains("base") || theCode.Contains("main"))
-                uintValue = (UIntPtr)((int)mainModule.BaseAddress + intToUint);
+                uintValue = (UIntPtr)((int)procs.MainModule.BaseAddress + intToUint);
             else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
             {
                 string[] moduleName = theCode.Split('+');
@@ -1043,13 +1044,18 @@ namespace Memory
             }
 
             //DumpMemory(0);
-            byte[] test = new byte[procs.VirtualMemorySize];
+            byte[] test = new byte[procs.VirtualMemorySize64];
             SuspendProcess(procID);
-            UIntPtr procMod = (UIntPtr)((int)mainModule.BaseAddress);
-            ReadProcessMemory(pHandle, procMod, test, (UIntPtr)procs.PrivateMemorySize, IntPtr.Zero);
+            UIntPtr procMod = (UIntPtr)((int)procs.MainModule.BaseAddress);
+            ReadProcessMemory(pHandle, procMod, test, (UIntPtr)procs.PrivateMemorySize64, IntPtr.Zero);
             //Debug.Write("[DEBUG] ReadProcessMemory Length=" + test.Length.ToString() + " Dump Length=" + dumpBytes.Length + " (2)");
             //File.WriteAllBytes("test.txt", test);
             return (IntPtr)FindPattern(test, myPattern, mask);
+        }
+
+        async Task PutTaskDelay()
+        {
+            await Task.Delay(5000);
         }
 
         /// <summary>
@@ -1091,10 +1097,13 @@ namespace Memory
                 i++;
             }
 
-            byte[] test = new byte[procs.VirtualMemorySize];
+            byte[] test = new byte[procs.VirtualMemorySize64];
             SuspendProcess(procID);
-            UIntPtr procMod = (UIntPtr)((int)mainModule.BaseAddress);
-            ReadProcessMemory(pHandle, procMod, test, (UIntPtr)2, IntPtr.Zero);
+            UIntPtr procMod = (UIntPtr)((int)procs.MainModule.BaseAddress);
+            Debug.Write("[DEBUG] Main module address at " + procMod.ToString() + Environment.NewLine);
+            Debug.Write("[DEBUG] VirtualMemorySize64 = " + procs.VirtualMemorySize64 + Environment.NewLine);
+            ReadProcessMemory(pHandle, procMod, test, (UIntPtr)test.Length, IntPtr.Zero);
+            //File.WriteAllBytes("test.dmp", test);
             return (IntPtr)FindPattern(test, myPattern, mask, start, length);
         }
 
@@ -1175,7 +1184,7 @@ namespace Memory
             if (length == 0)
                 length = (haystack.Length - start);
 
-            Debug.Write("[DEBUG] starting AoB scan at " + start + " and going " + length + " length.");
+            Debug.Write("[DEBUG] starting AoB scan at " + start + " and going " + length + " length." + Environment.NewLine);
             Debug.Write("[DEBUG] AoB mask is " + strMask + Environment.NewLine);
             Debug.Write("[DEBUG] AoB pattern is " + ByteArrayToString(needle) + Environment.NewLine);
             Debug.Write("[DEBUG] memory dump (" + haystack.Length + ")");
