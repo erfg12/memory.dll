@@ -156,7 +156,7 @@ namespace Memory
         /// <summary>
         /// The process handle that was opened. (Use OpenProcess function to populate this variable)
         /// </summary>
-        public static IntPtr pHandle;
+        public IntPtr pHandle;
 
         public Process procs = null;
         public int procID = 0;
@@ -1236,6 +1236,67 @@ namespace Memory
         }
 
         int diff = 0;
+
+        public static void AppendAllBytes(string path, byte[] bytes)
+        {
+            //argument-checking here.
+
+            using (var stream = new FileStream(path, FileMode.Append))
+            {
+                stream.Write(bytes, 0, bytes.Length);
+            }
+        }
+
+        public void DumpMemory2()
+        {
+            SYSTEM_INFO sys_info = new SYSTEM_INFO();
+            GetSystemInfo(out sys_info);
+
+            IntPtr proc_min_address = sys_info.minimumApplicationAddress;
+            IntPtr proc_max_address = sys_info.maximumApplicationAddress;
+
+            // saving the values as long ints so I won't have to do a lot of casts later
+            long proc_min_address_l = (long)procs.MainModule.BaseAddress;
+            long proc_max_address_l = (long)procs.VirtualMemorySize64;
+
+            // notepad better be runnin'
+            //Process process = Process.GetProcessesByName("notepad")[0];
+
+            // opening the process with desired access level
+            //IntPtr processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | 0x0010, false, process.Id);
+
+            StreamWriter sw = new StreamWriter("dump.dmp");
+
+            // this will store any information we get from VirtualQueryEx()
+            MEMORY_BASIC_INFORMATION mem_basic_info = new MEMORY_BASIC_INFORMATION();
+            while (proc_min_address_l < proc_max_address_l)
+            {
+                // 28 = sizeof(MEMORY_BASIC_INFORMATION)
+                VirtualQueryEx(pHandle, procs.MainModule.BaseAddress, out mem_basic_info, 28);
+
+                // if this memory chunk is accessible
+                //if (mem_basic_info.Protect == PAGE_READWRITE && mem_basic_info.State == MEM_COMMIT)
+                //{
+                byte[] buffer = new byte[mem_basic_info.RegionSize];
+                UIntPtr test = (UIntPtr)mem_basic_info.RegionSize;
+                UIntPtr test2 = (UIntPtr)((int)procs.MainModule.BaseAddress);
+                    // read everything in the buffer above
+                    ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
+                    AppendAllBytes(@"test.txt", buffer);
+                    // then output this in the file
+                    /*for (int i = 0; i < (int)mem_basic_info.RegionSize; i++)
+                    {
+                        sw.WriteLine("{0}", ((char)buffer[i]);
+                        //Debug.Write(((int)mem_basic_info.BaseAddress + i).ToString("X") + buffer[i].ToString());
+                    }*/
+                //}
+
+                // move to the next memory chunk
+                proc_min_address_l += (int)mem_basic_info.RegionSize;
+                proc_min_address = new IntPtr(proc_min_address_l);
+            }
+            sw.Close();
+        }
 
         /// <summary>
         /// dumps process memory to file
