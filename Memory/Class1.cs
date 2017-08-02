@@ -29,7 +29,7 @@ namespace Memory
             );
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION lpBuffer, uint dwLength);
+        static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION lpBuffer, int dwLength);
 
         [DllImport("kernel32.dll")]
         static extern IntPtr OpenThread(ThreadAccess dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
@@ -160,6 +160,7 @@ namespace Memory
 
         public Process procs = null;
         public int procID = 0;
+        public byte[] dumpBytes;
 
         internal enum MINIDUMP_TYPE
         {
@@ -217,7 +218,8 @@ namespace Memory
                 mainModule = procs.MainModule;
                 getModules();
                 return true;
-            } catch { return false; }
+            }
+            catch { return false; }
         }
 
         /// <summary>
@@ -891,7 +893,7 @@ namespace Memory
                     ReadProcessMemory(pHandle, (UIntPtr)(trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
                 uint num1 = BitConverter.ToUInt32(memoryAddress, 0);
-                
+
                 UIntPtr base1 = new UIntPtr(num1);
                 num1 = BitConverter.ToUInt32(memoryAddress, 0);
                 return base1;
@@ -950,8 +952,6 @@ namespace Memory
 
             return;
         }
-
-        byte[] dumpBytes;
 
         [Flags]
         public enum ThreadAccess : int
@@ -1043,19 +1043,23 @@ namespace Memory
                 i++;
             }
 
-            //DumpMemory(0);
-            byte[] test = new byte[procs.VirtualMemorySize64];
-            SuspendProcess(procID);
-            UIntPtr procMod = (UIntPtr)((int)procs.MainModule.BaseAddress);
-            ReadProcessMemory(pHandle, procMod, test, (UIntPtr)procs.PrivateMemorySize64, IntPtr.Zero);
-            //Debug.Write("[DEBUG] ReadProcessMemory Length=" + test.Length.ToString() + " Dump Length=" + dumpBytes.Length + " (2)");
-            //File.WriteAllBytes("test.txt", test);
-            return (IntPtr)FindPattern(test, myPattern, mask);
+            DumpMemory2(1);
+            return (IntPtr)FindPattern(dumpBytes, myPattern, mask);
         }
 
         async Task PutTaskDelay()
         {
             await Task.Delay(5000);
+        }
+
+        public static void AppendAllBytes(string path, byte[] bytes)
+        {
+            //argument-checking here.
+
+            using (var stream = new FileStream(path, FileMode.Append))
+            {
+                stream.Write(bytes, 0, bytes.Length);
+            }
         }
 
         /// <summary>
@@ -1097,14 +1101,8 @@ namespace Memory
                 i++;
             }
 
-            byte[] test = new byte[procs.VirtualMemorySize64];
-            SuspendProcess(procID);
-            UIntPtr procMod = (UIntPtr)((int)procs.MainModule.BaseAddress);
-            Debug.Write("[DEBUG] Main module address at " + procMod.ToString() + Environment.NewLine);
-            Debug.Write("[DEBUG] VirtualMemorySize64 = " + procs.VirtualMemorySize64 + Environment.NewLine);
-            ReadProcessMemory(pHandle, procMod, test, (UIntPtr)test.Length, IntPtr.Zero);
-            //File.WriteAllBytes("test.dmp", test);
-            return (IntPtr)FindPattern(test, myPattern, mask, start, length);
+            DumpMemory2(1);
+            return (IntPtr)FindPattern(dumpBytes, myPattern, mask, start, length);
         }
 
         private bool MaskCheck(int nOffset, byte[] btPattern, string strMask, byte[] dumpRegion)
@@ -1112,6 +1110,13 @@ namespace Memory
             // Loop the pattern and compare to the mask and dump.
             for (int x = 0; x < btPattern.Length; x++)
             {
+                if ((nOffset + x) >= dumpRegion.Length)
+                    return false;
+                if (x >= btPattern.Length)
+                    return false;
+                if (x >= strMask.Length)
+                    return false;
+
                 // If the mask char is a wildcard.
                 if (strMask[x] == '?')
                 {
@@ -1121,7 +1126,8 @@ namespace Memory
                     { //50% wildcard
                         if (dumpRegion[nOffset + x].ToString("X").Length == 2) //byte must be 2 characters long
                         {
-                            if (btPattern[x].ToString("X")[0] == '?') { //ex: ?5
+                            if (btPattern[x].ToString("X")[0] == '?')
+                            { //ex: ?5
                                 if (dumpRegion[nOffset + x].ToString("X")[1] != btPattern[x].ToString("X")[1])
                                     return false;
                             }
@@ -1133,6 +1139,7 @@ namespace Memory
                         }
                     }
                 }
+
                 //Debug.Write("[DEBUG] AoB scan comparing " + String.Format("0x{0:x2}", Convert.ToUInt32(btPattern[x].ToString())) + " and " + String.Format("0x{0:x2}", Convert.ToUInt32(dumpRegion[nOffset + x].ToString())) + " at " + String.Format("0x{0:x8}", Convert.ToUInt32((nOffset + x).ToString())) + " nOffset:" + nOffset.ToString() + " x:" + x.ToString() + Environment.NewLine);
 
                 if ((strMask[x] == 'x') && (btPattern[x] != dumpRegion[nOffset + x]))
@@ -1180,53 +1187,57 @@ namespace Memory
         }
 
         public int FindPattern(byte[] haystack, byte[] needle, string strMask, int start = 0, int length = 0)
-        {
+        { //We need to find a way to shrink the haystack for full AoBScans.
+            Debug.Write("[DEBUG] FindPattern started " + DateTime.Now.ToString("h:mm:ss tt") + Environment.NewLine);
+            //byte[] smallHaystack = trimByte(haystack); //triming it down causes max memory error
             if (length == 0)
                 length = (haystack.Length - start);
 
             Debug.Write("[DEBUG] starting AoB scan at " + start + " and going " + length + " length." + Environment.NewLine);
             Debug.Write("[DEBUG] AoB mask is " + strMask + Environment.NewLine);
             Debug.Write("[DEBUG] AoB pattern is " + ByteArrayToString(needle) + Environment.NewLine);
-            Debug.Write("[DEBUG] memory dump (" + haystack.Length + ")");
+            Debug.Write("[DEBUG] memory dump size is " + haystack.Length.ToString("x8"));
             for (int x = start; x < (start + length); x++)
             {
                 if (MaskCheck(x, needle, strMask, haystack))
                 {
                     //string total = (x + diff).ToString("x8");
                     //Debug.Write("[DEBUG] base address is " + procs.MainModule.BaseAddress.ToString("x8") + " and resulting offset is " + x.ToString("x8") + " min address is " + getMinAddress().ToString("x8") + Environment.NewLine);
-                    ResumeProcess(procID);
+                    //ResumeProcess(procID);
+                    Debug.Write("[DEBUG] FindPattern ended " + DateTime.Now.ToString("h:mm:ss tt"));
                     return (x + (int)mainModule.BaseAddress);
                 }
             }
-            ResumeProcess(procID);
+            //ResumeProcess(procID);
+            Debug.Write("[DEBUG] FindPattern ended " + DateTime.Now.ToString("h:mm:ss tt") + Environment.NewLine);
             return 0;
         }
-
         public struct SYSTEM_INFO
-{
-    public ushort processorArchitecture;
-    ushort reserved;
-    public uint pageSize;
-    public IntPtr minimumApplicationAddress;  // minimum address
-    public IntPtr maximumApplicationAddress;  // maximum address
-    public IntPtr activeProcessorMask;
-    public uint numberOfProcessors;
-    public uint processorType;
-    public uint allocationGranularity;
-    public ushort processorLevel;
-    public ushort processorRevision;
-}
+        {
+            public ushort processorArchitecture;
+            ushort reserved;
+            public uint pageSize;
+            public IntPtr minimumApplicationAddress;
+            public IntPtr maximumApplicationAddress;
+            public IntPtr activeProcessorMask;
+            public uint numberOfProcessors;
+            public uint processorType;
+            public uint allocationGranularity;
+            public ushort processorLevel;
+            public ushort processorRevision;
+        }
 
         public struct MEMORY_BASIC_INFORMATION
         {
-            public ulong BaseAddress;
-            public ulong AllocationBase;
-            public int AllocationProtect;
-            public ulong RegionSize;
-            public int State;
-            public ulong Protect;
-            public ulong Type;
+            public IntPtr BaseAddress;
+            public IntPtr AllocationBase;
+            public uint AllocationProtect;
+            public IntPtr RegionSize;
+            public uint State;
+            public uint Protect;
+            public uint Type;
         }
+
 
         public ulong getMinAddress()
         {
@@ -1237,18 +1248,13 @@ namespace Memory
 
         int diff = 0;
 
-        public static void AppendAllBytes(string path, byte[] bytes)
+        /// <summary>
+        /// Dump memory page by page.
+        /// </summary>
+        /// <param name="type">0 = to dump.dmp file, 1 = to dumpBytes array</param>
+        public void DumpMemory2(int type = 0)
         {
-            //argument-checking here.
-
-            using (var stream = new FileStream(path, FileMode.Append))
-            {
-                stream.Write(bytes, 0, bytes.Length);
-            }
-        }
-
-        public void DumpMemory2()
-        {
+            Debug.Write("[DEBUG] DumpMemory2 started " + DateTime.Now.ToString("h:mm:ss tt") + Environment.NewLine);
             SYSTEM_INFO sys_info = new SYSTEM_INFO();
             GetSystemInfo(out sys_info);
 
@@ -1259,43 +1265,53 @@ namespace Memory
             long proc_min_address_l = (long)procs.MainModule.BaseAddress;
             long proc_max_address_l = (long)procs.VirtualMemorySize64;
 
-            // notepad better be runnin'
-            //Process process = Process.GetProcessesByName("notepad")[0];
-
-            // opening the process with desired access level
-            //IntPtr processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | 0x0010, false, process.Id);
-
-            StreamWriter sw = new StreamWriter("dump.dmp");
+            dumpBytes = new byte[0x70000000];
+            //Debug.Write("min:" + proc_min_address_l.ToString("x8") + " max:" + proc_max_address_l.ToString("x8"));
 
             // this will store any information we get from VirtualQueryEx()
             MEMORY_BASIC_INFORMATION mem_basic_info = new MEMORY_BASIC_INFORMATION();
+            int length = 0;
             while (proc_min_address_l < proc_max_address_l)
             {
-                // 28 = sizeof(MEMORY_BASIC_INFORMATION)
-                VirtualQueryEx(pHandle, procs.MainModule.BaseAddress, out mem_basic_info, 28);
-
-                // if this memory chunk is accessible
+                VirtualQueryEx(pHandle, proc_min_address, out mem_basic_info, Marshal.SizeOf(mem_basic_info));
                 //if (mem_basic_info.Protect == PAGE_READWRITE && mem_basic_info.State == MEM_COMMIT)
                 //{
-                byte[] buffer = new byte[mem_basic_info.RegionSize];
-                UIntPtr test = (UIntPtr)mem_basic_info.RegionSize;
-                UIntPtr test2 = (UIntPtr)((int)procs.MainModule.BaseAddress);
-                    // read everything in the buffer above
-                    ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
-                    AppendAllBytes(@"test.txt", buffer);
-                    // then output this in the file
-                    /*for (int i = 0; i < (int)mem_basic_info.RegionSize; i++)
-                    {
-                        sw.WriteLine("{0}", ((char)buffer[i]);
-                        //Debug.Write(((int)mem_basic_info.BaseAddress + i).ToString("X") + buffer[i].ToString());
-                    }*/
+                    byte[] buffer = new byte[(int)mem_basic_info.RegionSize];
+                    UIntPtr test = (UIntPtr)((int)mem_basic_info.RegionSize);
+                    UIntPtr test2 = (UIntPtr)((int)mem_basic_info.BaseAddress);
+
+                // read everything in the buffer above
+                ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
+                if (type == 0)
+                    AppendAllBytes(@"dump.dmp", buffer);
+                else if (type == 1)
+                {
+                    //buffer.CopyTo(dumpBytes, length);
+                    length += buffer.Length;
+                }
                 //}
 
                 // move to the next memory chunk
                 proc_min_address_l += (int)mem_basic_info.RegionSize;
+                //Debug.Write("increasing min by " + (int)mem_basic_info.RegionSize + Environment.NewLine);
                 proc_min_address = new IntPtr(proc_min_address_l);
             }
-            sw.Close();
+            Debug.Write("[DEBUG] DumpMemory2 ended " + DateTime.Now.ToString("h:mm:ss tt") + Environment.NewLine);
+        }
+
+        public byte[] trimByte(byte[] packet)
+        {
+            Debug.Write("old byte length:" + packet.Length + Environment.NewLine);
+            var i = packet.Length - 1;
+            while (packet[i] == 0)
+            {
+                --i;
+            }
+            var temp = new byte[i + 1];
+            Array.Copy(packet, temp, i + 1);
+            //MessageBox.Show(temp.Length.ToString());
+            Debug.Write("new byte length:" + temp.Length + Environment.NewLine);
+            return temp;
         }
 
         /// <summary>
@@ -1322,7 +1338,7 @@ namespace Memory
                 /*MINIDUMP_TYPE.MiniDumpNormal |*/ MINIDUMP_TYPE.MiniDumpWithDataSegs | MINIDUMP_TYPE.MiniDumpWithFullMemory | MINIDUMP_TYPE.MiniDumpWithHandleData | MINIDUMP_TYPE.MiniDumpFilterMemory
             | MINIDUMP_TYPE.MiniDumpScanMemory | MINIDUMP_TYPE.MiniDumpWithUnloadedModules | MINIDUMP_TYPE.MiniDumpWithIndirectlyReferencedMemory | MINIDUMP_TYPE.MiniDumpFilterModulePaths
             | MINIDUMP_TYPE.MiniDumpWithProcessThreadData | MINIDUMP_TYPE.MiniDumpWithPrivateReadWriteMemory /*| MINIDUMP_TYPE.MiniDumpWithoutOptionalData*/ | MINIDUMP_TYPE.MiniDumpWithFullMemoryInfo
-            | MINIDUMP_TYPE.MiniDumpWithThreadInfo | MINIDUMP_TYPE.MiniDumpWithCodeSegs, 
+            | MINIDUMP_TYPE.MiniDumpWithThreadInfo | MINIDUMP_TYPE.MiniDumpWithCodeSegs,
                 IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
             fsToDump.Close();
 
