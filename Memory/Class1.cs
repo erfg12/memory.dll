@@ -1107,7 +1107,7 @@ namespace Memory
 
         private bool MaskCheck(int nOffset, byte[] btPattern, string strMask, byte[] dumpRegion)
         {
-            // Loop the pattern and compare to the mask and dump.
+            // Loop the pattern and compare to the mask.
             for (int x = 0; x < btPattern.Length; x++)
             {
                 if ((nOffset + x) >= dumpRegion.Length)
@@ -1126,8 +1126,8 @@ namespace Memory
                     { //50% wildcard
                         if (dumpRegion[nOffset + x].ToString("X").Length == 2) //byte must be 2 characters long
                         {
-                            if (btPattern[x].ToString("X")[0] == '?')
-                            { //ex: ?5
+                            if (btPattern[x].ToString("X")[0] == '?') //ex: ?5
+                            {
                                 if (dumpRegion[nOffset + x].ToString("X")[1] != btPattern[x].ToString("X")[1])
                                     return false;
                             }
@@ -1187,16 +1187,24 @@ namespace Memory
         }
 
         public int FindPattern(byte[] haystack, byte[] needle, string strMask, int start = 0, int length = 0)
-        { //We need to find a way to shrink the haystack for full AoBScans.
-            Debug.Write("[DEBUG] FindPattern started " + DateTime.Now.ToString("h:mm:ss tt") + Environment.NewLine);
-            //byte[] smallHaystack = trimByte(haystack); //triming it down causes max memory error
+        {
+            Debug.Write("[DEBUG] FindPattern starting... (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+
+            Debug.Write("[DEBUG] starting AoB scan at 0x" + start.ToString("x8") + " and going 0x" + length.ToString("x8") + " length. (" + start.ToString("x8") + "-" + (start + length).ToString("x8") + ")" + Environment.NewLine);
+            Debug.Write("[DEBUG] AoB mask is " + strMask + Environment.NewLine);
+            Debug.Write("[DEBUG] AoB pattern is " + ByteArrayToString(needle) + Environment.NewLine);
+            Debug.Write("[DEBUG] memory dump size is 0x" + haystack.Length.ToString("x8") + Environment.NewLine);
+
+            if (start > 0)
+                start = start - (int)procs.MainModule.BaseAddress;
+            if (length > 0)
+                length = length - (int)procs.MainModule.BaseAddress;
+
             if (length == 0)
                 length = (haystack.Length - start);
 
-            Debug.Write("[DEBUG] starting AoB scan at " + start + " and going " + length + " length." + Environment.NewLine);
-            Debug.Write("[DEBUG] AoB mask is " + strMask + Environment.NewLine);
-            Debug.Write("[DEBUG] AoB pattern is " + ByteArrayToString(needle) + Environment.NewLine);
-            Debug.Write("[DEBUG] memory dump size is " + haystack.Length.ToString("x8"));
+            Debug.Write("[DEBUG] searching dump file start:0x" + start.ToString("x8") + " end:0x" + (start + length).ToString("x8") + ". Dump starts at 0x" + procs.MainModule.BaseAddress + Environment.NewLine);
+            Debug.Write("Searching for AoB pattern, please wait..." + Environment.NewLine);
             for (int x = start; x < (start + length); x++)
             {
                 if (MaskCheck(x, needle, strMask, haystack))
@@ -1207,8 +1215,8 @@ namespace Memory
                     Debug.Write("[DEBUG] FindPattern ended " + DateTime.Now.ToString("h:mm:ss tt"));
                     return (x + (int)mainModule.BaseAddress);
                 }
+                //Debug.Write("[DEBUG] FindPattern searching " + x.ToString("x8") + Environment.NewLine);
             }
-            //ResumeProcess(procID);
             Debug.Write("[DEBUG] FindPattern ended " + DateTime.Now.ToString("h:mm:ss tt") + Environment.NewLine);
             return 0;
         }
@@ -1254,7 +1262,7 @@ namespace Memory
         /// <param name="type">0 = to dump.dmp file, 1 = to dumpBytes array</param>
         public void DumpMemory2(int type = 0)
         {
-            Debug.Write("[DEBUG] DumpMemory2 started " + DateTime.Now.ToString("h:mm:ss tt") + Environment.NewLine);
+            Debug.Write("[DEBUG] memory dump starting... (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
             SYSTEM_INFO sys_info = new SYSTEM_INFO();
             GetSystemInfo(out sys_info);
 
@@ -1265,53 +1273,32 @@ namespace Memory
             long proc_min_address_l = (long)procs.MainModule.BaseAddress;
             long proc_max_address_l = (long)procs.VirtualMemorySize64;
 
-            dumpBytes = new byte[0x70000000];
-            //Debug.Write("min:" + proc_min_address_l.ToString("x8") + " max:" + proc_max_address_l.ToString("x8"));
-
             // this will store any information we get from VirtualQueryEx()
             MEMORY_BASIC_INFORMATION mem_basic_info = new MEMORY_BASIC_INFORMATION();
             int length = 0;
             while (proc_min_address_l < proc_max_address_l)
             {
                 VirtualQueryEx(pHandle, proc_min_address, out mem_basic_info, Marshal.SizeOf(mem_basic_info));
-                //if (mem_basic_info.Protect == PAGE_READWRITE && mem_basic_info.State == MEM_COMMIT)
-                //{
-                    byte[] buffer = new byte[(int)mem_basic_info.RegionSize];
-                    UIntPtr test = (UIntPtr)((int)mem_basic_info.RegionSize);
-                    UIntPtr test2 = (UIntPtr)((int)mem_basic_info.BaseAddress);
-
-                // read everything in the buffer above
+                byte[] buffer = new byte[(int)mem_basic_info.RegionSize];
+                UIntPtr test = (UIntPtr)((int)mem_basic_info.RegionSize);
+                UIntPtr test2 = (UIntPtr)((int)mem_basic_info.BaseAddress);
+                
                 ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
-                if (type == 0)
-                    AppendAllBytes(@"dump.dmp", buffer);
-                else if (type == 1)
-                {
-                    //buffer.CopyTo(dumpBytes, length);
-                    length += buffer.Length;
-                }
-                //}
+
+                AppendAllBytes(@"dump.dmp", buffer); //due to memory limits, we have to dump it then store it in an array.
+                length += buffer.Length;
 
                 // move to the next memory chunk
                 proc_min_address_l += (int)mem_basic_info.RegionSize;
-                //Debug.Write("increasing min by " + (int)mem_basic_info.RegionSize + Environment.NewLine);
                 proc_min_address = new IntPtr(proc_min_address_l);
             }
-            Debug.Write("[DEBUG] DumpMemory2 ended " + DateTime.Now.ToString("h:mm:ss tt") + Environment.NewLine);
-        }
-
-        public byte[] trimByte(byte[] packet)
-        {
-            Debug.Write("old byte length:" + packet.Length + Environment.NewLine);
-            var i = packet.Length - 1;
-            while (packet[i] == 0)
-            {
-                --i;
-            }
-            var temp = new byte[i + 1];
-            Array.Copy(packet, temp, i + 1);
-            //MessageBox.Show(temp.Length.ToString());
-            Debug.Write("new byte length:" + temp.Length + Environment.NewLine);
-            return temp;
+            if (File.Exists(@"dump.dmp"))
+                File.Delete(@"dump.dmp");
+            dumpBytes = new byte[length];
+            File.WriteAllBytes(@"dump.dmp", dumpBytes);
+            if (type == 1)
+                File.Delete(@"dump.dmp");
+            Debug.Write("[DEBUG] memory dump completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
         }
 
         /// <summary>
