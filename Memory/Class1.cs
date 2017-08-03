@@ -1043,8 +1043,8 @@ namespace Memory
                 i++;
             }
 
-            DumpMemory2(1);
-            return (IntPtr)FindPattern(dumpBytes, myPattern, mask);
+            DumpMemory2();
+            return (IntPtr)FindPattern(fileToBytes("dump.dmp"), myPattern, mask);
         }
 
         async Task PutTaskDelay()
@@ -1054,12 +1054,17 @@ namespace Memory
 
         public static void AppendAllBytes(string path, byte[] bytes)
         {
-            //argument-checking here.
-
             using (var stream = new FileStream(path, FileMode.Append))
             {
                 stream.Write(bytes, 0, bytes.Length);
             }
+        }
+
+        public byte[] fileToBytes(string path, bool dontDelete = false) {
+            byte[] newArray = File.ReadAllBytes(path);
+            if (dontDelete == false)
+                File.Delete(path);
+            return newArray;
         }
 
         /// <summary>
@@ -1101,8 +1106,8 @@ namespace Memory
                 i++;
             }
 
-            DumpMemory2(1);
-            return (IntPtr)FindPattern(dumpBytes, myPattern, mask, start, length);
+            DumpMemory2();
+            return (IntPtr)FindPattern(fileToBytes("dump.dmp"), myPattern, mask, start, length);
         }
 
         private bool MaskCheck(int nOffset, byte[] btPattern, string strMask, byte[] dumpRegion)
@@ -1213,7 +1218,7 @@ namespace Memory
                     //Debug.Write("[DEBUG] base address is " + procs.MainModule.BaseAddress.ToString("x8") + " and resulting offset is " + x.ToString("x8") + " min address is " + getMinAddress().ToString("x8") + Environment.NewLine);
                     //ResumeProcess(procID);
                     Debug.Write("[DEBUG] FindPattern ended " + DateTime.Now.ToString("h:mm:ss tt"));
-                    return (x + (int)mainModule.BaseAddress);
+                    return (x + (int)procs.MainModule.BaseAddress);
                 }
                 //Debug.Write("[DEBUG] FindPattern searching " + x.ToString("x8") + Environment.NewLine);
             }
@@ -1259,8 +1264,7 @@ namespace Memory
         /// <summary>
         /// Dump memory page by page.
         /// </summary>
-        /// <param name="type">0 = to dump.dmp file, 1 = to dumpBytes array</param>
-        public void DumpMemory2(int type = 0)
+        public void DumpMemory2()
         {
             Debug.Write("[DEBUG] memory dump starting... (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
             SYSTEM_INFO sys_info = new SYSTEM_INFO();
@@ -1275,7 +1279,9 @@ namespace Memory
 
             // this will store any information we get from VirtualQueryEx()
             MEMORY_BASIC_INFORMATION mem_basic_info = new MEMORY_BASIC_INFORMATION();
-            int length = 0;
+            int arrLength = 0;
+            if (File.Exists(@"dump.dmp"))
+                File.Delete(@"dump.dmp");
             while (proc_min_address_l < proc_max_address_l)
             {
                 VirtualQueryEx(pHandle, proc_min_address, out mem_basic_info, Marshal.SizeOf(mem_basic_info));
@@ -1286,18 +1292,11 @@ namespace Memory
                 ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
 
                 AppendAllBytes(@"dump.dmp", buffer); //due to memory limits, we have to dump it then store it in an array.
-                length += buffer.Length;
+                //arrLength += buffer.Length;
 
-                // move to the next memory chunk
                 proc_min_address_l += (int)mem_basic_info.RegionSize;
                 proc_min_address = new IntPtr(proc_min_address_l);
             }
-            if (File.Exists(@"dump.dmp"))
-                File.Delete(@"dump.dmp");
-            dumpBytes = new byte[length];
-            File.WriteAllBytes(@"dump.dmp", dumpBytes);
-            if (type == 1)
-                File.Delete(@"dump.dmp");
             Debug.Write("[DEBUG] memory dump completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
         }
 
