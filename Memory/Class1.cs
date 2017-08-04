@@ -24,7 +24,7 @@ namespace Memory
         [DllImport("kernel32.dll")]
         public static extern IntPtr OpenProcess(
             UInt32 dwDesiredAccess,
-            Int32 bInheritHandle,
+            bool bInheritHandle,
             Int32 dwProcessId
             );
 
@@ -208,7 +208,7 @@ namespace Memory
                 if (procs.Responding == false)
                     return false;
 
-                pHandle = OpenProcess(0x1F0FFF, 1, id);
+                pHandle = OpenProcess(0x1F0FFF, true, id);
 
                 if (pHandle == IntPtr.Zero)
                 {
@@ -294,7 +294,7 @@ namespace Memory
             return returnCode.ToString();
         }
 
-        private Int32 LoadIntCode(string name, string path)
+        private int LoadIntCode(string name, string path)
         {
             int intValue = Convert.ToInt32(LoadCode(name, path), 16);
             if (intValue >= 0)
@@ -346,7 +346,7 @@ namespace Memory
                 intToUint = Convert.ToInt32(newOffset, 16);
 
             if (theCode.Contains("base") || theCode.Contains("main"))
-                uintValue = (UIntPtr)((int)procs.MainModule.BaseAddress + intToUint);
+                uintValue = (UIntPtr)((Int64)procs.MainModule.BaseAddress + intToUint);
             else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
             {
                 string[] moduleName = theCode.Split('+');
@@ -357,7 +357,7 @@ namespace Memory
                 if (modules.ContainsKey(moduleName[0]))
                 {
                     IntPtr altModule = modules[moduleName[0]];
-                    uintValue = (UIntPtr)((int)altModule + intToUint);
+                    uintValue = (UIntPtr)((Int64)altModule + intToUint);
                 }
                 else
                 {
@@ -517,7 +517,7 @@ namespace Memory
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <returns></returns>
-        public uint readUInt(string code, string file = "")
+        public UInt64 readUInt(string code, string file = "")
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
@@ -527,7 +527,7 @@ namespace Memory
                 theCode = getCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
-                return BitConverter.ToUInt32(memory, 0);
+                return BitConverter.ToUInt64(memory, 0);
             else
                 return 0;
         }
@@ -732,7 +732,7 @@ namespace Memory
                 byte[] script_instruction_value_bytes;
                 for (int i = 0; i < num_bytes; i++)
                 {
-                    script_instruction_value_int = Int32.Parse(script_instruction_value_split[i], NumberStyles.AllowHexSpecifier);
+                    script_instruction_value_int = Int64.Parse(script_instruction_value_split[i], NumberStyles.AllowHexSpecifier);
                     script_instruction_value_bytes = BitConverter.GetBytes(script_instruction_value_int);
                     write_bytes[i] = script_instruction_value_bytes[0];
                 }
@@ -845,27 +845,27 @@ namespace Memory
 
             if (newOffsets.Contains(','))
             {
-                List<int> offsetsList = new List<int>();
+                List<Int64> offsetsList = new List<Int64>();
 
                 string[] newerOffsets = newOffsets.Split(',');
                 foreach (string oldOffsets in newerOffsets)
                 {
                     offsetsList.Add(Convert.ToInt32(oldOffsets, 16));
                 }
-                int[] offsets = offsetsList.ToArray();
+                Int64[] offsets = offsetsList.ToArray();
 
                 if (theCode.Contains("base") || theCode.Contains("main"))
-                    ReadProcessMemory(pHandle, (UIntPtr)((int)mainModule.BaseAddress + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                    ReadProcessMemory(pHandle, (UIntPtr)((Int64)mainModule.BaseAddress + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
                 else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
                 {
                     string[] moduleName = theCode.Split('+');
                     IntPtr altModule = modules[moduleName[0]];
-                    ReadProcessMemory(pHandle, (UIntPtr)((int)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                    ReadProcessMemory(pHandle, (UIntPtr)((Int64)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
                 }
                 else
                     ReadProcessMemory(pHandle, (UIntPtr)(offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
-                uint num1 = BitConverter.ToUInt32(memoryAddress, 0);
+                UInt64 num1 = BitConverter.ToUInt64(memoryAddress, 0);
 
                 UIntPtr base1 = (UIntPtr)0;
 
@@ -873,29 +873,29 @@ namespace Memory
                 {
                     base1 = new UIntPtr(num1 + Convert.ToUInt32(offsets[i]));
                     ReadProcessMemory(pHandle, base1, memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                    num1 = BitConverter.ToUInt32(memoryAddress, 0);
+                    num1 = BitConverter.ToUInt64(memoryAddress, 0);
                 }
                 return base1;
             }
             else
             {
-                int trueCode = Convert.ToInt32(newOffsets, 16);
+                Int64 trueCode = Convert.ToInt64(newOffsets, 16);
 
                 if (theCode.Contains("base") || theCode.Contains("main"))
-                    ReadProcessMemory(pHandle, (UIntPtr)((int)mainModule.BaseAddress + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                    ReadProcessMemory(pHandle, (UIntPtr)((Int64)mainModule.BaseAddress + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
                 else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
                 {
                     string[] moduleName = theCode.Split('+');
                     IntPtr altModule = modules[moduleName[0]];
-                    ReadProcessMemory(pHandle, (UIntPtr)((int)altModule + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                    ReadProcessMemory(pHandle, (UIntPtr)((Int64)altModule + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
                 }
                 else
                     ReadProcessMemory(pHandle, (UIntPtr)(trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
-                uint num1 = BitConverter.ToUInt32(memoryAddress, 0);
+                UInt64 num1 = BitConverter.ToUInt64(memoryAddress, 0);
 
                 UIntPtr base1 = new UIntPtr(num1);
-                num1 = BitConverter.ToUInt32(memoryAddress, 0);
+                num1 = BitConverter.ToUInt64(memoryAddress, 0);
                 return base1;
             }
         }
@@ -925,7 +925,7 @@ namespace Memory
             if (procs.Responding == false)
                 return;
 
-            Int32 LenWrite = strDLLName.Length + 1;
+            int LenWrite = strDLLName.Length + 1;
             IntPtr AllocMem = (IntPtr)VirtualAllocEx(pHandle, (IntPtr)null, (uint)LenWrite, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
             WriteProcessMemory(pHandle, AllocMem, strDLLName, (UIntPtr)LenWrite, out bytesout);
@@ -1096,16 +1096,11 @@ namespace Memory
             return (IntPtr) await FindPattern(fileToBytes("dump.dmp"), stringByteArray, mask, start, length);
         }*/
 
-        private bool MaskCheck(int nOffset, string[] btPattern, string strMask, byte[] dumpRegion)
+        private bool MaskCheck(Int64 nOffset, string[] btPattern, string strMask, byte[] dumpRegion)
         {
             for (int x = 0; x < btPattern.Length; x++)
             {
-                if ((nOffset + x) >= dumpRegion.Length)
-                    return false;
-                if (x >= btPattern.Length)
-                    return false;
-                if (x >= strMask.Length)
-                    return false;
+                if ((nOffset + x) >= dumpRegion.Length || x >= btPattern.Length || x >= strMask.Length) return false;
 
                 string theCode = btPattern[x].ToUpper();
                 string theCode2 = dumpRegion[nOffset + x].ToString("x2").ToUpper();
@@ -1113,59 +1108,25 @@ namespace Memory
                 if (strMask[x] == '?')
                 {
                     if (theCode == "??")
-                    { //100% wildcard
-                        //Debug.Write("[DEBUG] AoB scan comparing " + theCode.ToString() + " and " + theCode2 + " at " + String.Format("0x{0:x8}", Convert.ToUInt32((nOffset + x).ToString())) + " nOffset:" + nOffset.ToString() + " x:" + x.ToString() + " TRUE" + Environment.NewLine);
                         continue;
-                    }
                     else
                     { //50% wildcard
-                        //if (dumpRegion[nOffset + x].ToString("x2").Length == 2) //byte must be 2 characters long
-                        //{
-                        //Debug.Write(btPattern[x].Contains("?")); 
-                        if (theCode[0].Equals('?')) //ex: ?5
-                        {
-                            //Debug.Write("DEBUG: 50% wild found, comparing " + dumpRegion[nOffset + x].ToString("X")[1] + " and " + btPattern[x][1] + Environment.NewLine);
+                        if (theCode[0].Equals('?'))
+                        { //ex: ?5
                             if (!theCode2[1].Equals(theCode[1]))
-                            { //comparing strings?
-                                //Debug.Write("[DEBUG] AoB scan comparing " + theCode.ToString() + " and " + theCode2 + " at " + String.Format("0x{0:x8}", Convert.ToUInt32((nOffset + x).ToString())) + " nOffset:" + nOffset.ToString() + " x:" + x.ToString() + " FALSE" + Environment.NewLine);
                                 return false;
-                            }
-                            else
-                            {
-                                //Debug.Write("[DEBUG] AoB scan comparing " + theCode.ToString() + " and " + theCode2 + " at " + String.Format("0x{0:x8}", Convert.ToUInt32((nOffset + x).ToString())) + " nOffset:" + nOffset.ToString() + " x:" + x.ToString() + " TRUE" + Environment.NewLine);
-                            }
                         }
-                        else if (theCode[1].Equals('?')) //ex: 5?
-                        {
-                            //Debug.Write("DEBUG: 50% wild found, comparing " + dumpRegion[nOffset + x].ToString("X")[0] + " and " + btPattern[x][0] + Environment.NewLine);
-                            //Debug.Write("DEBUG: 50% wild found: " + btPattern[x]);
+                        else if (theCode[1].Equals('?'))
+                        { //ex: 5?
                             if (!theCode2[0].Equals(theCode[0]))
-                            { //comparing strings?
-                                //Debug.Write("[DEBUG] AoB scan comparing " + theCode + " and " + theCode2 + " at " + String.Format("0x{0:x8}", Convert.ToUInt32((nOffset + x).ToString())) + " nOffset:" + nOffset.ToString() + " x:" + x.ToString() + " FALSE" + Environment.NewLine);
                                 return false;
-                            }
-                            else
-                            {
-                                //Debug.Write("[DEBUG] AoB scan comparing " + theCode + " and " + theCode2 + " at " + String.Format("0x{0:x8}", Convert.ToUInt32((nOffset + x).ToString())) + " nOffset:" + nOffset.ToString() + " x:" + x.ToString() + " TRUE" + Environment.NewLine);
-                            }
                         }
-                        //}
                     }
                 }
 
-                if (strMask[x] == 'x'){
-                    if (!theCode.Equals(theCode2)){
-                        //Debug.Write("[DEBUG] AoB scan comparing " + theCode + " and " + theCode2 + " at " + String.Format("0x{0:x8}", Convert.ToUInt32((nOffset + x).ToString())) + " nOffset:" + nOffset.ToString() + " x:" + x.ToString() + " FALSE" + Environment.NewLine);
-                        return false;
-                    } else
-                    {
-                        //Debug.Write("[DEBUG] AoB scan comparing " + theCode + " and " + theCode2 + " at " + String.Format("0x{0:x8}", Convert.ToUInt32((nOffset + x).ToString())) + " nOffset:" + nOffset.ToString() + " x:" + x.ToString() + " TRUE" + Environment.NewLine);
-                    }
-                }
+                if (strMask[x] == 'x')
+                    if (!theCode.Equals(theCode2)) return false;
             }
-
-            // The loop was successful so we found 1 pattern match.
-            //Debug.Write("DEBUG: MaskCheck returning TRUE!");
             return true;
         }
 
@@ -1174,10 +1135,7 @@ namespace Memory
             StringBuilder hex = new StringBuilder(ba.Length * 2);
             foreach (byte b in ba)
             {
-                if (b == 255)
-                    hex.Append("?? ");
-                else
-                    hex.AppendFormat("{0:x2} ", b);
+                hex.AppendFormat("{0:x2} ", b);
             }
             return hex.ToString();
         }
@@ -1202,28 +1160,29 @@ namespace Memory
                     hex.AppendFormat("{0:x2} ", b);
                 i++;
             }
-            return hex.ToString();
+            return hex.ToString().ToUpper();
         }
 
-        public async Task<int> PageFindPattern(byte[] haystack, string[] needle, string strMask, int start = 0) //for pages
+        public void PageFindPattern(byte[] haystack, string[] needle, string strMask, Int64 start = 0) //for pages
         {
             //if ( haystack.All(singleByte => singleByte == 0xFF) || haystack.All(singleByte => singleByte == 0x00))
             //    return 0;
-            Debug.Write("DEBUG: PageFindPattern starting at " + start.ToString("x8") + Environment.NewLine);
+            //Debug.Write("DEBUG: PageFindPattern starting at 0x" + start.ToString("x8") + " with length 0x" + haystack.Length.ToString("x8") + Environment.NewLine);
+
+            //Debug.Write(ByteArrayToString(haystack));
             for (int x = 0; x < haystack.Length; x++)
             {
+                //Debug.Write("PageFindPattern now at 0x" + (start + x).ToString("x8") + Environment.NewLine);
                 if (MaskCheck(x, needle, strMask, haystack))
                 {
-                    int address = (x + start);
-                    Debug.Write("[DEBUG] FOUND ADDRESS:" + address.ToString("x8") + " start:" + start.ToString("x8") + " x:" + x.ToString("x8") + " base:" + procs.MainModule.BaseAddress.ToString("x8") + Environment.NewLine);
-                    //AppendAllBytes(@"dump" + start.ToString("x8") + ".dmp", haystack);
-                    return address;
+                    Debug.Write("[DEBUG] FOUND ADDRESS:0x" + (x + start).ToString("x8") + " start:0x" + start.ToString("x8") + " x:" + x.ToString("x8") + " base:0x" + procs.MainModule.BaseAddress.ToString("x8") + Environment.NewLine);
+                    aobAddress = x + start;
                 }
             }
-            return 0;
+            //return IntPtr.Zero;
         }
 
-        public async Task<int> FindPattern(byte[] haystack, string[] needle, string strMask, int start = 0, int length = 0)
+        public async Task<int> FindPattern(byte[] haystack, string[] needle, string strMask, Int64 start = 0, Int64 length = 0)
         {
             //Debug.Write("[DEBUG] FindPattern starting... (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
 
@@ -1233,16 +1192,16 @@ namespace Memory
             //Debug.Write("[DEBUG] haystack size is 0x" + haystack.Length.ToString("x8") + Environment.NewLine);
             
                  if (start > 0)
-                     start = start - (int)procs.MainModule.BaseAddress;
+                     start = start - (Int64)procs.MainModule.BaseAddress;
                  if (length > 0)
-                     length = length - (int)procs.MainModule.BaseAddress;
+                     length = length - (Int64)procs.MainModule.BaseAddress;
 
                  if (length == 0)
                      length = (haystack.Length - start);
 
                 //Debug.Write("[DEBUG] searching dump file start:0x" + start.ToString("x8") + " end:0x" + (start + length).ToString("x8") + ". Dump starts at 0x" + procs.MainModule.BaseAddress + Environment.NewLine);
                 //Debug.Write("Searching for AoB pattern, please wait..." + Environment.NewLine);
-                for (int x = start; x < (start + length); x++)
+                for (Int64 x = start; x < (start + length); x++)
                  {
                      if (MaskCheck(x, needle, strMask, haystack))
                      {
@@ -1250,7 +1209,7 @@ namespace Memory
                         //Debug.Write("[DEBUG] base address is " + procs.MainModule.BaseAddress.ToString("x8") + " and resulting offset is " + x.ToString("x8") + " min address is " + getMinAddress().ToString("x8") + Environment.NewLine);
                         //ResumeProcess(procID);
                         //Debug.Write("[DEBUG] FindPattern ended " + DateTime.Now.ToString("h:mm:ss tt"));
-                        aobAddress = (x + (int)procs.MainModule.BaseAddress);
+                        aobAddress = (x + (Int64)procs.MainModule.BaseAddress);
                      }
                     //Debug.Write("[DEBUG] FindPattern searching " + x.ToString("x8") + Environment.NewLine);
                 }
@@ -1306,8 +1265,8 @@ namespace Memory
             IntPtr proc_max_address = sys_info.maximumApplicationAddress;
 
             // saving the values as long ints so I won't have to do a lot of casts later
-            long proc_min_address_l = (long)procs.MainModule.BaseAddress;
-            long proc_max_address_l = (long)procs.VirtualMemorySize64;
+            Int64 proc_min_address_l = (Int64)procs.MainModule.BaseAddress;
+            Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64;
 
             // this will store any information we get from VirtualQueryEx()
             MEMORY_BASIC_INFORMATION mem_basic_info = new MEMORY_BASIC_INFORMATION();
@@ -1317,100 +1276,120 @@ namespace Memory
             while (proc_min_address_l < proc_max_address_l)
             {
                 VirtualQueryEx(pHandle, proc_min_address, out mem_basic_info, Marshal.SizeOf(mem_basic_info));
-                byte[] buffer = new byte[(int)mem_basic_info.RegionSize];
-                UIntPtr test = (UIntPtr)((int)mem_basic_info.RegionSize);
-                UIntPtr test2 = (UIntPtr)((int)mem_basic_info.BaseAddress);
+                byte[] buffer = new byte[(Int64)mem_basic_info.RegionSize];
+                UIntPtr test = (UIntPtr)((Int64)mem_basic_info.RegionSize);
+                UIntPtr test2 = (UIntPtr)((Int64)mem_basic_info.BaseAddress);
                 
                 ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
 
                 await AppendAllBytes(@"dump.dmp", buffer); //due to memory limits, we have to dump it then store it in an array.
                 //arrLength += buffer.Length;
 
-                proc_min_address_l += (int)mem_basic_info.RegionSize;
+                proc_min_address_l += (Int64)mem_basic_info.RegionSize;
                 proc_min_address = new IntPtr(proc_min_address_l);
             }
             Debug.Write("[DEBUG] memory dump completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
             return true;
         }
 
-        int aobAddress = 0;
+        public Int64 aobAddress = 0;
 
-        public async Task<IntPtr> AoBScan2(int start, int length, string search, string file = "")
+        public Int64 AoBScan2(Int64 start, Int64 length, string search, string file = "")
         {
-            Debug.Write("[DEBUG] memory scan starting... (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+            aobAddress = 0;
+            Int64 ar = 0;
+            var list = new List<string>();
+
+            string memCode = LoadCode(search, file);
+
+            string[] stringByteArray = memCode.Split(' ');
+            string mask = "";
+            int i = 0;
+            foreach (string ba in stringByteArray)
+            {
+                if (ba == "??")
+                    mask += "?";
+                else if (Char.IsLetterOrDigit(ba[0]) && ba[1] == '?')
+                    mask += "?";
+                else if (Char.IsLetterOrDigit(ba[1]) && ba[0] == '?')
+                    mask += "?";
+                else
+                    mask += "x";
+                i++;
+            }
+
             SYSTEM_INFO sys_info = new SYSTEM_INFO();
             GetSystemInfo(out sys_info);
 
             IntPtr proc_min_address = sys_info.minimumApplicationAddress;
             IntPtr proc_max_address = sys_info.maximumApplicationAddress;
 
-            // saving the values as long ints so I won't have to do a lot of casts later
-            long proc_min_address_l = (long)procs.MainModule.BaseAddress;
-            long proc_max_address_l = (long)procs.VirtualMemorySize64;
-            
+            Int64 proc_min_address_l = (Int64)procs.MainModule.BaseAddress;
+            Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64;
+            Debug.Write("[DEBUG] memory scan starting... min:" + proc_min_address_l.ToString("x8") + " max:" + proc_max_address_l.ToString("x8") + " (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
             MEMORY_BASIC_INFORMATION mem_basic_info = new MEMORY_BASIC_INFORMATION();
-
             while (proc_min_address_l < proc_max_address_l)
             {
                 VirtualQueryEx(pHandle, proc_min_address, out mem_basic_info, Marshal.SizeOf(mem_basic_info));
-                if (start <= proc_min_address_l /*&& start <= (proc_min_address_l + (int)mem_basic_info.RegionSize)*/)
+                Int64 regionsize = (Int64)mem_basic_info.RegionSize;
+                Int64 BaseAddress = (Int64)mem_basic_info.BaseAddress;
+                if (start < proc_min_address_l && proc_min_address_l < (start + length))
                 {
-                    //Debug.Write("[DEBUG] memory scanning new page min1:" + proc_min_address_l.ToString("x8") + " max: " + proc_max_address_l.ToString("x8") + Environment.NewLine);
-                    //Debug.Write(start + " > " + proc_min_address_l);
-                } else {
-                    //Debug.Write("[DEBUG] skipping start:" + start.ToString("x8") + " min:" + proc_min_address_l.ToString("x8") + " max:" + (proc_min_address_l + (int)mem_basic_info.RegionSize).ToString("x8") + Environment.NewLine);
-                    proc_min_address_l += (int)mem_basic_info.RegionSize;
-                    proc_min_address = new IntPtr(proc_min_address_l);
-                    continue;
+                    Debug.Write("[" + ar + "] Adding 0x" + proc_min_address.ToString("x8") + " to list arr. Length:0x" + mem_basic_info.RegionSize.ToString("x8") + Environment.NewLine);
+                    //Task.Run(() => test(proc_min_address_l, search, file));
+                    list.Add((Int64)proc_min_address + "|" + regionsize + "|" + BaseAddress);
+                    //test((Int64)proc_min_address, memCode, stringByteArray, mask, regionsize, BaseAddress);
+                    ar++;
                 }
-                
-                byte[] buffer = new byte[(int)mem_basic_info.RegionSize];
-                UIntPtr test = (UIntPtr)((int)mem_basic_info.RegionSize);
-                UIntPtr test2 = (UIntPtr)((int)mem_basic_info.BaseAddress);
-
-                ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
-
-                string[] stringByteArray = LoadCode(search, file).Split(' ');
-                //byte[] myPattern = new byte[stringByteArray.Length];
-                string mask = "";
-                int i = 0;
-                foreach (string ba in stringByteArray)
-                {
-                    if (ba == "??")
-                    {
-                        //myPattern[i] = 0xFF;
-                        mask += "?";
-                    }
-                    else if (Char.IsLetterOrDigit(ba[0]) && ba[1] == '?') //partial match
-                    {
-                        //myPattern[i] = Encoding.ASCII.GetBytes("0x" + ba[0] + "F")[0];
-                        mask += "?"; //show it's still a wildcard of some kind
-                    }
-                    else if (Char.IsLetterOrDigit(ba[1]) && ba[0] == '?') //partial match
-                    {
-                        //myPattern[i] = Encoding.ASCII.GetBytes("0xF" + ba[1])[0];
-                        mask += "?"; //show it's still a wildcard of some kind
-                    }
-                    else
-                    {
-                        //myPattern[i] = Byte.Parse(ba, NumberStyles.HexNumber);
-                        mask += "x";
-                    }
-                    i++;
-                }
-                //Debug.Write(mask);
-                //Debug.Write("[DEBUG] memory scanning new page with length " + buffer.Length.ToString("x8") + " min1:" + proc_min_address_l.ToString("x8") + " max: " + proc_max_address_l.ToString("x8") + Environment.NewLine);
-                //Debug.Write("DEBUG: PageFindPattern starting at " + proc_min_address_l.ToString("x8") + Environment.NewLine);
-                int value = await PageFindPattern(buffer, stringByteArray, mask, (int)proc_min_address_l);
-                if (value > 0)
-                    return (IntPtr)value;
-                //s++;
-
-                proc_min_address_l += (int)mem_basic_info.RegionSize;
+                //Debug.Write("region size: " + mem_basic_info.RegionSize + Environment.NewLine);
+                proc_min_address_l += (Int64)mem_basic_info.RegionSize;
                 proc_min_address = new IntPtr(proc_min_address_l);
             }
+
+            //Debug.Write("[DEBUG] VirtualQueryEx finished at 0x" + proc_min_address_l.ToString("x8") + ". Last region size is 0x" + (proc_min_address_l - proc_max_address_l).ToString("x8") + " (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+            var cts = new CancellationTokenSource();
+            var po = new ParallelOptions();
+            po.CancellationToken = cts.Token;
+
+            Parallel.For(0, list.Count, po, index => { test(Convert.ToInt64(list[index].Split('|')[0]), memCode, stringByteArray, mask, Convert.ToInt64(list[index].Split('|')[1]), Convert.ToInt64(list[index].Split('|')[2])); });
             Debug.Write("[DEBUG] memory scan completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
-            return (IntPtr)0;
+
+            while (true)
+            {
+                if (aobAddress > 0)
+                {
+                    cts.Cancel();
+                    return aobAddress;
+                }
+            }
+        }
+
+        public void test(Int64 start, string memCode, string[] stringByteArray, string mask, Int64 regionsize, Int64 BaseAddress)
+        {
+            try
+            {
+                byte[] buffer = new byte[regionsize];
+                UIntPtr test2 = (UIntPtr)BaseAddress;
+                UIntPtr test = (UIntPtr)regionsize;
+                ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
+
+                Debug.Write("PageFindPattern starting... 0x" + start.ToString("x8") + " buffer length=" + buffer.Length + Environment.NewLine);
+                string hexString = BitConverter.ToString(buffer).Replace("-", " ");
+                //Debug.Write(hexString);
+
+
+                if (Regex.IsMatch(hexString, memCode.Replace('?', '.').ToUpper()))
+                {
+                    Debug.Write("I found something in 0x" + start.ToString("x8") + Environment.NewLine);
+                    //PageFindPattern(buffer, stringByteArray, mask, start);
+                }
+            }
+            catch (Exception ex)
+            {
+                StackTrace st = new StackTrace(ex, true);
+                StackFrame frame = st.GetFrame(0);
+                Debug.Write( "ERROR ON LINE " + frame.GetFileLineNumber() + Environment.NewLine );
+            }
         }
 
         /// <summary>
