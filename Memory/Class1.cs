@@ -1321,7 +1321,7 @@ namespace Memory
 
             Int64 proc_min_address_l = (Int64)procs.MainModule.BaseAddress;
             Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64;
-            //Debug.Write("[DEBUG] memory scan starting... min:" + proc_min_address_l.ToString("x8") + " max:" + proc_max_address_l.ToString("x8") + " (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+            Debug.Write("[DEBUG] memory scan starting... min:" + proc_min_address_l.ToString("x8") + " max:" + proc_max_address_l.ToString("x8") + " (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
             MEMORY_BASIC_INFORMATION mem_basic_info = new MEMORY_BASIC_INFORMATION();
             while (proc_min_address_l < proc_max_address_l)
             {
@@ -1347,6 +1347,7 @@ namespace Memory
             Int64[] results = new Int64[500000];
             try
             {
+                memCode = memCode.Replace('?', '.').Replace(' ', '-').ToUpper(); //for test regex
                 ParallelLoopResult result = Parallel.For(0, list.Count, po, async index =>
                 {
                     results[index] = await test(Convert.ToInt64(list[index].Split('|')[0]), memCode, stringByteArray, mask, Convert.ToInt64(list[index].Split('|')[1]), Convert.ToInt64(list[index].Split('|')[2]));
@@ -1354,7 +1355,7 @@ namespace Memory
                     if (results[index] > 0)
                         cts.Cancel();
                 });
-                //Debug.Write("[DEBUG] memory scan completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+                
                 while (true)
                 {
                     if (result.IsCompleted || cts.IsCancellationRequested)
@@ -1362,7 +1363,10 @@ namespace Memory
                         foreach (int r in results)
                         {
                             if (r > 0)
+                            {
+                                Debug.Write("[DEBUG] memory scan completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
                                 return r;
+                            }
                         }
                         return 0; //if we fail
                     }
@@ -1373,7 +1377,10 @@ namespace Memory
                 foreach (int r in results)
                 {
                     if (r > 0)
+                    {
+                        Debug.Write("[DEBUG] memory scan completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
                         return r;
+                    }
                 }
                 return 0; //if we fail
             }
@@ -1394,10 +1401,9 @@ namespace Memory
                 ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
 
                 //Debug.Write("PageFindPattern starting... 0x" + start.ToString("x8") + " buffer length=" + buffer.Length + Environment.NewLine);
-                string hexString = BitConverter.ToString(buffer).Replace("-", " ");
-                //Debug.Write(hexString);
+                string hexString = BitConverter.ToString(buffer);
                 
-                if (Regex.IsMatch(hexString, memCode.Replace('?', '.').ToUpper()))
+                if (Regex.IsMatch(hexString, memCode))
                 {
                     //Debug.Write("I found something in 0x" + start.ToString("x8") + Environment.NewLine);
                     return await PageFindPattern(buffer, stringByteArray, mask, start);
@@ -1405,9 +1411,9 @@ namespace Memory
             }
             catch (Exception ex)
             {
-                StackTrace st = new StackTrace(ex, true);
-                StackFrame frame = st.GetFrame(0);
-                Debug.Write( "ERROR ON LINE " + frame.GetFileLineNumber() + Environment.NewLine );
+                //StackTrace st = new StackTrace(ex, true);
+                //StackFrame frame = st.GetFrame(0);
+                //Debug.Write( "ERROR ON LINE " + frame.GetFileLineNumber() + Environment.NewLine );
             }
             return 0;
         }
