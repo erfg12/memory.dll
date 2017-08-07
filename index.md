@@ -13,17 +13,11 @@ layout: default
 ```csharp
 using Memory;
 ```
-<li style="font-weight:bold;">Create a namespace for MemLib in your class.</li>
+<li style="font-weight:bold;">Create a namespace for Mem in your class.</li>
 ```csharp
-public Mem MemLib = new Mem();
+public Mem m = new Mem();
 ```
 
 <span style="font-weight:bold;">IMPORTANT:</span> Your program must run with admin privileges! <a href="https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges">Click here to learn how.</a>
 
-Now you can use MemLib.FUNCTIONS(); in our project! See sample projects below.
-
-<a href="https://github.com/erfg12/memory.dll/wiki">All functions are listed in the wiki docs. Click here to visit the page.</a>
-<hr>
-# [](#header-1)Sample Projects
-
-<a href="https://github.com/erfg12/Game-Trainers" id="view-on-github" class="button"><span>Game Trainers</span></a>
+<a href="https://github.com/erfg12/memory.dll/wiki" target="_BLANK">Now you can use m.FUNCTIONS in your project! Click here for wiki docs.</a>
