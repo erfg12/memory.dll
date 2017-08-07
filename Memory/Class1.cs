@@ -1006,7 +1006,7 @@ namespace Memory
             }
         }
         
-        public async Task<IntPtr> AoBScan(string search, string file = "")
+        public IntPtr AoBScan(string search, string file = "")
         {
             string[] stringByteArray = LoadCode(search, file).Split(' ');
             //byte[] myPattern = new byte[stringByteArray.Length];
@@ -1025,20 +1025,8 @@ namespace Memory
                 i++;
             }
 
-            /*await DumpMemory2();
-            byte[] arr = fileToBytes("dump.dmp");
-            byte[] firstArray = arr.Take(arr.Length / 2).ToArray();
-            byte[] secondArray = arr.Skip(arr.Length / 2).ToArray();
-            arr = null;
-            int firstOne = await FindPattern(firstArray, stringByteArray, mask);
-            int secondOne = await FindPattern(secondArray, stringByteArray, mask);*/
-            
-            /*if (firstOne > 0)
-                return (IntPtr)firstOne;
-            else if (secondOne > 0)
-                return (IntPtr)secondOne;
-            else*/
-                return (IntPtr)await FindPattern(fileToBytes("dump.dmp"), stringByteArray, mask);
+            DumpMemory2();
+            return (IntPtr)FindPattern(fileToBytes("dump.dmp"), stringByteArray, mask);
         }
 
         async Task PutTaskDelay()
@@ -1046,7 +1034,7 @@ namespace Memory
             await Task.Delay(5000);
         }
 
-        async Task AppendAllBytes(string path, byte[] bytes)
+        void AppendAllBytes(string path, byte[] bytes)
         {
             using (var stream = new FileStream(path, FileMode.Append))
             {
@@ -1061,40 +1049,27 @@ namespace Memory
             return newArray;
         }
         
-        /*public async Task<IntPtr> AoBScanFast(int start, int length, string search, string file = "")
+        public IntPtr AoBScanFast(int start, int length, string search, string file = "")
         {
             string[] stringByteArray = LoadCode(search, file).Split(' ');
-            //byte[] myPattern = new byte[stringByteArray.Length];
             string mask = "";
             int i = 0;
             foreach (string ba in stringByteArray)
             {
                 if (ba == "??")
-                {
-                    //myPattern[i] = 0xFF;
                     mask += "?";
-                }
-                else if (Char.IsLetterOrDigit(ba[0]) && ba[1] == '?') //partial match
-                {
-                    //myPattern[i] = Encoding.ASCII.GetBytes("0x" + ba[0] + "F")[0];
-                    mask += "?"; //show it's still a wildcard of some kind
-                }
-                else if (Char.IsLetterOrDigit(ba[1]) && ba[0] == '?') //partial match
-                {
-                    //myPattern[i] = Encoding.ASCII.GetBytes("0xF" + ba[1])[0];
-                    mask += "?"; //show it's still a wildcard of some kind
-                }
+                else if (Char.IsLetterOrDigit(ba[0]) && ba[1] == '?')
+                    mask += "?";
+                else if (Char.IsLetterOrDigit(ba[1]) && ba[0] == '?')
+                    mask += "?";
                 else
-                {
-                    //myPattern[i] = Byte.Parse(ba, NumberStyles.HexNumber);
                     mask += "x";
-                }
                 i++;
             }
 
             DumpMemory2();
-            return (IntPtr) await FindPattern(fileToBytes("dump.dmp"), stringByteArray, mask, start, length);
-        }*/
+            return (IntPtr)FindPattern(fileToBytes("dump.dmp"), stringByteArray, mask, start, length);
+        }
 
         private bool MaskCheck(Int64 nOffset, string[] btPattern, string strMask, byte[] dumpRegion)
         {
@@ -1182,7 +1157,7 @@ namespace Memory
             //return IntPtr.Zero;
         }
 
-        public async Task<int> FindPattern(byte[] haystack, string[] needle, string strMask, Int64 start = 0, Int64 length = 0)
+        public Int64 FindPattern(byte[] haystack, string[] needle, string strMask, Int64 start = 0, Int64 length = 0)
         {
             //Debug.Write("[DEBUG] FindPattern starting... (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
 
@@ -1190,29 +1165,29 @@ namespace Memory
             //Debug.Write("[DEBUG] AoB mask is " + strMask + Environment.NewLine);
             //Debug.Write("[DEBUG] AoB pattern is " + ByteArrayToString(needle) + Environment.NewLine);
             //Debug.Write("[DEBUG] haystack size is 0x" + haystack.Length.ToString("x8") + Environment.NewLine);
-            
-                 if (start > 0)
-                     start = start - (Int64)procs.MainModule.BaseAddress;
-                 if (length > 0)
-                     length = length - (Int64)procs.MainModule.BaseAddress;
 
-                 if (length == 0)
-                     length = (haystack.Length - start);
+            if (start > 0)
+                start = start - (Int64)procs.MainModule.BaseAddress;
+            if (length > 0)
+                length = length - (Int64)procs.MainModule.BaseAddress;
 
-                //Debug.Write("[DEBUG] searching dump file start:0x" + start.ToString("x8") + " end:0x" + (start + length).ToString("x8") + ". Dump starts at 0x" + procs.MainModule.BaseAddress + Environment.NewLine);
-                //Debug.Write("Searching for AoB pattern, please wait..." + Environment.NewLine);
-                for (Int64 x = start; x < (start + length); x++)
-                 {
-                     if (MaskCheck(x, needle, strMask, haystack))
-                     {
-                        //string total = (x + diff).ToString("x8");
-                        //Debug.Write("[DEBUG] base address is " + procs.MainModule.BaseAddress.ToString("x8") + " and resulting offset is " + x.ToString("x8") + " min address is " + getMinAddress().ToString("x8") + Environment.NewLine);
-                        //ResumeProcess(procID);
-                        //Debug.Write("[DEBUG] FindPattern ended " + DateTime.Now.ToString("h:mm:ss tt"));
-                        aobAddress = (x + (Int64)procs.MainModule.BaseAddress);
-                     }
-                    //Debug.Write("[DEBUG] FindPattern searching " + x.ToString("x8") + Environment.NewLine);
+            if (length == 0)
+                length = (haystack.Length - start);
+
+            //Debug.Write("[DEBUG] searching dump file start:0x" + start.ToString("x8") + " end:0x" + (start + length).ToString("x8") + ". Dump starts at 0x" + procs.MainModule.BaseAddress + Environment.NewLine);
+            //Debug.Write("Searching for AoB pattern, please wait..." + Environment.NewLine);
+            for (Int64 x = start; x < (start + length); x++)
+            {
+                if (MaskCheck(x, needle, strMask, haystack))
+                {
+                    //string total = (x + diff).ToString("x8");
+                    //Debug.Write("[DEBUG] base address is " + procs.MainModule.BaseAddress.ToString("x8") + " and resulting offset is " + x.ToString("x8") + " min address is " + getMinAddress().ToString("x8") + Environment.NewLine);
+                    //ResumeProcess(procID);
+                    //Debug.Write("[DEBUG] FindPattern ended " + DateTime.Now.ToString("h:mm:ss tt"));
+                    return (x + (Int64)procs.MainModule.BaseAddress);
                 }
+                //Debug.Write("[DEBUG] FindPattern searching " + x.ToString("x8") + Environment.NewLine);
+            }
             //Debug.Write("[DEBUG] FindPattern ended " + DateTime.Now.ToString("h:mm:ss tt") + Environment.NewLine);
             return 0;
         }
@@ -1255,7 +1230,7 @@ namespace Memory
         /// <summary>
         /// Dump memory page by page.
         /// </summary>
-        public async Task<bool> DumpMemory2()
+        public bool DumpMemory2()
         {
             Debug.Write("[DEBUG] memory dump starting... (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
             SYSTEM_INFO sys_info = new SYSTEM_INFO();
@@ -1282,7 +1257,7 @@ namespace Memory
                 
                 ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
 
-                await AppendAllBytes(@"dump.dmp", buffer); //due to memory limits, we have to dump it then store it in an array.
+                AppendAllBytes(@"dump.dmp", buffer); //due to memory limits, we have to dump it then store it in an array.
                 //arrLength += buffer.Length;
 
                 proc_min_address_l += (Int64)mem_basic_info.RegionSize;
