@@ -1326,15 +1326,18 @@ namespace Memory
             while (proc_min_address_l < proc_max_address_l)
             {
                 VirtualQueryEx(pHandle, proc_min_address, out mem_basic_info, Marshal.SizeOf(mem_basic_info));
-                Int64 regionsize = (Int64)mem_basic_info.RegionSize;
-                Int64 BaseAddress = (Int64)mem_basic_info.BaseAddress;
-                if (start < proc_min_address_l && proc_min_address_l < (start + length))
+                if (mem_basic_info.Protect == PAGE_READWRITE && mem_basic_info.State == MEM_COMMIT) //this makes it fast :)
                 {
-                    //Debug.Write("[" + ar + "] Adding 0x" + proc_min_address.ToString("x8") + " to list arr. Length:0x" + mem_basic_info.RegionSize.ToString("x8") + Environment.NewLine);
-                    //Task.Run(() => test(proc_min_address_l, search, file));
-                    list.Add((Int64)proc_min_address + "|" + regionsize + "|" + BaseAddress);
-                    //test((Int64)proc_min_address, memCode, stringByteArray, mask, regionsize, BaseAddress);
-                    ar++;
+                    Int64 regionsize = (Int64)mem_basic_info.RegionSize;
+                    Int64 BaseAddress = (Int64)mem_basic_info.BaseAddress;
+                    if (start < proc_min_address_l && proc_min_address_l < (start + length))
+                    {
+                        //Debug.Write("[" + ar + "] Adding 0x" + proc_min_address.ToString("x8") + " to list arr. Length:0x" + mem_basic_info.RegionSize.ToString("x8") + Environment.NewLine);
+                        //Task.Run(() => test(proc_min_address_l, search, file));
+                        list.Add((Int64)proc_min_address + "|" + regionsize + "|" + BaseAddress);
+                        //test((Int64)proc_min_address, memCode, stringByteArray, mask, regionsize, BaseAddress);
+                        ar++;
+                    }
                 }
                 //Debug.Write("region size: " + mem_basic_info.RegionSize + Environment.NewLine);
                 proc_min_address_l += (Int64)mem_basic_info.RegionSize;
