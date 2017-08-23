@@ -1351,12 +1351,16 @@ namespace Memory
             try
             {
                 memCode = memCode.Replace('?', '.').Replace(' ', '-').ToUpper(); //for test regex
-                ParallelLoopResult result = Parallel.For(0, list.Count, po, async index =>
+                ParallelLoopResult result = Parallel.For(0, list.Count, po, async (int index, ParallelLoopState parallelLoopState) =>
                 {
                     results[index] = await test(Convert.ToInt64(list[index].Split('|')[0]), memCode, stringByteArray, mask, Convert.ToInt64(list[index].Split('|')[1]), Convert.ToInt64(list[index].Split('|')[2]));
                     //po.CancellationToken.ThrowIfCancellationRequested();
                     if (results[index] > 0)
+                    {
                         cts.Cancel();
+                        //Debug.Write("STOPPING PARALLEL LOOP STATE!" + Environment.NewLine);
+                        parallelLoopState.Stop();
+                    }
                 });
                 
                 while (true)
