@@ -830,9 +830,9 @@ namespace Memory
         /// </summary>
         /// <param name="name">label in ini file</param>
         /// <param name="path">path to ini file</param>
-        /// <param name="size">size of address (default is 4)</param>
+        /// <param name="size">size of address (default is 8)</param>
         /// <returns></returns>
-        private UIntPtr getCode(string name, string path, int size = 4)
+        private UIntPtr getCode(string name, string path, int size = 8)
         {
             string theCode = LoadCode(name, path);
             if (theCode == "")
@@ -850,7 +850,7 @@ namespace Memory
                 string[] newerOffsets = newOffsets.Split(',');
                 foreach (string oldOffsets in newerOffsets)
                 {
-                    offsetsList.Add(Convert.ToInt32(oldOffsets, 16));
+                    offsetsList.Add(Convert.ToInt64(oldOffsets, 16));
                 }
                 Int64[] offsets = offsetsList.ToArray();
 
@@ -865,15 +865,15 @@ namespace Memory
                 else
                     ReadProcessMemory(pHandle, (UIntPtr)(offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
-                UInt64 num1 = BitConverter.ToUInt64(memoryAddress, 0);
+                UInt64 num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
 
                 UIntPtr base1 = (UIntPtr)0;
 
                 for (int i = 1; i < offsets.Length; i++)
                 {
-                    base1 = new UIntPtr(num1 + Convert.ToUInt32(offsets[i]));
+                    base1 = new UIntPtr(num1 + Convert.ToUInt64(offsets[i]));
                     ReadProcessMemory(pHandle, base1, memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                    num1 = BitConverter.ToUInt64(memoryAddress, 0);
+                    num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
                 }
                 return base1;
             }
@@ -892,10 +892,10 @@ namespace Memory
                 else
                     ReadProcessMemory(pHandle, (UIntPtr)(trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
-                UInt64 num1 = BitConverter.ToUInt64(memoryAddress, 0);
+                UInt64 num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
 
                 UIntPtr base1 = new UIntPtr(num1);
-                num1 = BitConverter.ToUInt64(memoryAddress, 0);
+                num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
                 return base1;
             }
         }
