@@ -720,24 +720,18 @@ namespace Memory
             else if (type == "byte")
             {
                 memory = new byte[1];
-                memory = BitConverter.GetBytes(Convert.ToInt32(write));
-                size = 1;
+                memory[0] = Convert.ToByte(write, 16);
             }
             else if (type == "bytes")
             {
-                string[] script_instruction_value_split = write.Split(' ');
-                int num_bytes = script_instruction_value_split.Length;
-                byte[] write_bytes = new byte[num_bytes];
-                long script_instruction_value_int = 0;
-                byte[] script_instruction_value_bytes;
-                for (int i = 0; i < num_bytes; i++)
+                string[] stringBytes = write.Split(' ');
+                int c = stringBytes.Count();
+                memory = new byte[c];
+                for (int i = 0; i < c; i++)
                 {
-                    script_instruction_value_int = Int64.Parse(script_instruction_value_split[i], NumberStyles.AllowHexSpecifier);
-                    script_instruction_value_bytes = BitConverter.GetBytes(script_instruction_value_int);
-                    write_bytes[i] = script_instruction_value_bytes[0];
+                    memory[i] = Convert.ToByte(stringBytes[i], 16);
                 }
-                writeBytes(theCode.ToString(), write_bytes);
-                return true;
+                size = stringBytes.Count();
             }
             else if (type == "long")
             {
@@ -750,7 +744,7 @@ namespace Memory
                 memory = System.Text.Encoding.UTF8.GetBytes(write);
                 size = write.Length;
             }
-
+            //Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:" + theCode + "] " + String.Join(",", memory) + Environment.NewLine);
             if (WriteProcessMemory(pHandle, theCode, memory, (UIntPtr)size, IntPtr.Zero))
                 return true;
             else
@@ -779,8 +773,9 @@ namespace Memory
 
             if (type == "float")
             {
+                memory = new byte[write.Length];
                 memory = BitConverter.GetBytes(Convert.ToSingle(write));
-                size = 4;
+                size = write.Length;
             }
             else if (type == "int")
             {
@@ -790,8 +785,7 @@ namespace Memory
             else if (type == "byte")
             {
                 memory = new byte[1];
-                memory = BitConverter.GetBytes(Convert.ToInt32(write));
-                size = 1;
+                memory[0] = Convert.ToByte(write, 16);
             }
             else if (type == "string")
             {
@@ -802,6 +796,8 @@ namespace Memory
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
 
+            Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:" + newCode + " MQTY:" + moveQty + "] " + String.Join(",", memory) + Environment.NewLine);
+            Thread.Sleep(1000);
             if (WriteProcessMemory(pHandle, newCode, memory, (UIntPtr)size, IntPtr.Zero))
                 return true;
             else
@@ -865,7 +861,7 @@ namespace Memory
                 else
                     ReadProcessMemory(pHandle, (UIntPtr)(offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
-                UInt64 num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
+                UInt32 num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
 
                 UIntPtr base1 = (UIntPtr)0;
 
