@@ -796,7 +796,7 @@ namespace Memory
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
 
-            Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:" + newCode + " MQTY:" + moveQty + "] " + String.Join(",", memory) + Environment.NewLine);
+            Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:[O]" + theCode + " [N]" + newCode + " MQTY:" + moveQty + "] " + String.Join(",", memory) + Environment.NewLine);
             Thread.Sleep(1000);
             if (WriteProcessMemory(pHandle, newCode, memory, (UIntPtr)size, IntPtr.Zero))
                 return true;
@@ -867,7 +867,7 @@ namespace Memory
 
                 for (int i = 1; i < offsets.Length; i++)
                 {
-                    base1 = new UIntPtr(num1 + Convert.ToUInt64(offsets[i]));
+                    base1 = new UIntPtr(num1 + Convert.ToUInt32(offsets[i]));
                     ReadProcessMemory(pHandle, base1, memoryAddress, (UIntPtr)size, IntPtr.Zero);
                     num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
                 }
