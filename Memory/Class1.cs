@@ -721,6 +721,7 @@ namespace Memory
             {
                 memory = new byte[1];
                 memory[0] = Convert.ToByte(write, 16);
+                size = 1;
             }
             else if (type == "bytes")
             {
@@ -786,6 +787,7 @@ namespace Memory
             {
                 memory = new byte[1];
                 memory[0] = Convert.ToByte(write, 16);
+                size = 1;
             }
             else if (type == "string")
             {
