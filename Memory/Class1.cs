@@ -137,6 +137,9 @@ namespace Memory
           out IntPtr lpThreadId
         );
 
+        [DllImport("kernel32")]
+        public static extern bool IsWow64Process(IntPtr hProcess, out bool lpSystemInfo);
+
         [DllImport("user32.dll")]
         static extern bool SetForegroundWindow(IntPtr hWnd);
 
@@ -192,7 +195,8 @@ namespace Memory
             {
                 Debug.Write("WARNING: You are NOT running this program as admin!! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
                 MessageBox.Show("WARNING: You are NOT running this program as admin!!");
-            }
+            } else
+                Debug.Write("Program is operating at Administrative level. Now opening process id #" + id + "." + Environment.NewLine);
 
             try
             {
@@ -215,6 +219,8 @@ namespace Memory
                     var eCode = Marshal.GetLastWin32Error();
                 }
 
+                Debug.Write("Now storing module addresses for process id #" + id + "." + Environment.NewLine);
+
                 mainModule = procs.MainModule;
                 getModules();
                 return true;
@@ -233,6 +239,17 @@ namespace Memory
                 WindowsPrincipal principal = new WindowsPrincipal(identity);
                 return principal.IsInRole(WindowsBuiltInRole.Administrator);
             }
+        }
+
+        /// <summary>
+        /// Check if opened process is 64bit. Used primarily for getCode().
+        /// </summary>
+        /// <returns></returns>
+        public bool is64bit()
+        {
+            bool isTrue;
+            IsWow64Process(pHandle, out isTrue);
+            return isTrue;
         }
 
         /// <summary>
@@ -303,6 +320,9 @@ namespace Memory
                 return 0;
         }
 
+        /// <summary>
+        /// Dictionary with our opened process module names with addresses.
+        /// </summary>
         public Dictionary<string, IntPtr> modules = new Dictionary<string, IntPtr>();
 
         /// <summary>
@@ -824,13 +844,94 @@ namespace Memory
         #endregion
 
         /// <summary>
-        /// Get code from ini file.
+        /// Convert code from string to real address. If path is not blank, will pull from ini file.
         /// </summary>
         /// <param name="name">label in ini file</param>
         /// <param name="path">path to ini file</param>
         /// <param name="size">size of address (default is 8)</param>
         /// <returns></returns>
         private UIntPtr getCode(string name, string path, int size = 8)
+        {
+            if (is64bit())
+            {
+                if (size == 8) size = 16; //change to 64bit
+                return get64bitCode(name, path, size); //jump over to 64bit code grab
+            }
+
+            string theCode = LoadCode(name, path);
+            if (theCode == "")
+                return UIntPtr.Zero;
+            string newOffsets = theCode;
+            if (theCode.Contains("+"))
+                newOffsets = theCode.Substring(theCode.IndexOf('+') + 1);
+
+            byte[] memoryAddress = new byte[size];
+
+            if (newOffsets.Contains(','))
+            {
+                List<int> offsetsList = new List<int>();
+
+                string[] newerOffsets = newOffsets.Split(',');
+                foreach (string oldOffsets in newerOffsets)
+                {
+                    offsetsList.Add(Convert.ToInt32(oldOffsets, 8));
+                }
+                int[] offsets = offsetsList.ToArray();
+
+                if (theCode.Contains("base") || theCode.Contains("main"))
+                    ReadProcessMemory(pHandle, (UIntPtr)((int)mainModule.BaseAddress + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
+                {
+                    string[] moduleName = theCode.Split('+');
+                    IntPtr altModule = modules[moduleName[0]];
+                    ReadProcessMemory(pHandle, (UIntPtr)((int)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                }
+                else
+                    ReadProcessMemory(pHandle, (UIntPtr)(offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+
+                uint num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
+
+                UIntPtr base1 = (UIntPtr)0;
+
+                for (int i = 1; i < offsets.Length; i++)
+                {
+                    base1 = new UIntPtr(num1 + Convert.ToUInt32(offsets[i]));
+                    ReadProcessMemory(pHandle, base1, memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                    num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
+                }
+                return base1;
+            }
+            else
+            {
+                int trueCode = Convert.ToInt32(newOffsets, 8);
+
+                if (theCode.Contains("base") || theCode.Contains("main"))
+                    ReadProcessMemory(pHandle, (UIntPtr)((int)mainModule.BaseAddress + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
+                {
+                    string[] moduleName = theCode.Split('+');
+                    IntPtr altModule = modules[moduleName[0]];
+                    ReadProcessMemory(pHandle, (UIntPtr)((int)altModule + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+                }
+                else
+                    ReadProcessMemory(pHandle, (UIntPtr)(trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
+
+                uint num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
+
+                UIntPtr base1 = new UIntPtr(num1);
+                num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
+                return base1;
+            }
+        }
+
+        /// <summary>
+        /// Convert code from string to real address. If path is not blank, will pull from ini file.
+        /// </summary>
+        /// <param name="name">label in ini file</param>
+        /// <param name="path">path to ini file</param>
+        /// <param name="size">size of address (default is 16)</param>
+        /// <returns></returns>
+        private UIntPtr get64bitCode(string name, string path, int size = 16)
         {
             string theCode = LoadCode(name, path);
             if (theCode == "")
@@ -863,15 +964,15 @@ namespace Memory
                 else
                     ReadProcessMemory(pHandle, (UIntPtr)(offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
-                UInt32 num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
+                UInt64 num1 = BitConverter.ToUInt64(memoryAddress, 0);
 
                 UIntPtr base1 = (UIntPtr)0;
 
                 for (int i = 1; i < offsets.Length; i++)
                 {
-                    base1 = new UIntPtr(num1 + Convert.ToUInt32(offsets[i]));
+                    base1 = new UIntPtr(num1 + Convert.ToUInt64(offsets[i]));
                     ReadProcessMemory(pHandle, base1, memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                    num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
+                    num1 = BitConverter.ToUInt64(memoryAddress, 0);
                 }
                 return base1;
             }
@@ -890,10 +991,10 @@ namespace Memory
                 else
                     ReadProcessMemory(pHandle, (UIntPtr)(trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
-                UInt64 num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
+                UInt64 num1 = BitConverter.ToUInt64(memoryAddress, 0);
 
                 UIntPtr base1 = new UIntPtr(num1);
-                num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
+                num1 = BitConverter.ToUInt64(memoryAddress, 0);
                 return base1;
             }
         }
@@ -1003,34 +1104,10 @@ namespace Memory
                 CloseHandle(pOpenThread);
             }
         }
-        
-        //too slow to do page by page on a single thread.
-        /*public IntPtr AoBScan(string search, string file = "")
-        {
-            string[] stringByteArray = LoadCode(search, file).Split(' ');
-            //byte[] myPattern = new byte[stringByteArray.Length];
-            string mask = "";
-            int i = 0;
-            foreach (string ba in stringByteArray)
-            {
-                if (ba == "??")
-                    mask += "?";
-                else if (Char.IsLetterOrDigit(ba[0]) && ba[1] == '?') //partial match
-                    mask += "?"; //show it's still a wildcard of some kind
-                else if (Char.IsLetterOrDigit(ba[1]) && ba[0] == '?') //partial match
-                    mask += "?";
-                else
-                    mask += "x";
-                i++;
-            }
 
-            DumpMemory2();
-            return (IntPtr)FindPattern(fileToBytes("dump.dmp"), stringByteArray, mask);
-        }*/
-
-        async Task PutTaskDelay()
+        async Task PutTaskDelay(int delay)
         {
-            await Task.Delay(5000);
+            await Task.Delay(delay);
         }
 
         void AppendAllBytes(string path, byte[] bytes)
@@ -1047,28 +1124,6 @@ namespace Memory
                 File.Delete(path);
             return newArray;
         }
-        
-        /*public IntPtr AoBScanFast(int start, int length, string search, string file = "")
-        {
-            string[] stringByteArray = LoadCode(search, file).Split(' ');
-            string mask = "";
-            int i = 0;
-            foreach (string ba in stringByteArray)
-            {
-                if (ba == "??")
-                    mask += "?";
-                else if (Char.IsLetterOrDigit(ba[0]) && ba[1] == '?')
-                    mask += "?";
-                else if (Char.IsLetterOrDigit(ba[1]) && ba[0] == '?')
-                    mask += "?";
-                else
-                    mask += "x";
-                i++;
-            }
-
-            DumpMemory2();
-            return (IntPtr)FindPattern(fileToBytes("dump.dmp"), stringByteArray, mask, start, length);
-        }*/
 
         private bool MaskCheck(Int64 nOffset, string[] btPattern, string strMask, byte[] dumpRegion)
         {
@@ -1319,7 +1374,7 @@ namespace Memory
 
             Int64 proc_min_address_l = (Int64)procs.MainModule.BaseAddress;
             Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64;
-            Debug.Write("[DEBUG] memory scan starting... min:" + proc_min_address_l.ToString("x8") + " max:" + proc_max_address_l.ToString("x8") + " (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+            Debug.Write("[DEBUG] memory scan starting... base:0x" + proc_min_address_l.ToString("x8") + " max:0x" + proc_max_address_l.ToString("x8") + " (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
             MEMORY_BASIC_INFORMATION mem_basic_info = new MEMORY_BASIC_INFORMATION();
             while (proc_min_address_l < proc_max_address_l)
             {
@@ -1333,7 +1388,7 @@ namespace Memory
                         //Debug.Write("[" + ar + "] Adding 0x" + proc_min_address.ToString("x8") + " to list arr. Length:0x" + mem_basic_info.RegionSize.ToString("x8") + Environment.NewLine);
                         //Task.Run(() => test(proc_min_address_l, search, file));
                         list.Add((Int64)proc_min_address + "|" + regionsize + "|" + BaseAddress);
-                        //test((Int64)proc_min_address, memCode, stringByteArray, mask, regionsize, BaseAddress);
+                        //compareScan((Int64)proc_min_address, memCode, stringByteArray, mask, regionsize, BaseAddress);
                         ar++;
                     }
                 }
@@ -1345,13 +1400,14 @@ namespace Memory
             //Debug.Write("[DEBUG] VirtualQueryEx finished at 0x" + proc_min_address_l.ToString("x8") + ". Last region size is 0x" + (proc_min_address_l - proc_max_address_l).ToString("x8") + " (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
             ParallelOptions po = new ParallelOptions();
             po.CancellationToken = cts.Token;
-            Int64[] results = new Int64[500000];
-            try
-            {
-                memCode = memCode.Replace('?', '.').Replace(' ', '-').ToUpper(); //for test regex
+            Int64 pageCount = list.Count;
+            Int64[] results = new Int64[pageCount];
+            //try
+            //{
+                memCode = memCode.Replace('?', '.').Replace(' ', '-').ToUpper(); //for compareScan regex
                 ParallelLoopResult result = Parallel.For(0, list.Count, po, async (int index, ParallelLoopState parallelLoopState) =>
                 {
-                    results[index] = await test(Convert.ToInt64(list[index].Split('|')[0]), memCode, stringByteArray, mask, Convert.ToInt64(list[index].Split('|')[1]), Convert.ToInt64(list[index].Split('|')[2]));
+                    results[index] = await compareScan(Convert.ToInt64(list[index].Split('|')[0]), memCode, stringByteArray, mask, Convert.ToInt64(list[index].Split('|')[1]), Convert.ToInt64(list[index].Split('|')[2]));
                     //po.CancellationToken.ThrowIfCancellationRequested();
                     if (results[index] > 0)
                     {
@@ -1376,7 +1432,7 @@ namespace Memory
                         return 0; //if we fail
                     }
                 }
-            }
+            /*}
             catch (OperationCanceledException e)
             {
                 foreach (int r in results)
@@ -1392,10 +1448,10 @@ namespace Memory
             finally
             {
                 cts.Dispose();
-            }
+            }*/
         }
 
-        public async Task<Int64> test(Int64 start, string memCode, string[] stringByteArray, string mask, Int64 regionsize, Int64 BaseAddress)
+        public async Task<Int64> compareScan(Int64 start, string memCode, string[] stringByteArray, string mask, Int64 regionsize, Int64 BaseAddress)
         {
             try
             {
