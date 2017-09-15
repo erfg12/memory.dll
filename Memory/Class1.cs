@@ -1373,8 +1373,14 @@ namespace Memory
             IntPtr proc_max_address = sys_info.maximumApplicationAddress;
 
             Int64 proc_min_address_l = (Int64)procs.MainModule.BaseAddress;
-            Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64;
-            Debug.Write("[DEBUG] memory scan starting... base:0x" + proc_min_address_l.ToString("x8") + " max:0x" + proc_max_address_l.ToString("x8") + " (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+            Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64 + proc_min_address_l;
+
+            if (start < proc_min_address_l) { //if our start is too low, we should adjust it to main module base address
+                start = proc_min_address_l;
+                Debug.Write("AoB scan cannot start at less than main module base address, changing to " + proc_min_address_l + "." + Environment.NewLine);
+            }
+
+            Debug.Write("[DEBUG] memory scan starting... (base:0x" + proc_min_address_l.ToString("x8") + " max:0x" + proc_max_address_l.ToString("x8") + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
             MEMORY_BASIC_INFORMATION mem_basic_info = new MEMORY_BASIC_INFORMATION();
             while (proc_min_address_l < proc_max_address_l)
             {
