@@ -29,7 +29,10 @@ namespace Memory
             );
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION lpBuffer, int dwLength);
+        static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION32 lpBuffer, int dwLength);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION64 lpBuffer, int dwLength);
 
         [DllImport("kernel32.dll")]
         static extern IntPtr OpenThread(ThreadAccess dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
@@ -284,6 +287,9 @@ namespace Memory
         public int getProcIDFromName(string name) //new 1.0.2 function
         {
             Process[] processlist = Process.GetProcesses();
+
+            if (name.Contains(".exe"))
+                name = name.Replace(".exe", "");
 
             foreach (Process theprocess in processlist)
             {
@@ -1198,8 +1204,8 @@ namespace Memory
 
         public async Task<Int64> PageFindPattern(byte[] haystack, string[] needle, string strMask, Int64 start = 0) //for pages
         {
-            try
-            {
+            //try
+            //{
                 if (cts.IsCancellationRequested) return 0;
                 //if ( haystack.All(singleByte => singleByte == 0xFF) || haystack.All(singleByte => singleByte == 0x00))
                 //    return 0;
@@ -1216,10 +1222,10 @@ namespace Memory
                         return (x + start);
                     }
                 }
-            } catch
+            /*} catch
             {
                 Debug.Write("PageFindPattern failed");
-            }
+            }*/
             return 0;// IntPtr.Zero;
         }
 
@@ -1272,7 +1278,7 @@ namespace Memory
             public ushort processorRevision;
         }
 
-        public struct MEMORY_BASIC_INFORMATION
+        public struct MEMORY_BASIC_INFORMATION32
         {
             public IntPtr BaseAddress;
             public IntPtr AllocationBase;
@@ -1281,6 +1287,18 @@ namespace Memory
             public uint State;
             public uint Protect;
             public uint Type;
+        }
+
+        public struct MEMORY_BASIC_INFORMATION64 {
+            public IntPtr BaseAddress;
+            public IntPtr AllocationBase;
+            public uint AllocationProtect;
+            public UInt32 __alignment1;
+            public long RegionSize;
+            public uint State;
+            public uint Protect;
+            public uint Type;
+            public UInt32 __alignment2;
         }
 
 
@@ -1310,23 +1328,23 @@ namespace Memory
             Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64;
 
             // this will store any information we get from VirtualQueryEx()
-            MEMORY_BASIC_INFORMATION mem_basic_info = new MEMORY_BASIC_INFORMATION();
+            MEMORY_BASIC_INFORMATION32 mem_basic_info32 = new MEMORY_BASIC_INFORMATION32();
             //int arrLength = 0;
             if (File.Exists(@"dump.dmp"))
                 File.Delete(@"dump.dmp");
             while (proc_min_address_l < proc_max_address_l)
             {
-                VirtualQueryEx(pHandle, proc_min_address, out mem_basic_info, Marshal.SizeOf(mem_basic_info));
-                byte[] buffer = new byte[(Int64)mem_basic_info.RegionSize];
-                UIntPtr test = (UIntPtr)((Int64)mem_basic_info.RegionSize);
-                UIntPtr test2 = (UIntPtr)((Int64)mem_basic_info.BaseAddress);
+                VirtualQueryEx(pHandle, proc_min_address, out mem_basic_info32, Marshal.SizeOf(mem_basic_info32));
+                byte[] buffer = new byte[(Int64)mem_basic_info32.RegionSize];
+                UIntPtr test = (UIntPtr)((Int64)mem_basic_info32.RegionSize);
+                UIntPtr test2 = (UIntPtr)((Int64)mem_basic_info32.BaseAddress);
                 
                 ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
 
                 AppendAllBytes(@"dump.dmp", buffer); //due to memory limits, we have to dump it then store it in an array.
                 //arrLength += buffer.Length;
 
-                proc_min_address_l += (Int64)mem_basic_info.RegionSize;
+                proc_min_address_l += (Int64)mem_basic_info32.RegionSize;
                 proc_min_address = new IntPtr(proc_min_address_l);
             }
             Debug.Write("[DEBUG] memory dump completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
@@ -1375,32 +1393,69 @@ namespace Memory
             Int64 proc_min_address_l = (Int64)procs.MainModule.BaseAddress;
             Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64 + proc_min_address_l;
 
-            if (start < proc_min_address_l) { //if our start is too low, we should adjust it to main module base address
+            /*if (start < proc_min_address_l) { //if our start is too low, we should adjust it to main module base address
                 start = proc_min_address_l;
                 Debug.Write("AoB scan cannot start at less than main module base address, changing to " + proc_min_address_l + "." + Environment.NewLine);
-            }
+            }*/
+            
+            Debug.Write("[DEBUG] memory scan starting... (base:0x" + proc_min_address_l.ToString("x16") + " max:" + proc_max_address_l.ToString("x16") + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
 
-            Debug.Write("[DEBUG] memory scan starting... (base:0x" + proc_min_address_l.ToString("x8") + " max:0x" + proc_max_address_l.ToString("x8") + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
-            MEMORY_BASIC_INFORMATION mem_basic_info = new MEMORY_BASIC_INFORMATION();
-            while (proc_min_address_l < proc_max_address_l)
+            if (is64bit())
             {
-                VirtualQueryEx(pHandle, proc_min_address, out mem_basic_info, Marshal.SizeOf(mem_basic_info));
-                if (mem_basic_info.Protect == PAGE_READWRITE && mem_basic_info.State == MEM_COMMIT) //this makes it fast :)
+                MEMORY_BASIC_INFORMATION64 mem_basic_info64 = new MEMORY_BASIC_INFORMATION64();
+                while (proc_min_address_l < proc_max_address_l)
                 {
-                    Int64 regionsize = (Int64)mem_basic_info.RegionSize;
-                    Int64 BaseAddress = (Int64)mem_basic_info.BaseAddress;
-                    if (start < proc_min_address_l && proc_min_address_l < (start + length))
+                    VirtualQueryEx(pHandle, proc_min_address, out mem_basic_info64, Marshal.SizeOf(mem_basic_info64));
+                    if (mem_basic_info64.Protect >= 2 && mem_basic_info64.State == MEM_COMMIT) //this makes it fast :)
                     {
-                        //Debug.Write("[" + ar + "] Adding 0x" + proc_min_address.ToString("x8") + " to list arr. Length:0x" + mem_basic_info.RegionSize.ToString("x8") + Environment.NewLine);
-                        //Task.Run(() => test(proc_min_address_l, search, file));
-                        list.Add((Int64)proc_min_address + "|" + regionsize + "|" + BaseAddress);
-                        //compareScan((Int64)proc_min_address, memCode, stringByteArray, mask, regionsize, BaseAddress);
-                        ar++;
+                        Int64 regionsize = mem_basic_info64.RegionSize;
+                        Int64 BaseAddress = (Int64)mem_basic_info64.BaseAddress;
+                        Debug.Write("we got one here! start:" + start.ToString("x16") + " min:" + proc_min_address_l.ToString("x16") + " size:" + mem_basic_info64.RegionSize.ToString("x16") + Environment.NewLine);
+                        if (start < proc_min_address_l && proc_min_address_l < (start + length))
+                        {
+                            Debug.Write("[" + ar + "] Adding 0x" + proc_min_address.ToString("x16") + " to list arr. Length:0x" + mem_basic_info64.RegionSize.ToString("x16") + Environment.NewLine);
+                            //Task.Run(() => test(proc_min_address_l, search, file));
+                            list.Add((Int64)proc_min_address + "|" + regionsize + "|" + BaseAddress);
+                            //compareScan((Int64)proc_min_address, memCode, stringByteArray, mask, regionsize, BaseAddress);
+                            ar++;
+                        }
                     }
+                    else
+                    {
+                        Debug.Write("[" + ar + "] Cannot add 0x" + proc_min_address.ToString("x16") + " to list arr. Size:0x" + mem_basic_info64.RegionSize.ToString("x16") + " Protection:" + mem_basic_info64.Protect + " State:" + mem_basic_info64.State + " (64bit)" + Environment.NewLine);
+                    }
+                    //Debug.Write("region size: " + mem_basic_info.RegionSize + Environment.NewLine);
+                    proc_min_address_l += mem_basic_info64.RegionSize;
+                    proc_min_address = new IntPtr(proc_min_address_l);
                 }
-                //Debug.Write("region size: " + mem_basic_info.RegionSize + Environment.NewLine);
-                proc_min_address_l += (Int64)mem_basic_info.RegionSize;
-                proc_min_address = new IntPtr(proc_min_address_l);
+            }
+            else
+            {
+                MEMORY_BASIC_INFORMATION32 mem_basic_info32 = new MEMORY_BASIC_INFORMATION32();
+                while (proc_min_address_l < proc_max_address_l)
+                {
+                    VirtualQueryEx(pHandle, proc_min_address, out mem_basic_info32, Marshal.SizeOf(mem_basic_info32));
+                    if (mem_basic_info32.Protect == PAGE_READWRITE && mem_basic_info32.State == MEM_COMMIT) //this makes it fast :)
+                    {
+                        Int64 regionsize = (Int64)mem_basic_info32.RegionSize;
+                        Int64 BaseAddress = (Int64)mem_basic_info32.BaseAddress;
+                        if (start < proc_min_address_l && proc_min_address_l < (start + length))
+                        {
+                            Debug.Write("[" + ar + "] Adding 0x" + proc_min_address.ToString("x8") + " to list arr. Length:0x" + mem_basic_info32.RegionSize.ToString("x8") + Environment.NewLine);
+                            //Task.Run(() => test(proc_min_address_l, search, file));
+                            list.Add((Int64)proc_min_address + "|" + regionsize + "|" + BaseAddress);
+                            //compareScan((Int64)proc_min_address, memCode, stringByteArray, mask, regionsize, BaseAddress);
+                            ar++;
+                        }
+                    }
+                    else
+                    {
+                        Debug.Write("[" + ar + "] Cannot add 0x" + proc_min_address.ToString("x8") + " to list arr. Is it protected? Length:0x" + mem_basic_info32.RegionSize.ToString("x8") + " Protection Code:" + mem_basic_info32.Protect + " (32bit)" + Environment.NewLine);
+                    }
+                    //Debug.Write("region size: " + mem_basic_info.RegionSize + Environment.NewLine);
+                    proc_min_address_l += (Int64)mem_basic_info32.RegionSize;
+                    proc_min_address = new IntPtr(proc_min_address_l);
+                }
             }
 
             //Debug.Write("[DEBUG] VirtualQueryEx finished at 0x" + proc_min_address_l.ToString("x8") + ". Last region size is 0x" + (proc_min_address_l - proc_max_address_l).ToString("x8") + " (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
@@ -1459,15 +1514,15 @@ namespace Memory
 
         public async Task<Int64> compareScan(Int64 start, string memCode, string[] stringByteArray, string mask, Int64 regionsize, Int64 BaseAddress)
         {
-            try
-            {
+            //try
+            //{
                 if (cts.IsCancellationRequested) return 0;
                 byte[] buffer = new byte[regionsize];
                 UIntPtr test2 = (UIntPtr)BaseAddress;
                 UIntPtr test = (UIntPtr)regionsize;
                 ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
 
-                //Debug.Write("PageFindPattern starting... 0x" + start.ToString("x8") + " buffer length=" + buffer.Length + Environment.NewLine);
+                Debug.Write("PageFindPattern starting... 0x" + start.ToString("x8") + " buffer length=" + buffer.Length + Environment.NewLine);
                 string hexString = BitConverter.ToString(buffer);
                 
                 if (Regex.IsMatch(hexString, memCode))
@@ -1475,13 +1530,13 @@ namespace Memory
                     //Debug.Write("I found something in 0x" + start.ToString("x8") + Environment.NewLine);
                     return await PageFindPattern(buffer, stringByteArray, mask, start);
                 }
-            }
+            /*}
             catch (Exception ex)
             {
                 //StackTrace st = new StackTrace(ex, true);
                 //StackFrame frame = st.GetFrame(0);
                 //Debug.Write( "ERROR ON LINE " + frame.GetFileLineNumber() + Environment.NewLine );
-            }
+            }*/
             return 0;
         }
         
