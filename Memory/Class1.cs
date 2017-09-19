@@ -250,9 +250,13 @@ namespace Memory
         /// <returns></returns>
         public bool is64bit()
         {
-            bool isTrue;
-            IsWow64Process(pHandle, out isTrue);
-            return isTrue;
+            bool is32bit = false;
+            IsWow64Process(pHandle, out is32bit);
+
+            if (is32bit)
+                return false;
+            else
+                return true;
         }
 
         /// <summary>
@@ -293,7 +297,7 @@ namespace Memory
 
             foreach (Process theprocess in processlist)
             {
-                if (theprocess.ProcessName == name) //find (name).exe in the process list (use task manager to find the name)
+                if (theprocess.ProcessName.Equals(name)) //find (name).exe in the process list (use task manager to find the name)
                     return theprocess.Id;
             }
 
@@ -1361,10 +1365,18 @@ namespace Memory
         /// <param name="search">array of bytes to search for, OR your ini code label.</param>
         /// <param name="file">ini file (OPTIONAL)</param>
         /// <returns></returns>
-        public async Task<Int64> AoBScan(Int64 start, Int64 length, string search, string file = "")
+        public async Task<Int64> AoBScan(string start, Int64 length, string search, string file = "")
         {
             Int64 ar = 0;
             var list = new List<string>();
+
+            UIntPtr gCode;
+            if (!LoadCode(start, file).Contains(","))
+                gCode = LoadUIntPtrCode(start, file);
+            else
+                gCode = getCode(start, file);
+
+            Int64 theCode = (Int64)gCode;
 
             string memCode = LoadCode(search, file);
 
@@ -1406,24 +1418,24 @@ namespace Memory
                 while (proc_min_address_l < proc_max_address_l)
                 {
                     VirtualQueryEx(pHandle, proc_min_address, out mem_basic_info64, Marshal.SizeOf(mem_basic_info64));
-                    if (mem_basic_info64.Protect >= 2 && mem_basic_info64.State == MEM_COMMIT) //this makes it fast :)
+                    if (mem_basic_info64.Protect >= 1 && mem_basic_info64.State == MEM_COMMIT) //this makes it fast :)
                     {
                         Int64 regionsize = mem_basic_info64.RegionSize;
                         Int64 BaseAddress = (Int64)mem_basic_info64.BaseAddress;
-                        Debug.Write("we got one here! start:" + start.ToString("x16") + " min:" + proc_min_address_l.ToString("x16") + " size:" + mem_basic_info64.RegionSize.ToString("x16") + Environment.NewLine);
-                        if (start < proc_min_address_l && proc_min_address_l < (start + length))
+                        //Debug.Write("we got one here! start:" + theCode.ToString("x16") + " min:" + proc_min_address_l.ToString("x16") + " size:" + mem_basic_info64.RegionSize.ToString("x16") + Environment.NewLine);
+                        if (theCode < proc_min_address_l && proc_min_address_l < (theCode + length))
                         {
-                            Debug.Write("[" + ar + "] Adding 0x" + proc_min_address.ToString("x16") + " to list arr. Length:0x" + mem_basic_info64.RegionSize.ToString("x16") + Environment.NewLine);
+                            //Debug.Write("[" + ar + "] Adding 0x" + proc_min_address.ToString("x16") + " to list arr. Length:0x" + mem_basic_info64.RegionSize.ToString("x16") + Environment.NewLine);
                             //Task.Run(() => test(proc_min_address_l, search, file));
                             list.Add((Int64)proc_min_address + "|" + regionsize + "|" + BaseAddress);
                             //compareScan((Int64)proc_min_address, memCode, stringByteArray, mask, regionsize, BaseAddress);
                             ar++;
                         }
                     }
-                    else
+                    /*else
                     {
                         Debug.Write("[" + ar + "] Cannot add 0x" + proc_min_address.ToString("x16") + " to list arr. Size:0x" + mem_basic_info64.RegionSize.ToString("x16") + " Protection:" + mem_basic_info64.Protect + " State:" + mem_basic_info64.State + " (64bit)" + Environment.NewLine);
-                    }
+                    }*/
                     //Debug.Write("region size: " + mem_basic_info.RegionSize + Environment.NewLine);
                     proc_min_address_l += mem_basic_info64.RegionSize;
                     proc_min_address = new IntPtr(proc_min_address_l);
@@ -1439,7 +1451,7 @@ namespace Memory
                     {
                         Int64 regionsize = (Int64)mem_basic_info32.RegionSize;
                         Int64 BaseAddress = (Int64)mem_basic_info32.BaseAddress;
-                        if (start < proc_min_address_l && proc_min_address_l < (start + length))
+                        if (theCode < proc_min_address_l && proc_min_address_l < (theCode + length))
                         {
                             Debug.Write("[" + ar + "] Adding 0x" + proc_min_address.ToString("x8") + " to list arr. Length:0x" + mem_basic_info32.RegionSize.ToString("x8") + Environment.NewLine);
                             //Task.Run(() => test(proc_min_address_l, search, file));
@@ -1522,7 +1534,7 @@ namespace Memory
                 UIntPtr test = (UIntPtr)regionsize;
                 ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
 
-                Debug.Write("PageFindPattern starting... 0x" + start.ToString("x8") + " buffer length=" + buffer.Length + Environment.NewLine);
+                //Debug.Write("PageFindPattern starting... 0x" + start.ToString("x8") + " buffer length=" + buffer.Length + Environment.NewLine);
                 string hexString = BitConverter.ToString(buffer);
                 
                 if (Regex.IsMatch(hexString, memCode))
