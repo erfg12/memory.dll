@@ -13,6 +13,7 @@ layout: default
 <span class="highlight_this">Project</span> » <span class="highlight_this">Add Reference</span> » <span class="highlight_this">Browse...</span> » <span class="highlight_this">Select Memory.dll</span>
 </ul>
 </li>
+</ul>
 <li style="font-weight:bold;">Place using statement above namespace.</li>
 ```csharp
 using Memory;
@@ -21,7 +22,7 @@ using Memory;
 ```csharp
 public Mem m = new Mem();
 ```
-</ul>
+
 
 <span style="font-weight:bold;">IMPORTANT:</span> Your program must run with admin privileges! <a href="https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges">Click here to learn how.</a>
 
