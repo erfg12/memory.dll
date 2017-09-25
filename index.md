@@ -21,7 +21,7 @@ layout: default
 ```csharp
 using Memory;
 ```
-<li style="font-weight:bold;">Create a namespace for Mem in your class.</li>
+<li style="font-weight:bold;margin-top:-10px;">Create a namespace for Mem in your class.</li>
 ```csharp
 public Mem m = new Mem();
 ```
@@ -32,7 +32,7 @@ public Mem m = new Mem();
 ```vb.net
 Imports Memory
 ```
-<li style="font-weight:bold;">Create a namespace for Mem in your class.</li>
+<li style="font-weight:bold;margin-top:-10px;">Create a namespace for Mem in your class.</li>
 ```vb.net
 Dim m As New Memory.Mem
 ```
