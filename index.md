@@ -4,11 +4,15 @@ layout: default
 
 # [](#header-1)Getting Started
 
-<p><li style="font-weight:bold;">Open Visual Studio and make a new project.</li></p>
-<li style="font-weight:bold;">Add reference to Memory.dll.</li>
+<ul>
+<li style="font-weight:bold;">Open Visual Studio and make a new project.</li>
+<li style="font-weight:bold;">Add reference to Memory.dll.
 <span class="highlight_this">Project</span> » <span class="highlight_this">Manage NuGet Packages...</span> » <span class="highlight_this">select Browse</span> » <span class="highlight_this">Search For Memory.dll</span>
-<div style="padding:5px;"><i>Or, for manual installation...</i></div>
+<ul>
+<li style="font-weight:bold;">Or, for manual installation...</li>
 <span class="highlight_this">Project</span> » <span class="highlight_this">Add Reference</span> » <span class="highlight_this">Browse...</span> » <span class="highlight_this">Select Memory.dll</span>
+</ul>
+</li>
 <li style="font-weight:bold;">Place using statement above namespace.</li>
 ```csharp
 using Memory;
@@ -17,6 +21,7 @@ using Memory;
 ```csharp
 public Mem m = new Mem();
 ```
+</ul>
 
 <span style="font-weight:bold;">IMPORTANT:</span> Your program must run with admin privileges! <a href="https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges">Click here to learn how.</a>
 
