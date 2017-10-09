@@ -314,10 +314,12 @@ namespace Memory
         {
             StringBuilder returnCode = new StringBuilder(1024);
             uint read_ini_result;
+
             if (file != "")
                 read_ini_result = GetPrivateProfileString("codes", name, "", returnCode, (uint)file.Length, file);
             else
                 returnCode.Append(name);
+
             return returnCode.ToString();
         }
 
@@ -363,6 +365,9 @@ namespace Memory
         private UIntPtr LoadUIntPtrCode(string name, string path = "")
         {
             string theCode = LoadCode(name, path);
+
+            if (!theCode.Contains("+")) return (UIntPtr)(uint)Convert.ToInt32(theCode); //just return the code
+
             UIntPtr uintValue;
 
             string newOffset = theCode.Substring(theCode.IndexOf('+') + 1);
@@ -448,11 +453,11 @@ namespace Memory
             byte[] memory = new byte[4];
 
             UIntPtr theCode;
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
+            //if (!LoadCode(code, file).Contains(","))
+            //    theCode = LoadUIntPtrCode(code, file);
+            //else
                 theCode = getCode(code, file);
-
+            //Debug.Write(theCode + Environment.NewLine);
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
             {
                 float address = BitConverter.ToSingle(memory, 0);
@@ -474,16 +479,17 @@ namespace Memory
         /// <returns></returns>
         public string readString(string code, string file = "")
         {
+            //Debug.Write("readString:" + code + ", FILE:" + file + Environment.NewLine);
             byte[] memoryNormal = new byte[32];
             UIntPtr theCode;
-            theCode = getCode(code, file);
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
+            //theCode = getCode(code, file);
+           // if (!LoadCode(code, file).Contains(","))
+            //    theCode = LoadUIntPtrCode(code, file);
+            //else
                 theCode = getCode(code, file);
-
+            //Debug.WriteLine(theCode);
             if (ReadProcessMemory(pHandle, theCode, memoryNormal, (UIntPtr)32, IntPtr.Zero))
-                return System.Text.Encoding.UTF8.GetString(memoryNormal);
+                return Encoding.UTF8.GetString(memoryNormal);
             else
                 return "";
         }
@@ -507,12 +513,12 @@ namespace Memory
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
-
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
-                theCode = getCode(code, file);
-
+            //Debug.Write("readString:" + code + ", FILE:" + file + Environment.NewLine);
+            //if (!LoadCode(code, file).Contains(","))
+            //    theCode = LoadUIntPtrCode(code, file);
+            //else
+            theCode = getCode(code, file);
+            //Debug.WriteLine(theCode);
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
                 return BitConverter.ToInt32(memory, 0);
             else
@@ -667,9 +673,9 @@ namespace Memory
             byte[] memoryTiny = new byte[4];
 
             UIntPtr theCode;
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
+            //if (!LoadCode(code, file).Contains(","))
+            //    theCode = LoadUIntPtrCode(code, file);
+            //else
                 theCode = getCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memoryTiny, (UIntPtr)1, IntPtr.Zero))
@@ -732,9 +738,9 @@ namespace Memory
             int size = 4;
 
             UIntPtr theCode;
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
+            //if (!LoadCode(code, file).Contains(","))
+            //    theCode = LoadUIntPtrCode(code, file);
+            //else
                 theCode = getCode(code, file);
 
             if (type == "float")
@@ -755,14 +761,29 @@ namespace Memory
             }
             else if (type == "bytes")
             {
-                string[] stringBytes = write.Split(' ');
-                int c = stringBytes.Count();
-                memory = new byte[c];
-                for (int i = 0; i < c; i++)
+                if (write.Contains(",") || write.Contains(" "))
                 {
-                    memory[i] = Convert.ToByte(stringBytes[i], 16);
+                    string[] stringBytes;
+                    if (write.Contains(","))
+                        stringBytes = write.Split(',');
+                    else
+                        stringBytes = write.Split(' ');
+                    //Debug.WriteLine("write:" + write + " stringBytes:" + stringBytes);
+
+                    int c = stringBytes.Count();
+                    memory = new byte[c];
+                    for (int i = 0; i < c; i++)
+                    {
+                        memory[i] = Convert.ToByte(stringBytes[i], 16);
+                    }
+                    size = stringBytes.Count();
                 }
-                size = stringBytes.Count();
+                else //somehow we wrote 1 byte instead of a byte array
+                {
+                    memory = new byte[1];
+                    memory[0] = Convert.ToByte(write, 16);
+                    size = 1;
+                }
             }
             else if (type == "long")
             {
@@ -864,17 +885,29 @@ namespace Memory
         {
             if (is64bit())
             {
+                //Debug.WriteLine("Changing to 64bit code...");
                 if (size == 8) size = 16; //change to 64bit
                 return get64bitCode(name, path, size); //jump over to 64bit code grab
             }
 
             string theCode = LoadCode(name, path);
+
             if (theCode == "")
+            {
+                //Debug.WriteLine("ERROR: LoadCode returned blank. NAME:" + name + " PATH:" + path);
                 return UIntPtr.Zero;
+            } else
+            {
+                //Debug.WriteLine("Found code=" + theCode + " NAME:" + name + " PATH:" + path);
+            }
+
+            if (!theCode.Contains("+") && !theCode.Contains(",")) return new UIntPtr(Convert.ToUInt32(theCode, 16));
+
             string newOffsets = theCode;
+
             if (theCode.Contains("+"))
                 newOffsets = theCode.Substring(theCode.IndexOf('+') + 1);
-
+            
             byte[] memoryAddress = new byte[size];
 
             if (newOffsets.Contains(','))
@@ -915,24 +948,15 @@ namespace Memory
             }
             else
             {
-                int trueCode = Convert.ToInt32(newOffsets, 8);
-
+                int trueCode = Convert.ToInt32(newOffsets, 16);
+                //Debug.WriteLine("newOffsets=" + newOffsets);
                 if (theCode.Contains("base") || theCode.Contains("main"))
-                    ReadProcessMemory(pHandle, (UIntPtr)((int)mainModule.BaseAddress + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
-                {
-                    string[] moduleName = theCode.Split('+');
-                    IntPtr altModule = modules[moduleName[0]];
-                    ReadProcessMemory(pHandle, (UIntPtr)((int)altModule + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                }
+                    return (UIntPtr)((int)mainModule.BaseAddress + trueCode);
                 else
-                    ReadProcessMemory(pHandle, (UIntPtr)(trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
-
-                uint num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
-
-                UIntPtr base1 = new UIntPtr(num1);
-                num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
-                return base1;
+                {
+                    IntPtr altModule = modules[theCode.Split('+')[0]];
+                    return (UIntPtr)((int)altModule + trueCode);
+                }
             }
         }
 
