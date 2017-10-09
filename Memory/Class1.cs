@@ -536,9 +536,9 @@ namespace Memory
             byte[] memory = new byte[16];
             UIntPtr theCode;
 
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
+            //if (!LoadCode(code, file).Contains(","))
+            //    theCode = LoadUIntPtrCode(code, file);
+            //else
                 theCode = getCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)16, IntPtr.Zero))
@@ -557,9 +557,9 @@ namespace Memory
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
+            //if (!LoadCode(code, file).Contains(","))
+            //    theCode = LoadUIntPtrCode(code, file);
+            //else
                 theCode = getCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
@@ -579,9 +579,9 @@ namespace Memory
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
+            //if (!LoadCode(code, file).Contains(","))
+            //    theCode = LoadUIntPtrCode(code, file);
+            //else
                 theCode = getCode(code, file);
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
@@ -603,9 +603,9 @@ namespace Memory
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
+            //if (!LoadCode(code, file).Contains(","))
+            //    theCode = LoadUIntPtrCode(code, file);
+            //else
                 theCode = getCode(code, file);
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
@@ -627,9 +627,9 @@ namespace Memory
         {
             byte[] memory = new byte[8];
             UIntPtr theCode;
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
+            //if (!LoadCode(code, file).Contains(","))
+            //    theCode = LoadUIntPtrCode(code, file);
+            //else
                 theCode = getCode(code, file, 8);
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
@@ -651,9 +651,9 @@ namespace Memory
             byte[] memoryTiny = new byte[4];
 
             UIntPtr theCode;
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
+            //if (!LoadCode(code, file).Contains(","))
+            //    theCode = LoadUIntPtrCode(code, file);
+            //else
                 theCode = getCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memoryTiny, (UIntPtr)2, IntPtr.Zero))
@@ -818,9 +818,9 @@ namespace Memory
             int size = 4;
 
             UIntPtr theCode;
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
+            //if (!LoadCode(code, file).Contains(","))
+            //    theCode = LoadUIntPtrCode(code, file);
+            //else
                 theCode = getCode(code, file);
 
             if (type == "float")
@@ -866,9 +866,9 @@ namespace Memory
         public void writeBytes(string code, byte[] write, string file = "")
         {
             UIntPtr theCode;
-            if (!LoadCode(code, file).Contains(","))
-                theCode = LoadUIntPtrCode(code, file);
-            else
+            //if (!LoadCode(code, file).Contains(","))
+            //    theCode = LoadUIntPtrCode(code, file);
+            //else
                 theCode = getCode(code, file);
             WriteProcessMemory(pHandle, theCode, write, (UIntPtr)write.Length, IntPtr.Zero);
         }
@@ -978,6 +978,8 @@ namespace Memory
 
             byte[] memoryAddress = new byte[size];
 
+            if (!theCode.Contains("+") && !theCode.Contains(",")) return new UIntPtr(Convert.ToUInt32(theCode, 16));
+
             if (newOffsets.Contains(','))
             {
                 List<Int64> offsetsList = new List<Int64>();
@@ -1017,6 +1019,18 @@ namespace Memory
             else
             {
                 Int64 trueCode = Convert.ToInt64(newOffsets, 16);
+                //Debug.WriteLine("newOffsets=" + newOffsets);
+                if (theCode.Contains("base") || theCode.Contains("main"))
+                    return (UIntPtr)((Int64)mainModule.BaseAddress + trueCode);
+                else
+                {
+                    IntPtr altModule = modules[theCode.Split('+')[0]];
+                    return (UIntPtr)((Int64)altModule + trueCode);
+                }
+            }
+            /*else
+            {
+                Int64 trueCode = Convert.ToInt64(newOffsets, 16);
 
                 if (theCode.Contains("base") || theCode.Contains("main"))
                     ReadProcessMemory(pHandle, (UIntPtr)((Int64)mainModule.BaseAddress + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
@@ -1034,7 +1048,7 @@ namespace Memory
                 UIntPtr base1 = new UIntPtr(num1);
                 num1 = BitConverter.ToUInt64(memoryAddress, 0);
                 return base1;
-            }
+            }*/
         }
 
         /// <summary>
