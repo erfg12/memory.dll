@@ -362,7 +362,7 @@ namespace Memory
 
         private ProcessModule mainModule;
 
-        private UIntPtr LoadUIntPtrCode(string name, string path = "")
+        /*private UIntPtr LoadUIntPtrCode(string name, string path = "")
         {
             string theCode = LoadCode(name, path);
 
@@ -405,7 +405,7 @@ namespace Memory
                 uintValue = (UIntPtr)intToUint;
 
             return (UIntPtr)uintValue;
-        }
+        }*/
 
         /// <summary>
         /// Cut a string that goes on for too long or one that is possibly merged with another string.
@@ -919,7 +919,7 @@ namespace Memory
                 {
                     string test = oldOffsets;
                     if (oldOffsets.Contains("0x")) test = oldOffsets.Replace("0x","");
-                    offsetsList.Add(Int32.Parse(test, System.Globalization.NumberStyles.HexNumber));
+                    offsetsList.Add(Int32.Parse(test, NumberStyles.HexNumber));
                 }
                 int[] offsets = offsetsList.ToArray();
 
@@ -928,7 +928,15 @@ namespace Memory
                 else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
                 {
                     string[] moduleName = theCode.Split('+');
-                    IntPtr altModule = modules[moduleName[0]];
+                    IntPtr altModule = IntPtr.Zero;
+                    if (!moduleName[0].Contains(".dll") && !moduleName[0].Contains(".exe"))
+                    {
+                        string theAddr = moduleName[0];
+                        if (theAddr.Contains("0x")) theAddr = theAddr.Replace("0x", "");
+                        altModule = (IntPtr)Int32.Parse(theAddr, NumberStyles.HexNumber);
+                    }
+                    else
+                        altModule = modules[moduleName[0]];
                     ReadProcessMemory(pHandle, (UIntPtr)((int)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
                 }
                 else
@@ -949,14 +957,25 @@ namespace Memory
             else
             {
                 int trueCode = Convert.ToInt32(newOffsets, 16);
+                IntPtr altModule = IntPtr.Zero;
                 //Debug.WriteLine("newOffsets=" + newOffsets);
                 if (theCode.Contains("base") || theCode.Contains("main"))
-                    return (UIntPtr)((int)mainModule.BaseAddress + trueCode);
-                else
+                    altModule = mainModule.BaseAddress;
+                else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
                 {
-                    IntPtr altModule = modules[theCode.Split('+')[0]];
-                    return (UIntPtr)((int)altModule + trueCode);
+                    string[] moduleName = theCode.Split('+');
+                    if (!moduleName[0].Contains(".dll") && !moduleName[0].Contains(".exe"))
+                    {
+                        string theAddr = moduleName[0];
+                        if (theAddr.Contains("0x")) theAddr = theAddr.Replace("0x", "");
+                        altModule = (IntPtr)Int32.Parse(theAddr, NumberStyles.HexNumber);
+                    }
+                    else
+                        altModule = modules[moduleName[0]];
                 }
+                else
+                    altModule = modules[theCode.Split('+')[0]];
+                return (UIntPtr)((int)altModule + trueCode);
             }
         }
 
@@ -998,7 +1017,11 @@ namespace Memory
                 else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
                 {
                     string[] moduleName = theCode.Split('+');
-                    IntPtr altModule = modules[moduleName[0]];
+                    IntPtr altModule = IntPtr.Zero;
+                    if (!moduleName[0].Contains(".dll") && !moduleName[0].Contains(".exe"))
+                        altModule = (IntPtr)Int64.Parse(moduleName[0], System.Globalization.NumberStyles.HexNumber);
+                    else
+                        altModule = modules[moduleName[0]];
                     ReadProcessMemory(pHandle, (UIntPtr)((Int64)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
                 }
                 else
@@ -1019,14 +1042,25 @@ namespace Memory
             else
             {
                 Int64 trueCode = Convert.ToInt64(newOffsets, 16);
+                IntPtr altModule = IntPtr.Zero;
                 //Debug.WriteLine("newOffsets=" + newOffsets);
                 if (theCode.Contains("base") || theCode.Contains("main"))
-                    return (UIntPtr)((Int64)mainModule.BaseAddress + trueCode);
-                else
+                    altModule = mainModule.BaseAddress;
+                else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
                 {
-                    IntPtr altModule = modules[theCode.Split('+')[0]];
-                    return (UIntPtr)((Int64)altModule + trueCode);
+                    string[] moduleName = theCode.Split('+');
+                    if (!moduleName[0].Contains(".dll") && !moduleName[0].Contains(".exe"))
+                    {
+                        string theAddr = moduleName[0];
+                        if (theAddr.Contains("0x")) theAddr = theAddr.Replace("0x", "");
+                        altModule = (IntPtr)Int64.Parse(theAddr, NumberStyles.HexNumber);
+                    }
+                    else
+                        altModule = modules[moduleName[0]];
                 }
+                else
+                    altModule = modules[theCode.Split('+')[0]];
+                return (UIntPtr)((Int64)altModule + trueCode);
             }
             /*else
             {
@@ -1435,9 +1469,9 @@ namespace Memory
             var list = new List<string>();
 
             UIntPtr gCode;
-            if (!LoadCode(start, file).Contains(","))
-                gCode = LoadUIntPtrCode(start, file);
-            else
+            //if (!LoadCode(start, file).Contains(","))
+            //    gCode = LoadUIntPtrCode(start, file);
+            //else
                 gCode = getCode(start, file);
 
             Int64 theCode = (Int64)gCode;
