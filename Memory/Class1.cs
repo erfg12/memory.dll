@@ -1573,8 +1573,8 @@ namespace Memory
             po.CancellationToken = cts.Token;
             Int64 pageCount = list.Count;
             Int64[] results = new Int64[pageCount];
-            try
-            {
+            //try
+            //{
                 memCode = memCode.Replace('?', '.').Replace(' ', '-').ToUpper(); //for compareScan regex
                 ParallelLoopResult result = Parallel.For(0, list.Count, po, async (int index, ParallelLoopState parallelLoopState) =>
                 {
@@ -1582,7 +1582,7 @@ namespace Memory
                     //po.CancellationToken.ThrowIfCancellationRequested();
                     if (results[index] > 0)
                     {
-                        cts.Cancel();
+                        cts.CancelAfter(TimeSpan.FromSeconds(2));
                         //Debug.Write("STOPPING PARALLEL LOOP STATE!" + Environment.NewLine);
                         parallelLoopState.Stop();
                     }
@@ -1603,7 +1603,7 @@ namespace Memory
                         return 0; //if we fail
                     }
                 }
-            }
+            /*}
             catch (OperationCanceledException e)
             {
                 foreach (int r in results)
@@ -1619,7 +1619,7 @@ namespace Memory
             finally
             {
                 cts.Dispose();
-            }
+            }*/
         }
 
         public async Task<Int64> compareScan(Int64 start, string memCode, string[] stringByteArray, string mask, Int64 regionsize, Int64 BaseAddress)
