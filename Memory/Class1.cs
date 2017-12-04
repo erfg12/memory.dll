@@ -997,7 +997,7 @@ namespace Memory
 
             byte[] memoryAddress = new byte[size];
 
-            if (!theCode.Contains("+") && !theCode.Contains(",")) return new UIntPtr(Convert.ToUInt32(theCode, 16));
+            if (!theCode.Contains("+") && !theCode.Contains(",")) return new UIntPtr(Convert.ToUInt64(theCode, 16));
 
             if (newOffsets.Contains(','))
             {
