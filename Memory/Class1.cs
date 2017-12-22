@@ -1466,13 +1466,10 @@ namespace Memory
         public async Task<Int64> AoBScan(string start, Int64 length, string search, string file = "")
         {
             Int64 ar = 0;
-            var list = new List<string>();
+            var pageInfoList = new List<List<long>>();
 
             UIntPtr gCode;
-            //if (!LoadCode(start, file).Contains(","))
-            //    gCode = LoadUIntPtrCode(start, file);
-            //else
-                gCode = getCode(start, file);
+            gCode = getCode(start, file);
 
             Int64 theCode = (Int64)gCode;
 
@@ -1500,14 +1497,14 @@ namespace Memory
             IntPtr proc_min_address = sys_info.minimumApplicationAddress;
             IntPtr proc_max_address = sys_info.maximumApplicationAddress;
 
-            Int64 proc_min_address_l = (Int64)procs.MainModule.BaseAddress;
+            Int64 proc_min_address_l = 0; // (Int64)procs.MainModule.BaseAddress;
             Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64 + proc_min_address_l;
 
             /*if (start < proc_min_address_l) { //if our start is too low, we should adjust it to main module base address
                 start = proc_min_address_l;
                 Debug.Write("AoB scan cannot start at less than main module base address, changing to " + proc_min_address_l + "." + Environment.NewLine);
             }*/
-            
+
             Debug.Write("[DEBUG] memory scan starting... (base:0x" + proc_min_address_l.ToString("x16") + " max:" + proc_max_address_l.ToString("x16") + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
 
             if (is64bit())
@@ -1525,7 +1522,11 @@ namespace Memory
                         {
                             //Debug.Write("[" + ar + "] Adding 0x" + proc_min_address.ToString("x16") + " to list arr. Length:0x" + mem_basic_info64.RegionSize.ToString("x16") + Environment.NewLine);
                             //Task.Run(() => test(proc_min_address_l, search, file));
-                            list.Add((Int64)proc_min_address + "|" + regionsize + "|" + BaseAddress);
+                            List<long> tempList = new List<long>();
+                            tempList.Add((Int64)proc_min_address);
+                            tempList.Add(regionsize);
+                            tempList.Add(BaseAddress);
+                            pageInfoList.Add(tempList);
                             //compareScan((Int64)proc_min_address, memCode, stringByteArray, mask, regionsize, BaseAddress);
                             ar++;
                         }
@@ -1553,7 +1554,11 @@ namespace Memory
                         {
                             //Debug.Write("[" + ar + "] Adding 0x" + proc_min_address.ToString("x8") + " to list arr. Length:0x" + mem_basic_info32.RegionSize.ToString("x8") + Environment.NewLine);
                             //Task.Run(() => test(proc_min_address_l, search, file));
-                            list.Add((Int64)proc_min_address + "|" + regionsize + "|" + BaseAddress);
+                            List<long> tempList = new List<long>();
+                            tempList.Add((Int64)proc_min_address);
+                            tempList.Add(regionsize);
+                            tempList.Add(BaseAddress);
+                            pageInfoList.Add(tempList);
                             //compareScan((Int64)proc_min_address, memCode, stringByteArray, mask, regionsize, BaseAddress);
                             ar++;
                         }
@@ -1571,14 +1576,14 @@ namespace Memory
             //Debug.Write("[DEBUG] VirtualQueryEx finished at 0x" + proc_min_address_l.ToString("x8") + ". Last region size is 0x" + (proc_min_address_l - proc_max_address_l).ToString("x8") + " (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
             ParallelOptions po = new ParallelOptions();
             po.CancellationToken = cts.Token;
-            Int64 pageCount = list.Count;
+            Int64 pageCount = pageInfoList.Count;
             Int64[] results = new Int64[pageCount];
-            //try
-            //{
-                memCode = memCode.Replace('?', '.').Replace(' ', '-').ToUpper(); //for compareScan regex
-                ParallelLoopResult result = Parallel.For(0, list.Count, po, async (int index, ParallelLoopState parallelLoopState) =>
+            memCode = memCode.Replace('?', '.').Replace(' ', '-').ToUpper(); //for compareScan regex
+            ParallelLoopResult result = Parallel.For(0, pageInfoList.Count, po, async (int index, ParallelLoopState parallelLoopState) =>
+            {
+                try
                 {
-                    results[index] = await compareScan(Convert.ToInt64(list[index].Split('|')[0]), memCode, stringByteArray, mask, Convert.ToInt64(list[index].Split('|')[1]), Convert.ToInt64(list[index].Split('|')[2]));
+                    results[index] = await compareScan(pageInfoList[index][0], memCode, stringByteArray, mask, pageInfoList[index][1], pageInfoList[index][2]);
                     //po.CancellationToken.ThrowIfCancellationRequested();
                     if (results[index] > 0)
                     {
@@ -1586,67 +1591,57 @@ namespace Memory
                         //Debug.Write("STOPPING PARALLEL LOOP STATE!" + Environment.NewLine);
                         parallelLoopState.Stop();
                     }
-                });
-                
-                while (true)
+                }
+                catch (AggregateException ex)
                 {
-                    if (result.IsCompleted || cts.IsCancellationRequested)
+                    Debug.WriteLine("[DEBUG] AoB Scan compareScan AggregateException!");
+                    Debug.WriteLine(ex);
+                    Debug.WriteLine(" stringByteArray:" + stringByteArray + " mask:" + mask + " start:" + start);
+                }
+            });
+
+            while (true)
+            {
+                if (result.IsCompleted || cts.IsCancellationRequested)
+                {
+                    foreach (int r in results)
                     {
-                        foreach (int r in results)
+                        if (r > 0)
                         {
-                            if (r > 0)
-                            {
-                                Debug.Write("[DEBUG] memory scan completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
-                                return r;
-                            }
+                            Debug.Write("[DEBUG] memory scan completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+                            return r;
                         }
-                        return 0; //if we fail
                     }
+                    return 0; //if we fail
                 }
-            /*}
-            catch (OperationCanceledException e)
-            {
-                foreach (int r in results)
-                {
-                    if (r > 0)
-                    {
-                        Debug.Write("[DEBUG] memory scan completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
-                        return r;
-                    }
-                }
-                return 0; //if we fail
             }
-            finally
-            {
-                cts.Dispose();
-            }*/
         }
 
         public async Task<Int64> compareScan(Int64 start, string memCode, string[] stringByteArray, string mask, Int64 regionsize, Int64 BaseAddress)
         {
-            //try
-            //{
-                if (cts.IsCancellationRequested) return 0;
-                byte[] buffer = new byte[regionsize];
-                UIntPtr test2 = (UIntPtr)BaseAddress;
-                UIntPtr test = (UIntPtr)regionsize;
-                ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
+            if (cts.IsCancellationRequested) return 0;
+            byte[] buffer = new byte[regionsize];
+            UIntPtr test2 = (UIntPtr)BaseAddress;
+            UIntPtr test = (UIntPtr)regionsize;
+            ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
 
-                //Debug.Write("PageFindPattern starting... 0x" + start.ToString("x8") + " buffer length=" + buffer.Length + Environment.NewLine);
-                string hexString = BitConverter.ToString(buffer);
-                
-                if (Regex.IsMatch(hexString, memCode))
+            //Debug.Write("PageFindPattern starting... 0x" + start.ToString("x8") + " buffer length=" + buffer.Length + Environment.NewLine);
+            string hexString = BitConverter.ToString(buffer);
+
+            if (Regex.IsMatch(hexString, memCode))
+            {
+                //Debug.Write("I found something in 0x" + start.ToString("x8") + Environment.NewLine);
+                try
                 {
-                    //Debug.Write("I found something in 0x" + start.ToString("x8") + Environment.NewLine);
                     return await PageFindPattern(buffer, stringByteArray, mask, start);
                 }
-            /*}
-            catch (Exception ex)
-            {
-                //StackTrace st = new StackTrace(ex, true);
-                //StackFrame frame = st.GetFrame(0);
-                //Debug.Write( "ERROR ON LINE " + frame.GetFileLineNumber() + Environment.NewLine );
-            }*/
+                catch (AggregateException ex)
+                {
+                    Debug.WriteLine("[DEBUG] AoB Scan PageFindPattern AggregateException!");
+                    Debug.WriteLine(ex);
+                    Debug.WriteLine("buffer:" + buffer + " stringByteArray:" + stringByteArray + " mask:" + mask + " start:" + start);
+                }
+            }
             return 0;
         }
         
