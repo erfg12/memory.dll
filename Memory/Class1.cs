@@ -1292,13 +1292,13 @@ namespace Memory
                 //Debug.Write("DEBUG: PageFindPattern starting at 0x" + start.ToString("x8") + " with length 0x" + haystack.Length.ToString("x8") + Environment.NewLine);
 
                 //Debug.Write(ByteArrayToString(haystack));
-                for (int x = 0; x < haystack.Length; x++)
+                for (Int64 x = 0; x < haystack.Length; x++)
                 {
                     if (cts.IsCancellationRequested) break;
                     //Debug.Write("PageFindPattern now at 0x" + (start + x).ToString("x8") + Environment.NewLine);
                     if (MaskCheck(x, needle, strMask, haystack))
                     {
-                        Debug.Write("[DEBUG] FOUND ADDRESS:0x" + (x + start).ToString("x8") + " start:0x" + start.ToString("x8") + " x:" + x.ToString("x8") + " base:0x" + procs.MainModule.BaseAddress.ToString("x8") + Environment.NewLine);
+                        Debug.Write("[DEBUG] FOUND ADDRESS:0x" + (x + start).ToString("x16") + " start:0x" + start.ToString("x16") + " x:" + x.ToString("x16") + " base:0x" + procs.MainModule.BaseAddress.ToString("x16") + Environment.NewLine);
                         return (x + start);
                     }
                 }
@@ -1472,6 +1472,7 @@ namespace Memory
             gCode = getCode(start, file);
 
             Int64 theCode = (Int64)gCode;
+            Int64 startHere = 0;
 
             string memCode = LoadCode(search, file);
 
@@ -1497,7 +1498,12 @@ namespace Memory
             IntPtr proc_min_address = sys_info.minimumApplicationAddress;
             IntPtr proc_max_address = sys_info.maximumApplicationAddress;
 
-            Int64 proc_min_address_l = 0; // (Int64)procs.MainModule.BaseAddress;
+            if (theCode >= (Int64)procs.MainModule.BaseAddress)
+                startHere = (Int64)procs.MainModule.BaseAddress;
+            else
+                startHere = theCode;
+
+            Int64 proc_min_address_l = startHere;
             Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64 + proc_min_address_l;
 
             /*if (start < proc_min_address_l) { //if our start is too low, we should adjust it to main module base address
@@ -1604,7 +1610,7 @@ namespace Memory
             {
                 if (result.IsCompleted || cts.IsCancellationRequested)
                 {
-                    foreach (int r in results)
+                    foreach (Int64 r in results)
                     {
                         if (r > 0)
                         {
