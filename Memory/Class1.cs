@@ -362,51 +362,6 @@ namespace Memory
 
         private ProcessModule mainModule;
 
-        /*private UIntPtr LoadUIntPtrCode(string name, string path = "")
-        {
-            string theCode = LoadCode(name, path);
-
-            if (!theCode.Contains("+")) return (UIntPtr)(uint)Convert.ToInt32(theCode); //just return the code
-
-            UIntPtr uintValue;
-
-            string newOffset = theCode.Substring(theCode.IndexOf('+') + 1);
-
-            if (String.IsNullOrEmpty(newOffset))
-                return (UIntPtr)0;
-
-            int intToUint = 0;
-
-            if (Convert.ToInt32(newOffset, 16) > 0)
-                intToUint = Convert.ToInt32(newOffset, 16);
-
-            if (theCode.Contains("base") || theCode.Contains("main"))
-                uintValue = (UIntPtr)((Int64)procs.MainModule.BaseAddress + intToUint);
-            else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
-            {
-                string[] moduleName = theCode.Split('+');
-
-                if (modules.Count == 0 || !modules.ContainsKey(moduleName[0]))
-                    getModules();
-
-                if (modules.ContainsKey(moduleName[0]))
-                {
-                    IntPtr altModule = modules[moduleName[0]];
-                    uintValue = (UIntPtr)((Int64)altModule + intToUint);
-                }
-                else
-                {
-                    Debug.WriteLine("ERROR! Module " + moduleName[0] + " not found! Visit https://github.com/erfg12/memory.dll/wiki/List-Modules");
-                    MessageBox.Show("ERROR! Module " + moduleName[0] + " not found!");
-                    return (UIntPtr)0;
-                }
-            }
-            else
-                uintValue = (UIntPtr)intToUint;
-
-            return (UIntPtr)uintValue;
-        }*/
-
         /// <summary>
         /// Cut a string that goes on for too long or one that is possibly merged with another string.
         /// </summary>
@@ -453,11 +408,7 @@ namespace Memory
             byte[] memory = new byte[4];
 
             UIntPtr theCode;
-            //if (!LoadCode(code, file).Contains(","))
-            //    theCode = LoadUIntPtrCode(code, file);
-            //else
-                theCode = getCode(code, file);
-            //Debug.Write(theCode + Environment.NewLine);
+            theCode = getCode(code, file);
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
             {
                 float address = BitConverter.ToSingle(memory, 0);
@@ -479,15 +430,9 @@ namespace Memory
         /// <returns></returns>
         public string readString(string code, string file = "")
         {
-            //Debug.Write("readString:" + code + ", FILE:" + file + Environment.NewLine);
             byte[] memoryNormal = new byte[32];
             UIntPtr theCode;
-            //theCode = getCode(code, file);
-           // if (!LoadCode(code, file).Contains(","))
-            //    theCode = LoadUIntPtrCode(code, file);
-            //else
-                theCode = getCode(code, file);
-            //Debug.WriteLine(theCode);
+            theCode = getCode(code, file);
             if (ReadProcessMemory(pHandle, theCode, memoryNormal, (UIntPtr)32, IntPtr.Zero))
                 return Encoding.UTF8.GetString(memoryNormal);
             else
@@ -513,12 +458,7 @@ namespace Memory
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
-            //Debug.Write("readString:" + code + ", FILE:" + file + Environment.NewLine);
-            //if (!LoadCode(code, file).Contains(","))
-            //    theCode = LoadUIntPtrCode(code, file);
-            //else
             theCode = getCode(code, file);
-            //Debug.WriteLine(theCode);
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
                 return BitConverter.ToInt32(memory, 0);
             else
@@ -535,11 +475,8 @@ namespace Memory
         {
             byte[] memory = new byte[16];
             UIntPtr theCode;
-
-            //if (!LoadCode(code, file).Contains(","))
-            //    theCode = LoadUIntPtrCode(code, file);
-            //else
-                theCode = getCode(code, file);
+            
+            theCode = getCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)16, IntPtr.Zero))
                 return BitConverter.ToInt64(memory, 0);
@@ -557,10 +494,7 @@ namespace Memory
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
-            //if (!LoadCode(code, file).Contains(","))
-            //    theCode = LoadUIntPtrCode(code, file);
-            //else
-                theCode = getCode(code, file);
+            theCode = getCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
                 return BitConverter.ToUInt64(memory, 0);
@@ -579,10 +513,7 @@ namespace Memory
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
-            //if (!LoadCode(code, file).Contains(","))
-            //    theCode = LoadUIntPtrCode(code, file);
-            //else
-                theCode = getCode(code, file);
+            theCode = getCode(code, file);
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
 
@@ -603,10 +534,7 @@ namespace Memory
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
-            //if (!LoadCode(code, file).Contains(","))
-            //    theCode = LoadUIntPtrCode(code, file);
-            //else
-                theCode = getCode(code, file);
+            theCode = getCode(code, file);
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
 
@@ -627,10 +555,7 @@ namespace Memory
         {
             byte[] memory = new byte[8];
             UIntPtr theCode;
-            //if (!LoadCode(code, file).Contains(","))
-            //    theCode = LoadUIntPtrCode(code, file);
-            //else
-                theCode = getCode(code, file, 8);
+            theCode = getCode(code, file, 8);
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
 
@@ -651,10 +576,7 @@ namespace Memory
             byte[] memoryTiny = new byte[4];
 
             UIntPtr theCode;
-            //if (!LoadCode(code, file).Contains(","))
-            //    theCode = LoadUIntPtrCode(code, file);
-            //else
-                theCode = getCode(code, file);
+            theCode = getCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memoryTiny, (UIntPtr)2, IntPtr.Zero))
                 return BitConverter.ToInt32(memoryTiny, 0);
@@ -673,10 +595,7 @@ namespace Memory
             byte[] memoryTiny = new byte[4];
 
             UIntPtr theCode;
-            //if (!LoadCode(code, file).Contains(","))
-            //    theCode = LoadUIntPtrCode(code, file);
-            //else
-                theCode = getCode(code, file);
+            theCode = getCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memoryTiny, (UIntPtr)1, IntPtr.Zero))
                 return BitConverter.ToInt32(memoryTiny, 0);
@@ -738,10 +657,7 @@ namespace Memory
             int size = 4;
 
             UIntPtr theCode;
-            //if (!LoadCode(code, file).Contains(","))
-            //    theCode = LoadUIntPtrCode(code, file);
-            //else
-                theCode = getCode(code, file);
+            theCode = getCode(code, file);
 
             if (type == "float")
             {
@@ -818,10 +734,7 @@ namespace Memory
             int size = 4;
 
             UIntPtr theCode;
-            //if (!LoadCode(code, file).Contains(","))
-            //    theCode = LoadUIntPtrCode(code, file);
-            //else
-                theCode = getCode(code, file);
+            theCode = getCode(code, file);
 
             if (type == "float")
             {
@@ -866,10 +779,7 @@ namespace Memory
         public void writeBytes(string code, byte[] write, string file = "")
         {
             UIntPtr theCode;
-            //if (!LoadCode(code, file).Contains(","))
-            //    theCode = LoadUIntPtrCode(code, file);
-            //else
-                theCode = getCode(code, file);
+            theCode = getCode(code, file);
             WriteProcessMemory(pHandle, theCode, write, (UIntPtr)write.Length, IntPtr.Zero);
         }
         #endregion
@@ -1043,7 +953,6 @@ namespace Memory
             {
                 Int64 trueCode = Convert.ToInt64(newOffsets, 16);
                 IntPtr altModule = IntPtr.Zero;
-                //Debug.WriteLine("newOffsets=" + newOffsets);
                 if (theCode.Contains("base") || theCode.Contains("main"))
                     altModule = mainModule.BaseAddress;
                 else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
@@ -1062,27 +971,6 @@ namespace Memory
                     altModule = modules[theCode.Split('+')[0]];
                 return (UIntPtr)((Int64)altModule + trueCode);
             }
-            /*else
-            {
-                Int64 trueCode = Convert.ToInt64(newOffsets, 16);
-
-                if (theCode.Contains("base") || theCode.Contains("main"))
-                    ReadProcessMemory(pHandle, (UIntPtr)((Int64)mainModule.BaseAddress + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
-                {
-                    string[] moduleName = theCode.Split('+');
-                    IntPtr altModule = modules[moduleName[0]];
-                    ReadProcessMemory(pHandle, (UIntPtr)((Int64)altModule + trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                }
-                else
-                    ReadProcessMemory(pHandle, (UIntPtr)(trueCode), memoryAddress, (UIntPtr)size, IntPtr.Zero);
-
-                UInt64 num1 = BitConverter.ToUInt64(memoryAddress, 0);
-
-                UIntPtr base1 = new UIntPtr(num1);
-                num1 = BitConverter.ToUInt64(memoryAddress, 0);
-                return base1;
-            }*/
         }
 
         /// <summary>
@@ -1284,14 +1172,7 @@ namespace Memory
 
         public async Task<Int64> PageFindPattern(byte[] haystack, string[] needle, string strMask, Int64 start = 0) //for pages
         {
-            //try
-            //{
                 if (cts.IsCancellationRequested) return 0;
-                //if ( haystack.All(singleByte => singleByte == 0xFF) || haystack.All(singleByte => singleByte == 0x00))
-                //    return 0;
-                //Debug.Write("DEBUG: PageFindPattern starting at 0x" + start.ToString("x8") + " with length 0x" + haystack.Length.ToString("x8") + Environment.NewLine);
-
-                //Debug.Write(ByteArrayToString(haystack));
                 for (Int64 x = 0; x < haystack.Length; x++)
                 {
                     if (cts.IsCancellationRequested) break;
@@ -1302,10 +1183,6 @@ namespace Memory
                         return (x + start);
                     }
                 }
-            /*} catch
-            {
-                Debug.Write("PageFindPattern failed");
-            }*/
             return 0;// IntPtr.Zero;
         }
 
@@ -1404,7 +1281,7 @@ namespace Memory
             IntPtr proc_max_address = sys_info.maximumApplicationAddress;
 
             // saving the values as long ints so I won't have to do a lot of casts later
-            Int64 proc_min_address_l = (Int64)procs.MainModule.BaseAddress;
+            Int64 proc_min_address_l = (Int64)proc_min_address; //(Int64)procs.MainModule.BaseAddress;
             Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64 + proc_min_address_l;
             
             //int arrLength = 0;
@@ -1472,7 +1349,6 @@ namespace Memory
             gCode = getCode(start, file);
 
             Int64 theCode = (Int64)gCode;
-            Int64 startHere = 0;
 
             string memCode = LoadCode(search, file);
 
@@ -1498,18 +1374,8 @@ namespace Memory
             IntPtr proc_min_address = sys_info.minimumApplicationAddress;
             IntPtr proc_max_address = sys_info.maximumApplicationAddress;
 
-            if (theCode >= (Int64)procs.MainModule.BaseAddress)
-                startHere = (Int64)procs.MainModule.BaseAddress;
-            else
-                startHere = theCode;
-
-            Int64 proc_min_address_l = startHere;
+            Int64 proc_min_address_l = (Int64)proc_min_address; //(Int64)procs.MainModule.BaseAddress;
             Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64 + proc_min_address_l;
-
-            /*if (start < proc_min_address_l) { //if our start is too low, we should adjust it to main module base address
-                start = proc_min_address_l;
-                Debug.Write("AoB scan cannot start at less than main module base address, changing to " + proc_min_address_l + "." + Environment.NewLine);
-            }*/
 
             Debug.Write("[DEBUG] memory scan starting... (base:0x" + proc_min_address_l.ToString("x16") + " max:" + proc_max_address_l.ToString("x16") + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
 
@@ -1589,8 +1455,8 @@ namespace Memory
             {
                 try
                 {
+                    po.CancellationToken.ThrowIfCancellationRequested();
                     results[index] = await compareScan(pageInfoList[index][0], memCode, stringByteArray, mask, pageInfoList[index][1], pageInfoList[index][2]);
-                    //po.CancellationToken.ThrowIfCancellationRequested();
                     if (results[index] > 0)
                     {
                         cts.CancelAfter(TimeSpan.FromSeconds(2));
@@ -1598,11 +1464,21 @@ namespace Memory
                         parallelLoopState.Stop();
                     }
                 }
+                catch (OperationCanceledException ex)
+                {
+                    Debug.WriteLine("[DEBUG] AoB Scan compareScan OperationCanceledException!");
+                    Debug.WriteLine(ex);
+                    Debug.WriteLine(" stringByteArray:" + stringByteArray + " mask:" + mask + " start:" + start);
+                }
                 catch (AggregateException ex)
                 {
                     Debug.WriteLine("[DEBUG] AoB Scan compareScan AggregateException!");
                     Debug.WriteLine(ex);
                     Debug.WriteLine(" stringByteArray:" + stringByteArray + " mask:" + mask + " start:" + start);
+                }
+                finally
+                {
+                    cts.Dispose();
                 }
             });
 
@@ -1614,7 +1490,7 @@ namespace Memory
                     {
                         if (r > 0)
                         {
-                            Debug.Write("[DEBUG] memory scan completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+                            Debug.WriteLine("[DEBUG] memory scan completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")");
                             return r;
                         }
                     }
@@ -1650,53 +1526,5 @@ namespace Memory
             }
             return 0;
         }
-        
-        /*public void DumpMemory(int type = 0)
-        {
-            int procID = GetProcessId(pHandle);
-            var str = "";
-            string rawFile = Process.GetProcessById(procID).ProcessName + ".DMP";
-            string txtFile = Process.GetProcessById(procID).ProcessName + ".TXT";
-            //Debug.Write("[DEBUG] Now dumping process ID:" + procID.ToString() + " (" + Process.GetProcessById(procID).ProcessName + ")" + Environment.NewLine);
-
-            FileStream fsToDump = null;
-            if (File.Exists(rawFile))
-                fsToDump = File.Open(rawFile, FileMode.Append);
-            else
-                fsToDump = File.Create(rawFile);
-
-            //Debug.Write("[DEBUG] writing raw values to dump file.." + Environment.NewLine);
-            Process thisProcess = Process.GetCurrentProcess();
-            MiniDumpWriteDump(pHandle, procID, fsToDump.SafeFileHandle.DangerousGetHandle(),
-                 MINIDUMP_TYPE.MiniDumpWithDataSegs | MINIDUMP_TYPE.MiniDumpWithFullMemory | MINIDUMP_TYPE.MiniDumpWithHandleData | MINIDUMP_TYPE.MiniDumpFilterMemory
-            | MINIDUMP_TYPE.MiniDumpScanMemory | MINIDUMP_TYPE.MiniDumpWithUnloadedModules | MINIDUMP_TYPE.MiniDumpWithIndirectlyReferencedMemory | MINIDUMP_TYPE.MiniDumpFilterModulePaths
-            | MINIDUMP_TYPE.MiniDumpWithProcessThreadData | MINIDUMP_TYPE.MiniDumpWithPrivateReadWriteMemory | MINIDUMP_TYPE.MiniDumpWithFullMemoryInfo
-            | MINIDUMP_TYPE.MiniDumpWithThreadInfo | MINIDUMP_TYPE.MiniDumpWithCodeSegs,
-                IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
-            fsToDump.Close();
-
-            if (type == 0)
-            {
-                dumpBytes = File.ReadAllBytes(rawFile);
-                diff = Convert.ToInt32(procs.WorkingSet) - dumpBytes.Length;
-                //MessageBox.Show(diff.ToString() + " 0x" + diff.ToString("x8"));
-            }
-
-            if (type == 1)
-            {
-                //Debug.Write("[DEBUG] converting raw values to hex string values, this can take a while..." + Environment.NewLine);
-                byte[] bytes = File.ReadAllBytes(rawFile);
-                str = ByteArrayToHexString(bytes);
-            }
-
-            if (type < 2)
-                File.Delete(rawFile);
-
-            if (type == 1)
-            {
-                //Debug.Write("[DEBUG] deleting raw dump file and writing hex string values to text file..." + Environment.NewLine);
-                File.WriteAllText(txtFile, str);
-            }
-        }*/
     }
 }
