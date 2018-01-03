@@ -1455,7 +1455,8 @@ namespace Memory
             {
                 try
                 {
-                    po.CancellationToken.ThrowIfCancellationRequested();
+                    if (po.CancellationToken.IsCancellationRequested)
+                        po.CancellationToken.ThrowIfCancellationRequested();
                     results[index] = await compareScan(pageInfoList[index][0], memCode, stringByteArray, mask, pageInfoList[index][1], pageInfoList[index][2]);
                     if (results[index] > 0)
                     {
