@@ -1479,7 +1479,7 @@ namespace Memory
                     {
                         if (po.CancellationToken.IsCancellationRequested)
                             po.CancellationToken.ThrowIfCancellationRequested();
-                        cts.CancelAfter(TimeSpan.FromSeconds(1));
+                        cts.CancelAfter(TimeSpan.FromSeconds(2));
                         //Debug.Write("STOPPING PARALLEL LOOP STATE!" + Environment.NewLine);
                         parallelLoopState.Stop();
                     }
