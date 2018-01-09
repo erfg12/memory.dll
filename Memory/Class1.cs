@@ -1147,6 +1147,14 @@ namespace Memory
             return hex.ToString();
         }
 
+        public string mSize()
+        {
+            if (is64bit())
+                return ("x16");
+            else
+                return ("x8");
+        }
+
         /// <summary>
         /// Convert a byte array to hex values in a string.
         /// </summary>
@@ -1179,7 +1187,7 @@ namespace Memory
                     //Debug.Write("PageFindPattern now at 0x" + (start + x).ToString("x8") + Environment.NewLine);
                     if (MaskCheck(x, needle, strMask, haystack))
                     {
-                        Debug.Write("[DEBUG] FOUND ADDRESS:0x" + (x + start).ToString("x16") + " start:0x" + start.ToString("x16") + " x:" + x.ToString("x16") + " base:0x" + procs.MainModule.BaseAddress.ToString("x16") + Environment.NewLine);
+                        Debug.WriteLine("[DEBUG] FOUND ADDRESS: 0x" + (x + start).ToString(mSize())/* + " start:0x" + start.ToString("x16") + " x:" + x.ToString("x16") + " base:0x" + procs.MainModule.BaseAddress.ToString("x16")*/);
                         return (x + start);
                     }
                 }
@@ -1377,7 +1385,12 @@ namespace Memory
             Int64 proc_min_address_l = (Int64)proc_min_address; //(Int64)procs.MainModule.BaseAddress;
             Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64 + proc_min_address_l;
 
-            Debug.Write("[DEBUG] memory scan starting... (base:0x" + proc_min_address_l.ToString("x16") + " max:" + proc_max_address_l.ToString("x16") + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+            if (theCode < proc_min_address_l)
+                theCode = proc_min_address_l;
+            if (length > proc_max_address_l)
+                length = proc_max_address_l;
+
+            Debug.Write("[DEBUG] memory scan starting... (min:0x" + proc_min_address_l.ToString(mSize()) + " max:0x" + proc_max_address_l.ToString(mSize()) + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
 
             if (is64bit())
             {
@@ -1460,10 +1473,14 @@ namespace Memory
                     {
                         if (po.CancellationToken.IsCancellationRequested)
                             po.CancellationToken.ThrowIfCancellationRequested();
-                        //cts.CancelAfter(TimeSpan.FromSeconds(2));
+                        cts.CancelAfter(TimeSpan.FromSeconds(1));
                         //Debug.Write("STOPPING PARALLEL LOOP STATE!" + Environment.NewLine);
                         parallelLoopState.Stop();
                     }
+                }
+                catch (ObjectDisposedException ex)
+                {
+                    Debug.WriteLine(ex);
                 }
                 catch (OperationCanceledException ex)
                 {
@@ -1477,10 +1494,10 @@ namespace Memory
                     Debug.WriteLine(ex);
                     Debug.WriteLine(" stringByteArray:" + stringByteArray + " mask:" + mask + " start:" + start);
                 }
-                finally
+                /*finally
                 {
                     cts.Dispose();
-                }
+                }*/
             });
 
             while (true)
