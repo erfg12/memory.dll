@@ -190,10 +190,11 @@ namespace Memory
         /// <summary>
         /// Open the PC game process with all security and access rights.
         /// </summary>
-        /// <param name="id">You can use the getProcIDFromName function to get this.</param>
+        /// <param name="proc">Use process name or process ID here.</param>
         /// <returns></returns>
-        public bool OpenProcess(int id)
+        public bool OpenProcess(string proc)
         {
+            int id = 0;
             if (isAdmin() == false)
             {
                 Debug.Write("WARNING: You are NOT running this program as admin!! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
@@ -204,6 +205,11 @@ namespace Memory
             try
             {
                 Process.EnterDebugMode();
+                if (Regex.IsMatch(proc, @"^[a-zA-Z]+$"))
+                    id = getProcIDFromName(proc);
+                else
+                    id = Convert.ToInt32(proc);
+
                 if (id != 0)
                 { //getProcIDFromName returns 0 if there was a problem
                     procs = Process.GetProcessById(id);
