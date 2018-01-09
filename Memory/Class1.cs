@@ -1455,12 +1455,12 @@ namespace Memory
             {
                 try
                 {
-                    if (po.CancellationToken.IsCancellationRequested)
-                        po.CancellationToken.ThrowIfCancellationRequested();
                     results[index] = await compareScan(pageInfoList[index][0], memCode, stringByteArray, mask, pageInfoList[index][1], pageInfoList[index][2]);
                     if (results[index] > 0)
                     {
-                        cts.CancelAfter(TimeSpan.FromSeconds(2));
+                        if (po.CancellationToken.IsCancellationRequested)
+                            po.CancellationToken.ThrowIfCancellationRequested();
+                        //cts.CancelAfter(TimeSpan.FromSeconds(2));
                         //Debug.Write("STOPPING PARALLEL LOOP STATE!" + Environment.NewLine);
                         parallelLoopState.Stop();
                     }
