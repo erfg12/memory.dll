@@ -311,6 +311,25 @@ namespace Memory
         }
 
         /// <summary>
+        /// Convert a byte array to a literal string
+        /// </summary>
+        /// <param name="buffer">Byte array to convert to byte string</param>
+        /// <returns></returns>
+        public string byteArrayToString(byte[] buffer)
+        {
+            StringBuilder build = new StringBuilder();
+            int i = 1;
+            foreach (byte b in buffer)
+            {
+                build.Append(String.Format("0x{0:X}", b));
+                if (i < buffer.Count())
+                    build.Append(" ");
+                i++;
+            }
+            return build.ToString();
+        }
+
+        /// <summary>
         /// Get code from ini file.
         /// </summary>
         /// <param name="name">label for address or code</param>
