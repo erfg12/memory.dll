@@ -871,7 +871,17 @@ namespace Memory
                         altModule = (IntPtr)Int32.Parse(theAddr, NumberStyles.HexNumber);
                     }
                     else
-                        altModule = modules[moduleName[0]];
+                    {
+                        try
+                        {
+                            altModule = modules[moduleName[0]];
+                        }
+                        catch
+                        {
+                            Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
+                            Debug.WriteLine("Modules: " + string.Join(",", modules));
+                        }
+                    }
                     ReadProcessMemory(pHandle, (UIntPtr)((int)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
                 }
                 else
@@ -906,7 +916,17 @@ namespace Memory
                         altModule = (IntPtr)Int32.Parse(theAddr, NumberStyles.HexNumber);
                     }
                     else
-                        altModule = modules[moduleName[0]];
+                    {
+                        try
+                        {
+                            altModule = modules[moduleName[0]];
+                        }
+                        catch
+                        {
+                            Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
+                            Debug.WriteLine("Modules: " + string.Join(",", modules));
+                        }
+                    }
                 }
                 else
                     altModule = modules[theCode.Split('+')[0]];
@@ -956,7 +976,17 @@ namespace Memory
                     if (!moduleName[0].Contains(".dll") && !moduleName[0].Contains(".exe"))
                         altModule = (IntPtr)Int64.Parse(moduleName[0], System.Globalization.NumberStyles.HexNumber);
                     else
-                        altModule = modules[moduleName[0]];
+                    {
+                        try
+                        {
+                            altModule = modules[moduleName[0]];
+                        }
+                        catch
+                        {
+                            Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
+                            Debug.WriteLine("Modules: " + string.Join(",", modules));
+                        }
+                    }
                     ReadProcessMemory(pHandle, (UIntPtr)((Int64)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
                 }
                 else
@@ -990,7 +1020,17 @@ namespace Memory
                         altModule = (IntPtr)Int64.Parse(theAddr, NumberStyles.HexNumber);
                     }
                     else
-                        altModule = modules[moduleName[0]];
+                    {
+                        try
+                        {
+                            altModule = modules[moduleName[0]];
+                        }
+                        catch
+                        {
+                            Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
+                            Debug.WriteLine("Modules: " + string.Join(",", modules));
+                        }
+                    }
                 }
                 else
                     altModule = modules[theCode.Split('+')[0]];
