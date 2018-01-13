@@ -350,11 +350,18 @@ namespace Memory
 
         private int LoadIntCode(string name, string path)
         {
-            int intValue = Convert.ToInt32(LoadCode(name, path), 16);
-            if (intValue >= 0)
-                return intValue;
-            else
+            try
+            {
+                int intValue = Convert.ToInt32(LoadCode(name, path), 16);
+                if (intValue >= 0)
+                    return intValue;
+                else
+                    return 0;
+            } catch
+            {
+                Debug.WriteLine("ERROR: LoadIntCode function crashed!");
                 return 0;
+            }
         }
 
         /// <summary>
