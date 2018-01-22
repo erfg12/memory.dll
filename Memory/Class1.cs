@@ -28,6 +28,8 @@ namespace Memory
             Int32 dwProcessId
             );
 
+#if WINXP
+#else
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION32 lpBuffer, int dwLength);
 
@@ -35,14 +37,15 @@ namespace Memory
         static extern int VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION64 lpBuffer, int dwLength);
 
         [DllImport("kernel32.dll")]
+        static extern void GetSystemInfo(out SYSTEM_INFO lpSystemInfo);
+#endif
+
+        [DllImport("kernel32.dll")]
         static extern IntPtr OpenThread(ThreadAccess dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
         [DllImport("kernel32.dll")]
         static extern uint SuspendThread(IntPtr hThread);
         [DllImport("kernel32.dll")]
         static extern int ResumeThread(IntPtr hThread);
-
-        [DllImport("kernel32.dll")]
-        static extern void GetSystemInfo(out SYSTEM_INFO lpSystemInfo);
 
         [DllImport("dbghelp.dll")]
         static extern bool MiniDumpWriteDump(
@@ -157,8 +160,8 @@ namespace Memory
         const uint MEM_COMMIT = 0x00001000;
         const uint MEM_RESERVE = 0x00002000;
         const uint PAGE_READWRITE = 4;
-        #endregion
-
+#endregion
+        
         /// <summary>
         /// The process handle that was opened. (Use OpenProcess function to populate this variable)
         /// </summary>
@@ -428,7 +431,7 @@ namespace Memory
             return sb.ToString();
         }
 
-        #region readMemory
+#region readMemory
         /// <summary>
         /// Read a float value from an address.
         /// </summary>
@@ -673,9 +676,9 @@ namespace Memory
             else
                 return "";
         }
-        #endregion
+#endregion
 
-        #region writeMemory
+#region writeMemory
         ///<summary>
         ///Write to memory address. See https://github.com/erfg12/memory.dll/wiki/writeMemory() for more information.
         ///</summary>
@@ -814,7 +817,7 @@ namespace Memory
             theCode = getCode(code, file);
             WriteProcessMemory(pHandle, theCode, write, (UIntPtr)write.Length, IntPtr.Zero);
         }
-        #endregion
+#endregion
 
         /// <summary>
         /// Convert code from string to real address. If path is not blank, will pull from ini file.
@@ -1151,10 +1154,13 @@ namespace Memory
             }
         }
 
+#if WINXP
+#else
         async Task PutTaskDelay(int delay)
         {
             await Task.Delay(delay);
         }
+#endif
 
         void AppendAllBytes(string path, byte[] bytes)
         {
@@ -1171,6 +1177,49 @@ namespace Memory
             return newArray;
         }
 
+        public string mSize()
+        {
+            if (is64bit())
+                return ("x16");
+            else
+                return ("x8");
+        }
+
+        /// <summary>
+        /// Convert a byte array to hex values in a string.
+        /// </summary>
+        /// <param name="ba">your byte array to convert</param>
+        /// <returns></returns>
+        public static string ByteArrayToHexString(byte[] ba)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            int i = 1;
+            foreach (byte b in ba)
+            {
+                if (i == 16)
+                {
+                    hex.AppendFormat("{0:x2}{1}", b, Environment.NewLine);
+                    i = 0;
+                }
+                else
+                    hex.AppendFormat("{0:x2} ", b);
+                i++;
+            }
+            return hex.ToString().ToUpper();
+        }
+
+        public static string ByteArrayToString(byte[] ba)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            foreach (byte b in ba)
+            {
+                hex.AppendFormat("{0:x2} ", b);
+            }
+            return hex.ToString();
+        }
+
+#if WINXP
+#else
         private bool MaskCheck(Int64 nOffset, string[] btPattern, string strMask, byte[] dumpRegion)
         {
             if (cts.IsCancellationRequested) return false;
@@ -1207,47 +1256,6 @@ namespace Memory
                     if (!theCode.Equals(theCode2)) return false;
             }
             return true;
-        }
-
-        public static string ByteArrayToString(byte[] ba)
-        {
-            StringBuilder hex = new StringBuilder(ba.Length * 2);
-            foreach (byte b in ba)
-            {
-                hex.AppendFormat("{0:x2} ", b);
-            }
-            return hex.ToString();
-        }
-
-        public string mSize()
-        {
-            if (is64bit())
-                return ("x16");
-            else
-                return ("x8");
-        }
-
-        /// <summary>
-        /// Convert a byte array to hex values in a string.
-        /// </summary>
-        /// <param name="ba">your byte array to convert</param>
-        /// <returns></returns>
-        public static string ByteArrayToHexString(byte[] ba)
-        {
-            StringBuilder hex = new StringBuilder(ba.Length * 2);
-            int i = 1;
-            foreach (byte b in ba)
-            {
-                if (i == 16)
-                {
-                    hex.AppendFormat("{0:x2}{1}", b, Environment.NewLine);
-                    i = 0;
-                }
-                else
-                    hex.AppendFormat("{0:x2} ", b);
-                i++;
-            }
-            return hex.ToString().ToUpper();
         }
 
         public async Task<Int64> PageFindPattern(byte[] haystack, string[] needle, string strMask, Int64 start = 0) //for pages
@@ -1347,7 +1355,7 @@ namespace Memory
         }
 
         int diff = 0;
-
+        
         /// <summary>
         /// Dump memory page by page to a dump.dmp file. Can be used with Cheat Engine.
         /// </summary>
@@ -1616,5 +1624,6 @@ namespace Memory
             }
             return 0;
         }
+#endif
     }
 }
