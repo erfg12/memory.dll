@@ -190,6 +190,17 @@ namespace Memory
             MiniDumpWithCodeSegs = 0x00002000
         }
 
+        bool IsDigitsOnly(string str)
+        {
+            foreach (char c in str)
+            {
+                if (c < '0' || c > '9')
+                    return false;
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// Open the PC game process with all security and access rights.
         /// </summary>
@@ -208,7 +219,7 @@ namespace Memory
             try
             {
                 Process.EnterDebugMode();
-                if (Regex.IsMatch(proc, @"^[a-zA-Z]+$"))
+                if (!IsDigitsOnly(proc))
                     id = getProcIDFromName(proc);
                 else
                     id = Convert.ToInt32(proc);
