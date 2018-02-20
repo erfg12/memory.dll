@@ -504,6 +504,24 @@ namespace Memory
 
         #region readMemory
         /// <summary>
+        /// Reads up to `length ` bytes from an address.
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="length">The maximum bytes to read.</param>
+        /// <param name="file">path and name of ini file.</param>
+        /// <returns>The bytes read or null</returns>
+        public byte[] readBytes(string code, long length, string file = "")
+        {
+            byte[] memory = new byte[length];
+            UIntPtr theCode = getCode(code, file);
+
+            if (!ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)length, IntPtr.Zero))
+                return null;
+
+            return memory;
+        }
+
+        /// <summary>
         /// Read a float value from an address.
         /// </summary>
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
