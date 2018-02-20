@@ -510,7 +510,7 @@ namespace Memory
         /// <param name="length">The maximum bytes to read.</param>
         /// <param name="file">path and name of ini file.</param>
         /// <returns>The bytes read or null</returns>
-        public byte[] readByteArray(string code, long length, string file = "")
+        public byte[] readBytes(string code, long length, string file = "")
         {
             byte[] memory = new byte[length];
             UIntPtr theCode = getCode(code, file);
