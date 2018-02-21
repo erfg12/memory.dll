@@ -552,12 +552,12 @@ namespace Memory
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <returns></returns>
-        public string readString(string code, string file = "")
+        public string readString(string code, string file = "", int length = 32)
         {
-            byte[] memoryNormal = new byte[32];
+            byte[] memoryNormal = new byte[length];
             UIntPtr theCode;
             theCode = getCode(code, file);
-            if (ReadProcessMemory(pHandle, theCode, memoryNormal, (UIntPtr)32, IntPtr.Zero))
+            if (ReadProcessMemory(pHandle, theCode, memoryNormal, (UIntPtr)length, IntPtr.Zero))
                 return Encoding.UTF8.GetString(memoryNormal);
             else
                 return "";
