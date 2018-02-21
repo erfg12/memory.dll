@@ -551,6 +551,7 @@ namespace Memory
         /// </summary>
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        /// <param name="length">length of bytes to read (OPTIONAL)</param>
         /// <returns></returns>
         public string readString(string code, string file = "", int length = 32)
         {
