@@ -1702,7 +1702,7 @@ namespace Memory
         /// <returns></returns>
         public async Task<Int64> AoBScan(string code, Int64 end, string search, string file = "")
         {
-            Int64 start = Convert.ToInt64(getCode(code, file));
+            Int64 start = (Int64)(getCode(code, file).ToUInt64());
             Int64 ar = 0;
             var pageInfoList = new List<List<long>>();
 
