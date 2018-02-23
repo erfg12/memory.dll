@@ -172,6 +172,10 @@ namespace Memory
         [DllImport("kernel32.dll")]
         private static extern bool WriteProcessMemory(IntPtr hProcess, UIntPtr lpBaseAddress, byte[] lpBuffer, UIntPtr nSize, IntPtr lpNumberOfBytesWritten);
 
+        // Added to avoid casting to UIntPtr
+        [DllImport("kernel32.dll")]
+        private static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, UIntPtr nSize, out IntPtr lpNumberOfBytesWritten);
+
         [DllImport("kernel32")]
         public static extern IntPtr CreateRemoteThread(
           IntPtr hProcess,
@@ -197,6 +201,7 @@ namespace Memory
         const int PROCESS_VM_READ = 0x0010;
 
         // used for memory allocation
+        const uint MEM_FREE = 0x10000;
         const uint MEM_COMMIT = 0x00001000;
         const uint MEM_RESERVE = 0x00002000;
 
@@ -907,6 +912,17 @@ namespace Memory
             theCode = getCode(code, file);
             WriteProcessMemory(pHandle, theCode, write, (UIntPtr)write.Length, IntPtr.Zero);
         }
+
+        /// <summary>
+        /// Write byte array to address
+        /// </summary>
+        /// <param name="address">Address to write to</param>
+        /// <param name="write">Byte array to write to</param>
+        public void writeBytes(IntPtr address, byte[] write)
+        {
+            WriteProcessMemory(pHandle, address, write, (UIntPtr)write.Length, out IntPtr bytesRead);
+        }
+
         #endregion
 
         /// <summary>
@@ -1189,6 +1205,179 @@ namespace Memory
                 CloseHandle(hThread);
 
             return;
+        }
+
+        /// <summary>
+        /// Creates a code cave to write custom opcodes in target process
+        /// </summary>
+        /// <param name="code">Address to create the trampoline</param>
+        /// <param name="newBytes">The opcodes to write in the code cave</param>
+        /// <param name="replaceCount">The number of bytes being replaced</param>
+        /// <param name="size">size of the allocated region</param>
+        /// <param name="file">ini file to look in</param>
+        /// <remarks>Please ensure that you use the proper replaceCount
+        /// if you replace halfway in an instruction you may cause bad things</remarks>
+        /// <returns>IntPtr to created code cave for use for later deallocation</returns>
+        public IntPtr CreateCodeCave(string code, byte[] newBytes, int replaceCount, int size = 0x10000, string file = "")
+        {
+            if (replaceCount < 5)
+                return IntPtr.Zero; // returning IntPtr.Zero instead of throwing an exception
+                                    // to better match existing code
+
+            UIntPtr theCode;
+            theCode = getCode(code, file);
+            IntPtr address = new IntPtr((long)theCode);
+
+            // if x64 we need to try to allocate near the address so we dont run into the +-2GB limit of the 0xE9 jmp
+
+            IntPtr caveAddress = IntPtr.Zero;
+            IntPtr prefered = address;
+
+            for(var i = 0; i < 10 && caveAddress == IntPtr.Zero; i++)
+            {
+                caveAddress = VirtualAllocEx(pHandle, FindFreeBlockForRegion(prefered, (uint)newBytes.Length),
+                                             (uint)size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+
+                if (caveAddress == IntPtr.Zero)
+                    prefered = IntPtr.Add(prefered, 0x10000);
+            }
+
+            // Failed to allocate memory around the address we wanted let windows handle it and hope for the best?
+            if (caveAddress == IntPtr.Zero)
+                caveAddress = VirtualAllocEx(pHandle, IntPtr.Zero, (uint)size, MEM_COMMIT | MEM_RESERVE,
+                                             PAGE_EXECUTE_READWRITE);
+
+            int nopsNeeded = replaceCount > 5 ? replaceCount - 5 : 0;
+
+            // (to - from - 5)
+            int offset = (int)((long)caveAddress - (long)address - 5);
+
+            byte[] jmpBytes = new byte[5 + nopsNeeded];
+            jmpBytes[0] = 0xE9;
+            BitConverter.GetBytes(offset).CopyTo(jmpBytes, 1);
+
+            for(var i = 5; i < jmpBytes.Length; i++)
+            {
+                jmpBytes[i] = 0x90;
+            }
+            writeBytes(address, jmpBytes);
+
+            byte[] caveBytes = new byte[5 + newBytes.Length];
+            offset = (int)(((long)address + jmpBytes.Length) - ((long)caveAddress + newBytes.Length) - 5);
+
+            newBytes.CopyTo(caveBytes, 0);
+            caveBytes[newBytes.Length] = 0xE9;
+            BitConverter.GetBytes(offset).CopyTo(caveBytes, newBytes.Length + 1);
+
+            writeBytes(caveAddress, caveBytes);
+
+            return caveAddress;
+        }
+
+        private IntPtr FindFreeBlockForRegion(IntPtr baseAddress, uint size)
+        {
+            IntPtr minAddress = IntPtr.Subtract(baseAddress, 0x70000000);
+            IntPtr maxAddress = IntPtr.Add(baseAddress, 0x70000000);
+
+            IntPtr ret = IntPtr.Zero;
+            IntPtr tmpAddress = IntPtr.Zero;
+
+            GetSystemInfo(out SYSTEM_INFO si);
+
+            if (Is64Bit)
+            {
+                if ((long)minAddress > (long)si.maximumApplicationAddress ||
+                    (long)minAddress < (long)si.minimumApplicationAddress)
+                    minAddress = si.minimumApplicationAddress;
+
+                if ((long)maxAddress < (long)si.minimumApplicationAddress ||
+                    (long)maxAddress > (long)si.maximumApplicationAddress)
+                    maxAddress = si.maximumApplicationAddress;
+            }
+            else
+            {
+                minAddress = si.minimumApplicationAddress;
+                maxAddress = si.maximumApplicationAddress;
+            }
+
+            MEMORY_BASIC_INFORMATION mbi;
+
+            IntPtr current = minAddress;
+            IntPtr previous = current;
+
+            while (VirtualQueryEx(pHandle, current, out mbi).ToUInt64() != 0)
+            {
+                if ((long)mbi.BaseAddress > (long)maxAddress)
+                    return IntPtr.Zero;  // No memory found, let windows handle
+
+                if (mbi.State == MEM_FREE && mbi.RegionSize > size)
+                {
+                    if ((long)mbi.BaseAddress % si.allocationGranularity > 0)
+                    {
+                        // The whole size can not be used
+                        tmpAddress = mbi.BaseAddress;
+                        int offset = (int)(si.allocationGranularity -
+                                           ((long)tmpAddress % si.allocationGranularity));
+
+                        // Check if there is enough left
+                        if((mbi.RegionSize - offset) >= size)
+                        {
+                            // yup there is enough
+                            tmpAddress = IntPtr.Add(tmpAddress, offset);
+
+                            if((long)tmpAddress < (long)baseAddress)
+                            {
+                                tmpAddress = IntPtr.Add(tmpAddress, (int)(mbi.RegionSize - offset - size));
+
+                                if ((long)tmpAddress > (long)baseAddress)
+                                    tmpAddress = baseAddress;
+
+                                // decrease tmpAddress until its alligned properly
+                                tmpAddress = IntPtr.Subtract(tmpAddress, (int)((long)tmpAddress % si.allocationGranularity));
+                            }
+
+                            // if the difference is closer then use that
+                            if (Math.Abs((long)tmpAddress - (long)baseAddress) < Math.Abs((long)ret - (long)baseAddress))
+                                ret = tmpAddress;
+                        }
+                    }
+                    else
+                    {
+                        tmpAddress = mbi.BaseAddress;
+
+                        if((long)tmpAddress < (long)baseAddress) // try to get it the cloest possible 
+                                                                 // (so to the end of the region - size and
+                                                                 // aligned by system allocation granularity)
+                        {
+                            tmpAddress = IntPtr.Add(tmpAddress, (int)(mbi.RegionSize - size));
+
+                            if ((long)tmpAddress > (long)baseAddress)
+                                tmpAddress = baseAddress;
+
+                            // decrease until aligned properly
+                            tmpAddress =
+                                IntPtr.Subtract(tmpAddress, (int)((long)tmpAddress % si.allocationGranularity));
+                        }
+
+                        if (Math.Abs((long)tmpAddress - (long)baseAddress) < Math.Abs((long)ret - (long)baseAddress))
+                            ret = tmpAddress;
+                    }
+                }
+
+                if (mbi.RegionSize % si.allocationGranularity > 0)
+                    mbi.RegionSize += si.allocationGranularity - (mbi.RegionSize % si.allocationGranularity);
+
+                previous = current;
+                current = IntPtr.Add(mbi.BaseAddress, (int)mbi.RegionSize);
+
+                if ((long)current > (long)maxAddress)
+                    return ret;
+
+                if ((long)previous > (long)current)
+                    return ret; // Overflow
+            }
+
+            return ret;
         }
 
         [Flags]
