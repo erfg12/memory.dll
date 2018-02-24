@@ -259,6 +259,8 @@ namespace Memory
             return true;
         }
 
+        List<int> openProcs = new List<int>();
+
         /// <summary>
         /// Open the PC game process with all security and access rights.
         /// </summary>
@@ -269,14 +271,12 @@ namespace Memory
             int id = 0;
             if (isAdmin() == false)
             {
-                Debug.Write("WARNING: You are NOT running this program as admin!! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
-                MessageBox.Show("WARNING: You are NOT running this program as admin!!");
-            } else
-                Debug.Write("Program is operating at Administrative level. Now opening process id #" + id + "." + Environment.NewLine);
+                Debug.Write("WARNING: You are NOT running this program as admin! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
+                MessageBox.Show("WARNING: You are NOT running this program as admin!");
+            }
 
             try
             {
-                Process.EnterDebugMode();
                 if (!IsDigitsOnly(proc))
                     id = getProcIDFromName(proc);
                 else
@@ -291,16 +291,24 @@ namespace Memory
                     return false;
 
                 if (procs.Responding == false)
+                {
+                    if (openProcs.Contains(id))
+                        openProcs.Remove(id); //proc is dead, remove it if we have it
                     return false;
+                }
+
+                if (openProcs.Contains(id)) //already open
+                    return true;
 
                 pHandle = OpenProcess(0x1F0FFF, true, id);
+                Process.EnterDebugMode();
 
                 if (pHandle == IntPtr.Zero)
                 {
                     var eCode = Marshal.GetLastWin32Error();
                 }
 
-                Debug.Write("Now storing module addresses for process id #" + id + "." + Environment.NewLine);
+                openProcs.Add(id);
 
                 mainModule = procs.MainModule;
 
@@ -308,7 +316,9 @@ namespace Memory
                 
                 // Lets set the process to 64bit or not here (cuts down on api calls)
                 Is64Bit = Environment.Is64BitOperatingSystem && (IsWow64Process(pHandle, out bool retVal) && !retVal);
-                
+
+                Debug.WriteLine("Program is operating at Administrative level. Process #" + id + " is open and modules are stored.");
+
                 return true;
             }
             catch { return false; }
@@ -804,6 +814,13 @@ namespace Memory
                 memory = new byte[1];
                 memory[0] = Convert.ToByte(write, 16);
                 size = 1;
+            }
+            else if (type == "2bytes")
+            {
+                memory = new byte[2];
+                memory[0] = (byte)(Convert.ToInt32(write) % 256);
+                memory[1] = (byte)(Convert.ToInt32(write) / 256);
+                size = 2;
             }
             else if (type == "bytes")
             {
