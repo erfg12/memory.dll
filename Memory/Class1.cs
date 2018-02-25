@@ -392,7 +392,7 @@ namespace Memory
 
             foreach (Process theprocess in processlist)
             {
-                if (theprocess.ProcessName.Equals(name)) //find (name).exe in the process list (use task manager to find the name)
+                if (theprocess.ProcessName.Equals(name, StringComparison.CurrentCultureIgnoreCase)) //find (name).exe in the process list (use task manager to find the name)
                     return theprocess.Id;
             }
 
