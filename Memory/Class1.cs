@@ -269,7 +269,7 @@ namespace Memory
         public bool OpenProcess(string proc)
         {
             int id = 0;
-            if (isAdmin() == false)
+            if (!isAdmin())
             {
                 Debug.Write("WARNING: You are NOT running this program as admin! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
                 MessageBox.Show("WARNING: You are NOT running this program as admin!");
@@ -290,7 +290,7 @@ namespace Memory
                 else
                     return false;
 
-                if (procs.Responding == false)
+                if (!procs.Responding)
                 {
                     if (openProcs.Contains(id))
                         openProcs.Remove(id); //proc is dead, remove it if we have it
@@ -424,7 +424,7 @@ namespace Memory
         /// <param name="name">label for address or code</param>
         /// <param name="file">path and name of ini file</param>
         /// <returns></returns>
-        public string LoadCode(string name, string file/*, bool isString*/) //version 1.0.4 added isString
+        public string LoadCode(string name, string file)
         {
             StringBuilder returnCode = new StringBuilder(1024);
             uint read_ini_result;
@@ -474,7 +474,7 @@ namespace Memory
                 //MessageBox.Show("[Client] Pipe connection established");
                 using (StreamWriter sw = new StreamWriter(pipeStream))
                 {
-                    if (sw.AutoFlush == false)
+                    if (!sw.AutoFlush)
                         sw.AutoFlush = true;
                     sw.WriteLine(func);
                 }
@@ -824,7 +824,7 @@ namespace Memory
             }
             else if (type == "bytes")
             {
-                if (write.Contains(",") || write.Contains(" "))
+                if (write.Contains(",") || write.Contains(" ")) //check if it's a proper array
                 {
                     string[] stringBytes;
                     if (write.Contains(","))
@@ -841,7 +841,7 @@ namespace Memory
                     }
                     size = stringBytes.Count();
                 }
-                else //somehow we wrote 1 byte instead of a byte array
+                else //wasnt array, only 1 byte
                 {
                     memory = new byte[1];
                     memory[0] = Convert.ToByte(write, 16);
@@ -860,10 +860,7 @@ namespace Memory
                 size = write.Length;
             }
             //Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:" + theCode + "] " + String.Join(",", memory) + Environment.NewLine);
-            if (WriteProcessMemory(pHandle, theCode, memory, (UIntPtr)size, IntPtr.Zero))
-                return true;
-            else
-                return false;
+            return WriteProcessMemory(pHandle, theCode, memory, (UIntPtr)size, IntPtr.Zero);
         }
 
         /// <summary>
@@ -875,7 +872,7 @@ namespace Memory
         /// <param name="moveQty">quantity to move</param>
         /// <param name="file">path and name of .ini file (OPTIONAL)</param>
         /// <returns></returns>
-        public bool writeMove(string code, string type, string write, int moveQty, string file = "") //version v1.0.3
+        public bool writeMove(string code, string type, string write, int moveQty, string file = "")
         {
             byte[] memory = new byte[4];
             int size = 4;
@@ -911,10 +908,7 @@ namespace Memory
 
             Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:[O]" + theCode + " [N]" + newCode + " MQTY:" + moveQty + "] " + String.Join(",", memory) + Environment.NewLine);
             Thread.Sleep(1000);
-            if (WriteProcessMemory(pHandle, newCode, memory, (UIntPtr)size, IntPtr.Zero))
-                return true;
-            else
-                return false;
+            return WriteProcessMemory(pHandle, newCode, memory, (UIntPtr)size, IntPtr.Zero);
         }
 
         /// <summary>
@@ -1193,7 +1187,7 @@ namespace Memory
                     return;
             }
 
-            if (procs.Responding == false)
+            if (!procs.Responding)
                 return;
 
             int LenWrite = strDLLName.Length + 1;
@@ -1468,7 +1462,7 @@ namespace Memory
 
         public byte[] fileToBytes(string path, bool dontDelete = false) {
             byte[] newArray = File.ReadAllBytes(path);
-            if (dontDelete == false)
+            if (!dontDelete)
                 File.Delete(path);
             return newArray;
         }
