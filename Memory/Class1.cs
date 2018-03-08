@@ -430,7 +430,7 @@ namespace Memory
             uint read_ini_result;
 
             if (file != "")
-                read_ini_result = GetPrivateProfileString("codes", name, "", returnCode, (uint)file.Length, file);
+                read_ini_result = GetPrivateProfileString("codes", name, "", returnCode, (uint)returnCode.Capacity, file);
             else
                 returnCode.Append(name);
 
