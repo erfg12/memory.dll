@@ -1218,6 +1218,8 @@ namespace Memory
             return;
         }
 
+        #if WINXP
+        #else
         /// <summary>
         /// Creates a code cave to write custom opcodes in target process
         /// </summary>
@@ -1284,7 +1286,7 @@ namespace Memory
 
             return caveAddress;
         }
-
+        
         private IntPtr FindFreeBlockForRegion(IntPtr baseAddress, uint size)
         {
             IntPtr minAddress = IntPtr.Subtract(baseAddress, 0x70000000);
@@ -1390,6 +1392,7 @@ namespace Memory
 
             return ret;
         }
+#endif
 
         [Flags]
         public enum ThreadAccess : int
