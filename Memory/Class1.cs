@@ -297,8 +297,15 @@ namespace Memory
                     return false;
                 }
 
-                if (openProcs.Contains(id)) //already open
+                if (openProcs.Contains(id))
+                {
+                    //Debug.WriteLine("Proccess " + id + " already open!");
                     return true;
+                }
+                else
+                {
+                    openProcs.Add(id);
+                }
 
                 pHandle = OpenProcess(0x1F0FFF, true, id);
                 Process.EnterDebugMode();
@@ -308,15 +315,13 @@ namespace Memory
                     var eCode = Marshal.GetLastWin32Error();
                 }
 
-                openProcs.Add(id);
-
                 mainModule = procs.MainModule;
 
                 getModules();
                 
                 // Lets set the process to 64bit or not here (cuts down on api calls)
                 Is64Bit = Environment.Is64BitOperatingSystem && (IsWow64Process(pHandle, out bool retVal) && !retVal);
-
+                
                 Debug.WriteLine("Program is operating at Administrative level. Process #" + id + " is open and modules are stored.");
 
                 return true;
@@ -1170,7 +1175,12 @@ namespace Memory
         /// </summary>
         public void closeProcess()
         {
+            if (pHandle == null)
+                return;
+
             CloseHandle(pHandle);
+            openProcs.Remove(procID);
+            procID = 0;
         }
 
         /// <summary>
