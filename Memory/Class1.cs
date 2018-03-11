@@ -225,8 +225,7 @@ namespace Memory
         /// </summary>
         public IntPtr pHandle;
 
-        public Process procs = null;
-        public int procID = 0;
+        public Process theProc = null;
         public byte[] dumpBytes;
 
         internal enum MINIDUMP_TYPE
@@ -259,8 +258,6 @@ namespace Memory
             return true;
         }
 
-        List<int> openProcs = new List<int>();
-
         /// <summary>
         /// Open the PC game process with all security and access rights.
         /// </summary>
@@ -284,28 +281,21 @@ namespace Memory
 
                 if (id != 0)
                 { //getProcIDFromName returns 0 if there was a problem
-                    procs = Process.GetProcessById(id);
-                    procID = id;
+                    theProc = Process.GetProcessById(id);
                 }
                 else
                     return false;
 
-                if (!procs.Responding)
-                {
-                    if (openProcs.Contains(id))
-                        openProcs.Remove(id); //proc is dead, remove it if we have it
+                if (id <= 0)
                     return false;
-                }
 
-                if (openProcs.Contains(id))
-                {
-                    //Debug.WriteLine("Proccess " + id + " already open!");
+                if (theProc != null && theProc.Id == id)
                     return true;
-                }
-                else
-                {
-                    openProcs.Add(id);
-                }
+
+                theProc = Process.GetProcessById(id);
+
+                if (theProc != null && !theProc.Responding)
+                    return false;
 
                 pHandle = OpenProcess(0x1F0FFF, true, id);
                 Process.EnterDebugMode();
@@ -315,7 +305,7 @@ namespace Memory
                     var eCode = Marshal.GetLastWin32Error();
                 }
 
-                mainModule = procs.MainModule;
+                mainModule = theProc.MainModule;
 
                 getModules();
                 
@@ -364,11 +354,11 @@ namespace Memory
         /// </summary>
         public void getModules()
         {
-            if (procs == null)
+            if (theProc == null)
                 return;
 
             modules.Clear();
-            foreach (ProcessModule Module in procs.Modules)
+            foreach (ProcessModule Module in theProc.Modules)
             {
                 if (Module.ModuleName != "" && Module.ModuleName != null && !modules.ContainsKey(Module.ModuleName))
                     modules.Add(Module.ModuleName, Module.BaseAddress);
@@ -380,7 +370,7 @@ namespace Memory
             //int style = GetWindowLong(procs.MainWindowHandle, -16);
             //if ((style & 0x20000000) == 0x20000000) //minimized
             //    SendMessage(procs.Handle, 0x0112, (IntPtr)0xF120, IntPtr.Zero);
-            SetForegroundWindow(procs.MainWindowHandle);
+            SetForegroundWindow(theProc.MainWindowHandle);
         }
 
         /// <summary>
@@ -1179,8 +1169,7 @@ namespace Memory
                 return;
 
             CloseHandle(pHandle);
-            openProcs.Remove(procID);
-            procID = 0;
+            theProc = null;
         }
 
         /// <summary>
@@ -1191,13 +1180,13 @@ namespace Memory
         {
             IntPtr bytesout;
 
-            foreach (ProcessModule pm in procs.Modules)
+            foreach (ProcessModule pm in theProc.Modules)
             {
                 if (pm.ModuleName.StartsWith("inject", StringComparison.InvariantCultureIgnoreCase))
                     return;
             }
 
-            if (!procs.Responding)
+            if (!theProc.Responding)
                 return;
 
             int LenWrite = strDLLName.Length + 1;
