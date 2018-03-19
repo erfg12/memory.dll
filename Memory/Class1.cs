@@ -254,7 +254,6 @@ namespace Memory
                 if (c < '0' || c > '9')
                     return false;
             }
-
             return true;
         }
 
@@ -263,9 +262,8 @@ namespace Memory
         /// </summary>
         /// <param name="proc">Use process name or process ID here.</param>
         /// <returns></returns>
-        public bool OpenProcess(string proc)
+        public bool OpenProcess(int proc)
         {
-            int id = 0;
             if (!isAdmin())
             {
                 Debug.Write("WARNING: You are NOT running this program as admin! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
@@ -274,30 +272,25 @@ namespace Memory
 
             try
             {
-                if (!IsDigitsOnly(proc))
-                    id = getProcIDFromName(proc);
-                else
-                    id = Convert.ToInt32(proc);
-
-                if (id != 0)
+                if (proc != 0)
                 { //getProcIDFromName returns 0 if there was a problem
-                    theProc = Process.GetProcessById(id);
+                    theProc = Process.GetProcessById(proc);
                 }
                 else
                     return false;
 
-                if (id <= 0)
+                if (proc <= 0)
                     return false;
 
-                if (theProc != null && theProc.Id == id)
+                if (theProc != null && theProc.Id == proc)
                     return true;
 
-                theProc = Process.GetProcessById(id);
+                theProc = Process.GetProcessById(proc);
 
                 if (theProc != null && !theProc.Responding)
                     return false;
 
-                pHandle = OpenProcess(0x1F0FFF, true, id);
+                pHandle = OpenProcess(0x1F0FFF, true, proc);
                 Process.EnterDebugMode();
 
                 if (pHandle == IntPtr.Zero)
@@ -308,15 +301,25 @@ namespace Memory
                 mainModule = theProc.MainModule;
 
                 getModules();
-                
+
                 // Lets set the process to 64bit or not here (cuts down on api calls)
                 Is64Bit = Environment.Is64BitOperatingSystem && (IsWow64Process(pHandle, out bool retVal) && !retVal);
-                
-                Debug.WriteLine("Program is operating at Administrative level. Process #" + id + " is open and modules are stored.");
+
+                Debug.WriteLine("Program is operating at Administrative level. Process #" + proc + " is open and modules are stored.");
 
                 return true;
             }
             catch { return false; }
+        }
+
+        /// <summary>
+        /// Open the PC game process with all security and access rights.
+        /// </summary>
+        /// <param name="proc">Use process name or process ID here.</param>
+        /// <returns></returns>
+        public bool OpenProcess(string proc)
+        {
+            return OpenProcess(getProcIDFromName(proc));
         }
 
         /// <summary>
