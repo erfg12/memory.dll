@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace Memory
 {
@@ -135,6 +136,9 @@ namespace Memory
         [DllImport("kernel32.dll")]
         private static extern bool ReadProcessMemory(IntPtr hProcess, UIntPtr lpBaseAddress, [Out] byte[] lpBuffer, UIntPtr nSize, IntPtr lpNumberOfBytesRead);
 
+        [DllImport("kernel32.dll")]
+        private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, IntPtr nSize, out long lpNumberOfBytesRead);
+
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         static extern IntPtr VirtualAllocEx(
             IntPtr hProcess,
@@ -220,7 +224,7 @@ namespace Memory
 
         #endregion
 
-        /// <summary>aob
+        /// <summary>
         /// The process handle that was opened. (Use OpenProcess function to populate this variable)
         /// </summary>
         public IntPtr pHandle;
@@ -262,7 +266,7 @@ namespace Memory
         /// </summary>
         /// <param name="proc">Use process name or process ID here.</param>
         /// <returns></returns>
-        public bool OpenProcess(int proc)
+        public bool OpenProcess(int pid)
         {
             if (!isAdmin())
             {
@@ -272,25 +276,18 @@ namespace Memory
 
             try
             {
-                if (proc != 0)
-                { //getProcIDFromName returns 0 if there was a problem
-                    theProc = Process.GetProcessById(proc);
-                }
-                else
-                    return false;
-
-                if (proc <= 0)
-                    return false;
-
-                if (theProc != null && theProc.Id == proc)
+                if (theProc != null && theProc.Id == pid)
                     return true;
 
-                theProc = Process.GetProcessById(proc);
+                if (pid <= 0)
+                    return false;
 
+                theProc = Process.GetProcessById(pid);
+                
                 if (theProc != null && !theProc.Responding)
                     return false;
 
-                pHandle = OpenProcess(0x1F0FFF, true, proc);
+                pHandle = OpenProcess(0x1F0FFF, true, pid);
                 Process.EnterDebugMode();
 
                 if (pHandle == IntPtr.Zero)
@@ -305,13 +302,14 @@ namespace Memory
                 // Lets set the process to 64bit or not here (cuts down on api calls)
                 Is64Bit = Environment.Is64BitOperatingSystem && (IsWow64Process(pHandle, out bool retVal) && !retVal);
 
-                Debug.WriteLine("Program is operating at Administrative level. Process #" + proc + " is open and modules are stored.");
+                Debug.WriteLine("Program is operating at Administrative level. Process #" + theProc + " is open and modules are stored.");
 
                 return true;
             }
             catch { return false; }
         }
 
+       
         /// <summary>
         /// Open the PC game process with all security and access rights.
         /// </summary>
@@ -363,7 +361,7 @@ namespace Memory
             modules.Clear();
             foreach (ProcessModule Module in theProc.Modules)
             {
-                if (Module.ModuleName != "" && Module.ModuleName != null && !modules.ContainsKey(Module.ModuleName))
+                if (!string.IsNullOrEmpty(Module.ModuleName) && !modules.ContainsKey(Module.ModuleName))
                     modules.Add(Module.ModuleName, Module.BaseAddress);
             }
         }
@@ -1515,94 +1513,7 @@ namespace Memory
 
 #if WINXP
 #else
-        private bool MaskCheck(Int64 nOffset, string[] btPattern, string strMask, byte[] dumpRegion)
-        {
-            if (cts.IsCancellationRequested) return false;
 
-            for (int x = 0; x < btPattern.Length; x++)
-            {
-                if (cts.IsCancellationRequested) break;
-
-                if ((nOffset + x) >= dumpRegion.Length || x >= btPattern.Length || x >= strMask.Length) return false;
-
-                string theCode = btPattern[x].ToUpper();
-                string theCode2 = dumpRegion[nOffset + x].ToString("x2").ToUpper();
-                // If the mask char is a wildcard.
-                if (strMask[x] == '?')
-                {
-                    if (theCode == "??")
-                        continue;
-                    else
-                    { //50% wildcard
-                        if (theCode[0].Equals('?'))
-                        { //ex: ?5
-                            if (!theCode2[1].Equals(theCode[1]))
-                                return false;
-                        }
-                        else if (theCode[1].Equals('?'))
-                        { //ex: 5?
-                            if (!theCode2[0].Equals(theCode[0]))
-                                return false;
-                        }
-                    }
-                }
-
-                if (strMask[x] == 'x')
-                    if (!theCode.Equals(theCode2)) return false;
-            }
-            return true;
-        }
-
-        public async Task<Int64> PageFindPattern(byte[] haystack, string[] needle, string strMask, Int64 start = 0) //for pages
-        {
-            if (cts.IsCancellationRequested) return 0;
-            for (Int64 x = 0; x < haystack.Length; x++)
-            {
-                if (cts.IsCancellationRequested) break;
-                //Debug.Write("PageFindPattern now at 0x" + (start + x).ToString("x8") + Environment.NewLine);
-                if (MaskCheck(x, needle, strMask, haystack))
-                {
-                    Debug.WriteLine("[DEBUG] FOUND ADDRESS: 0x" + (x + start).ToString(mSize())/* + " start:0x" + start.ToString("x16") + " x:" + x.ToString("x16") + " base:0x" + procs.MainModule.BaseAddress.ToString("x16")*/);
-                    return (x + start);
-                }
-            }
-            return 0;// IntPtr.Zero;
-        }
-
-        public Int64 FindPattern(byte[] haystack, string[] needle, string strMask, Int64 start = 0, Int64 length = 0)
-        {
-            //Debug.Write("[DEBUG] FindPattern starting... (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
-
-            //Debug.Write("[DEBUG] starting AoB scan at 0x" + start.ToString("x8") + " and going 0x" + length.ToString("x8") + " length. (" + start.ToString("x8") + "-" + (start + length).ToString("x8") + ")" + Environment.NewLine);
-            //Debug.Write("[DEBUG] AoB mask is " + strMask + Environment.NewLine);
-            //Debug.Write("[DEBUG] AoB pattern is " + ByteArrayToString(needle) + Environment.NewLine);
-            //Debug.Write("[DEBUG] haystack size is 0x" + haystack.Length.ToString("x8") + Environment.NewLine);
-
-            if (start > 0)
-                start = start - (Int64)procs.MainModule.BaseAddress;
-            if (length > 0)
-                length = length - (Int64)procs.MainModule.BaseAddress;
-
-            if (length == 0)
-                length = (haystack.Length - start);
-
-            //Debug.Write("[DEBUG] searching dump file start:0x" + start.ToString("x8") + " end:0x" + (start + length).ToString("x8") + ". Dump starts at 0x" + procs.MainModule.BaseAddress + Environment.NewLine);
-            //Debug.Write("Searching for AoB pattern, please wait..." + Environment.NewLine);
-            for (Int64 x = start; x < (start + length); x++)
-            {
-                if (MaskCheck(x, needle, strMask, haystack))
-                {
-                    //string total = (x + diff).ToString("x8");
-                    //Debug.Write("[DEBUG] base address is " + procs.MainModule.BaseAddress.ToString("x8") + " and resulting offset is " + x.ToString("x8") + " min address is " + getMinAddress().ToString("x8") + Environment.NewLine);
-                    //ResumeProcess(procID);
-                    //Debug.Write("[DEBUG] FindPattern ended " + DateTime.Now.ToString("h:mm:ss tt"));
-                    return (x + (Int64)procs.MainModule.BaseAddress);
-                }
-                //Debug.Write("[DEBUG] FindPattern searching " + x.ToString("x8") + Environment.NewLine);
-            }
-            //Debug.Write("[DEBUG] FindPattern ended " + DateTime.Now.ToString("h:mm:ss tt") + Environment.NewLine);
-            return 0;
-        }
         public struct SYSTEM_INFO
         {
             public ushort processorArchitecture;
@@ -1653,15 +1564,12 @@ namespace Memory
             public uint Type;
         }
 
-
         public ulong getMinAddress()
         {
             SYSTEM_INFO SI;
             GetSystemInfo(out SI);
             return (ulong)SI.minimumApplicationAddress;
         }
-
-        int diff = 0;
 
         /// <summary>
         /// Dump memory page by page to a dump.dmp file. Can be used with Cheat Engine.
@@ -1677,7 +1585,7 @@ namespace Memory
 
             // saving the values as long ints so I won't have to do a lot of casts later
             Int64 proc_min_address_l = (Int64)proc_min_address; //(Int64)procs.MainModule.BaseAddress;
-            Int64 proc_max_address_l = (Int64)procs.VirtualMemorySize64 + proc_min_address_l;
+            Int64 proc_max_address_l = (Int64)theProc.VirtualMemorySize64 + proc_min_address_l;
 
             //int arrLength = 0;
             if (File.Exists(file))
@@ -1706,38 +1614,59 @@ namespace Memory
             return true;
         }
 
-        CancellationTokenSource cts = new CancellationTokenSource();
-
         /// <summary>
-        /// Array of Byte scan. Returns first address found.
+        /// Array of byte scan.
+        /// </summary>
+        /// <param name="search">array of bytes to search for, OR your ini code label.</param>
+        /// <param name="writable">Include writable addresses in scan</param>
+        /// <param name="executable">Include executable addresses in scan</param>
+        /// <param name="file">ini file (OPTIONAL)</param>
+        /// <returns>IEnumerable of all addresses found.</returns>
+        public async Task<IEnumerable<long>> AoBScan(string search, bool writable = false, bool executable = true, string file = "")
+        {
+            return await AoBScan(0, long.MaxValue, search, writable, executable, file);
+        }
+        
+        /// <summary>
+        /// Array of Byte scan.
         /// </summary>
         /// <param name="start">Your starting address.</param>
-        /// <param name="length">Length to scan.</param>
+        /// <param name="end">ending address</param>
         /// <param name="search">array of bytes to search for, OR your ini code label.</param>
         /// <param name="file">ini file (OPTIONAL)</param>
-        /// <returns></returns>
-        public async Task<Int64> AoBScan(string code, Int64 end, string search, string file = "")
+        /// <param name="writable">Include writable addresses in scan</param>
+        /// <param name="executable">Include executable addresses in scan</param>
+        /// <returns>IEnumerable of all addresses found.</returns>
+        public async Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool writable = false, bool executable = true, string file = "")
         {
-            Int64 start = (Int64)(getCode(code, file).ToUInt64());
-            Int64 ar = 0;
-            var pageInfoList = new List<List<long>>();
+            var memRegionList = new List<MemoryRegionResult>();
 
             string memCode = LoadCode(search, file);
 
             string[] stringByteArray = memCode.Split(' ');
-            string mask = "";
-            int i = 0;
-            foreach (string ba in stringByteArray)
+            byte[] mask = new byte[stringByteArray.Length];
+
+            for(var i = 0; i < stringByteArray.Length; i++)
             {
+                string ba = stringByteArray[i];
+
                 if (ba == "??")
-                    mask += "?";
+                {
+                    mask[i] = 0x00;
+                    stringByteArray[i] = "0x00";
+                }
                 else if (Char.IsLetterOrDigit(ba[0]) && ba[1] == '?')
-                    mask += "?";
+                {
+                    mask[i] = 0xF0;
+                    stringByteArray[i] = ba[0] + "0";
+                }
                 else if (Char.IsLetterOrDigit(ba[1]) && ba[0] == '?')
-                    mask += "?";
+                {
+                    mask[i] = 0x0F;
+                    stringByteArray[i] = "0" + ba[1];
+                }
                 else
-                    mask += "x";
-                i++;
+                    mask[i] = 0xFF;
             }
 
             SYSTEM_INFO sys_info = new SYSTEM_INFO();
@@ -1756,11 +1685,11 @@ namespace Memory
 
             IntPtr currentBaseAddress = new IntPtr(start);
 
-
             MEMORY_BASIC_INFORMATION memInfo = new MEMORY_BASIC_INFORMATION();
             while (VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64() != 0 &&
                    (ulong)currentBaseAddress.ToInt64() < (ulong)end &&
-                   (ulong)currentBaseAddress.ToInt64() + (ulong)memInfo.RegionSize > (ulong)currentBaseAddress.ToInt64())
+                   (ulong)currentBaseAddress.ToInt64() + (ulong)memInfo.RegionSize >
+                   (ulong)currentBaseAddress.ToInt64())
             {
 
                 bool isValid = memInfo.State == MEM_COMMIT;
@@ -1781,6 +1710,9 @@ namespace Memory
                                         ((memInfo.Protect & PAGE_EXECUTE_READWRITE) > 0) ||
                                         ((memInfo.Protect & PAGE_EXECUTE_WRITECOPY) > 0);
 
+                    isWritable &= writable;
+                    isExecutable &= executable;
+
                     isValid &= isWritable || isExecutable;
                 }
 
@@ -1790,107 +1722,127 @@ namespace Memory
                     continue;
                 }
 
-                long regionsize = memInfo.RegionSize;
-                long BaseAddress = memInfo.BaseAddress.ToInt64();
 
-                List<long> tempList = new List<long>();
-                tempList.Add((long)currentBaseAddress);
-                tempList.Add(regionsize);
-                tempList.Add(BaseAddress);
-                pageInfoList.Add(tempList);
-                ar++;
+                MemoryRegionResult memRegion = new MemoryRegionResult
+                {
+                    CurrentBaseAddress = currentBaseAddress,
+                    RegionSize = memInfo.RegionSize,
+                    RegionBase = memInfo.BaseAddress
+                };
 
                 currentBaseAddress =
                     new IntPtr(memInfo.BaseAddress.ToInt64() + memInfo.RegionSize);
-            }
 
-
-            //Debug.Write("[DEBUG] VirtualQueryEx finished at 0x" + proc_min_address_l.ToString("x8") + ". Last region size is 0x" + (proc_min_address_l - proc_max_address_l).ToString("x8") + " (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
-            ParallelOptions po = new ParallelOptions();
-            po.CancellationToken = cts.Token;
-            Int64 pageCount = pageInfoList.Count;
-            Int64[] results = new Int64[pageCount];
-            memCode = memCode.Replace('?', '.').Replace(' ', '-').ToUpper(); //for compareScan regex
-            ParallelLoopResult result = Parallel.For(0, pageInfoList.Count, po, async (int index, ParallelLoopState parallelLoopState) =>
-            {
-                try
+                if (memRegionList.Count > 0)
                 {
-                    results[index] = await compareScan(pageInfoList[index][0], memCode, stringByteArray, mask, pageInfoList[index][1], pageInfoList[index][2]);
-                    if (results[index] > 0)
+                    var previousRegion = memRegionList[memRegionList.Count - 1];
+
+                    if ((long)previousRegion.RegionBase + previousRegion.RegionSize == (long)memInfo.BaseAddress)
                     {
-                        if (po.CancellationToken.IsCancellationRequested)
-                            po.CancellationToken.ThrowIfCancellationRequested();
-                        cts.CancelAfter(TimeSpan.FromSeconds(2));
-                        //Debug.Write("STOPPING PARALLEL LOOP STATE!" + Environment.NewLine);
-                        parallelLoopState.Stop();
-                    }
-                }
-                catch (ObjectDisposedException ex)
-                {
-                    Debug.WriteLine(ex);
-                }
-                catch (OperationCanceledException ex)
-                {
-                    Debug.WriteLine("[DEBUG] AoB Scan compareScan OperationCanceledException!");
-                    Debug.WriteLine(ex);
-                    Debug.WriteLine(" stringByteArray:" + stringByteArray + " mask:" + mask + " start:" + start);
-                }
-                catch (AggregateException ex)
-                {
-                    Debug.WriteLine("[DEBUG] AoB Scan compareScan AggregateException!");
-                    Debug.WriteLine(ex);
-                    Debug.WriteLine(" stringByteArray:" + stringByteArray + " mask:" + mask + " start:" + start);
-                }
-                /*finally
-                {
-                    cts.Dispose();
-                }*/
-            });
-
-            while (true)
-            {
-                if (result.IsCompleted || cts.IsCancellationRequested)
-                {
-                    foreach (Int64 r in results)
-                    {
-                        if (r > 0)
+                        memRegionList[memRegionList.Count - 1] = new MemoryRegionResult
                         {
-                            Debug.WriteLine("[DEBUG] memory scan completed. (" + DateTime.Now.ToString("h:mm:ss tt") + ")");
-                            return r;
-                        }
+                            CurrentBaseAddress = previousRegion.CurrentBaseAddress,
+                            RegionBase = previousRegion.RegionBase,
+                            RegionSize = previousRegion.RegionSize + memInfo.RegionSize
+                        };
+
+                        continue;
                     }
-                    return 0; //if we fail
                 }
+
+                memRegionList.Add(memRegion);
             }
+
+            ConcurrentBag<long> bagResult = new ConcurrentBag<long>();
+
+            Parallel.ForEach(memRegionList,
+                             (item, parallelLoopState, index) =>
+                             {
+                                 long[] compareResults = CompareScan(item, stringByteArray, mask);
+
+                                 foreach(long result in compareResults)
+                                    bagResult.Add(result);
+                             });
+
+            return bagResult.ToList().OrderBy(c => c);
         }
 
-        public async Task<Int64> compareScan(Int64 start, string memCode, string[] stringByteArray, string mask, Int64 regionsize, Int64 BaseAddress)
+        /// <summary>
+        /// Array of bytes scan
+        /// </summary>
+        /// <param name="code">Starting address or ini label</param>
+        /// <param name="end">ending address</param>
+        /// <param name="search">array of bytes to search for or your ini code label</param>
+        /// <param name="file">ini file</param>
+        /// <returns>First address found</returns>
+        public async Task<long> AoBScan(string code, long end, string search, string file ="")
         {
-            if (cts.IsCancellationRequested) return 0;
-            byte[] buffer = new byte[regionsize];
-            UIntPtr test2 = (UIntPtr)BaseAddress;
-            UIntPtr test = (UIntPtr)regionsize;
-            ReadProcessMemory(pHandle, test2, buffer, test, IntPtr.Zero);
+            long start = (long)getCode(code, file).ToUInt64();
 
-            //Debug.Write("PageFindPattern starting... 0x" + start.ToString("x8") + " buffer length=" + buffer.Length + Environment.NewLine);
-            string hexString = BitConverter.ToString(buffer);
+            return  (await AoBScan(start, end, search, true, true, file)).FirstOrDefault();
+        }
+        
+        private long[] CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask)
+        {
+            if (mask.Length != aobToFind.Length)
+                throw new ArgumentException($"{nameof(aobToFind)}.Length != {nameof(mask)}.Length");
 
-            if (Regex.IsMatch(hexString, memCode))
+            byte[] buffer = new byte[item.RegionSize];
+            ReadProcessMemory(pHandle, item.CurrentBaseAddress, buffer, (IntPtr)item.RegionSize, out long bytesRead);
+
+
+            byte[] aobPattern = new byte[aobToFind.Length];
+
+            for(int i = 0; i < aobToFind.Length; i++)
+                aobPattern[i] = (byte)(Convert.ToByte(aobToFind[i], 16) & mask[i]);
+
+            int result = 0 - aobToFind.Length;
+            List<long> ret = new List<long>();
+            do
             {
-                //Debug.Write("I found something in 0x" + start.ToString("x8") + Environment.NewLine);
-                try
+                result = FindPattern(buffer, aobPattern, mask, result + aobToFind.Length);
+
+                if (result >= 0)
+                    ret.Add((long)item.CurrentBaseAddress + result);
+
+            } while (result != -1);
+
+            return ret.ToArray();
+        }
+
+        private int FindPattern(byte[] body, byte[] pattern, byte[] masks, int start = 0)
+        {
+            int foundIndex = -1;
+
+            if (body.Length <= 0 || pattern.Length <= 0 || start > body.Length - pattern.Length ||
+                pattern.Length > body.Length) return foundIndex;
+
+            for (int index = start; index <= body.Length - pattern.Length; index++)
+            {
+                if (index == 0x154620)
+                    index = 0x154620;
+
+                if (((body[index] & masks[0]) == (pattern[0] & masks[0])))
                 {
-                    return await PageFindPattern(buffer, stringByteArray, mask, start);
-                }
-                catch (AggregateException ex)
-                {
-                    Debug.WriteLine("[DEBUG] AoB Scan PageFindPattern AggregateException!");
-                    Debug.WriteLine(ex);
-                    Debug.WriteLine("buffer:" + buffer + " stringByteArray:" + stringByteArray + " mask:" + mask + " start:" + start);
+                    var match = true;
+                    for (int index2 = 1; index2 <= pattern.Length - 1; index2++)
+                    {
+                        if ((body[index + index2] & masks[index2]) == (pattern[index2] & masks[index2])) continue;
+                        match = false;
+                        break;
+
+                    }
+
+                    if (!match) continue;
+
+                    foundIndex = index;
+                    break;
                 }
             }
-            return 0;
+
+            return foundIndex;
         }
+        
 #endif
     }
 }
