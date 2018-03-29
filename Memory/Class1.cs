@@ -1615,28 +1615,30 @@ namespace Memory
         }
 
         /// <summary>
-        /// Array of byte scan.  Returns first address found.
+        /// Array of byte scan.
         /// </summary>
         /// <param name="search">array of bytes to search for, OR your ini code label.</param>
+        /// <param name="writable">Include writable addresses in scan</param>
+        /// <param name="executable">Include executable addresses in scan</param>
         /// <param name="file">ini file (OPTIONAL)</param>
-        /// <returns>Address found or 0 if none.</returns>
-        public Int64 AoBScan(string search, string file = "", bool writable = true, bool executable = true)
+        /// <returns>IEnumerable of all addresses found.</returns>
+        public async Task<IEnumerable<long>> AoBScan(string search, bool writable = false, bool executable = true, string file = "")
         {
-            return AoBScan("0x00", long.MaxValue, search, file, writable, executable);
+            return await AoBScan(0, long.MaxValue, search, writable, executable, file);
         }
-
+        
         /// <summary>
-        /// Array of Byte scan. Returns first address found.
+        /// Array of Byte scan.
         /// </summary>
         /// <param name="start">Your starting address.</param>
-        /// <param name="length">Length to scan.</param>
+        /// <param name="end">ending address</param>
         /// <param name="search">array of bytes to search for, OR your ini code label.</param>
         /// <param name="file">ini file (OPTIONAL)</param>
-        /// <returns></returns>
-        [Obsolete("Use overload")]
-        public Int64 AoBScan(string code, Int64 end, string search, string file = "", bool writable = true, bool executable = true)
+        /// <param name="writable">Include writable addresses in scan</param>
+        /// <param name="executable">Include executable addresses in scan</param>
+        /// <returns>IEnumerable of all addresses found.</returns>
+        public async Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool writable = false, bool executable = true, string file = "")
         {
-            Int64 start = (Int64)(getCode(code, file).ToUInt64());
             var memRegionList = new List<MemoryRegionResult>();
 
             string memCode = LoadCode(search, file);
@@ -1751,26 +1753,36 @@ namespace Memory
                 memRegionList.Add(memRegion);
             }
 
-            ConcurrentBag<IntPtr> bagResult = new ConcurrentBag<IntPtr>();
+            ConcurrentBag<long> bagResult = new ConcurrentBag<long>();
 
             Parallel.ForEach(memRegionList,
                              (item, parallelLoopState, index) =>
                              {
-                                 IntPtr compareResult = CompareScan(item, stringByteArray, mask);
+                                 long[] compareResults = CompareScan(item, stringByteArray, mask);
 
-                                 if (compareResult != IntPtr.Zero)
-                                     bagResult.Add(compareResult);
+                                 foreach(long result in compareResults)
+                                    bagResult.Add(result);
                              });
 
-            if (bagResult.IsEmpty || !bagResult.TryTake(out IntPtr ret))
-                return 0;
-
-            return ret.ToInt64();
+            return bagResult.ToList().OrderBy(c => c);
         }
 
+        /// <summary>
+        /// Array of bytes scan
+        /// </summary>
+        /// <param name="code">Starting address or ini label</param>
+        /// <param name="end">ending address</param>
+        /// <param name="search">array of bytes to search for or your ini code label</param>
+        /// <param name="file">ini file</param>
+        /// <returns>First address found</returns>
+        public async Task<long> AoBScan(string code, long end, string search, string file ="")
+        {
+            long start = (long)getCode(code, file).ToUInt64();
 
-
-        private IntPtr CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask)
+            return  (await AoBScan(start, end, search, true, true, file)).FirstOrDefault();
+        }
+        
+        private long[] CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask)
         {
             if (mask.Length != aobToFind.Length)
                 throw new ArgumentException($"{nameof(aobToFind)}.Length != {nameof(mask)}.Length");
@@ -1780,20 +1792,22 @@ namespace Memory
 
 
             byte[] aobPattern = new byte[aobToFind.Length];
-            bool[] wildCards = new bool[mask.Length];
 
             for(int i = 0; i < aobToFind.Length; i++)
-            {
-                
                 aobPattern[i] = (byte)(Convert.ToByte(aobToFind[i], 16) & mask[i]);
-            }
 
-            int ret = FindPattern(buffer, aobPattern, mask);
+            int result = 0 - aobToFind.Length;
+            List<long> ret = new List<long>();
+            do
+            {
+                result = FindPattern(buffer, aobPattern, mask, result + aobToFind.Length);
 
-            if (ret != -1)
-                return new IntPtr((long)item.CurrentBaseAddress + ret);
+                if (result >= 0)
+                    ret.Add((long)item.CurrentBaseAddress + result);
 
-            return IntPtr.Zero;
+            } while (result != -1);
+
+            return ret.ToArray();
         }
 
         private int FindPattern(byte[] body, byte[] pattern, byte[] masks, int start = 0)
@@ -1804,6 +1818,9 @@ namespace Memory
                 pattern.Length > body.Length) return foundIndex;
 
             for (int index = start; index <= body.Length - pattern.Length; index++)
+            {
+                if (index == 0x154620)
+                    index = 0x154620;
 
                 if (((body[index] & masks[0]) == (pattern[0] & masks[0])))
                 {
@@ -1821,6 +1838,7 @@ namespace Memory
                     foundIndex = index;
                     break;
                 }
+            }
 
             return foundIndex;
         }
