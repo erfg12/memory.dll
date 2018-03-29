@@ -1620,9 +1620,9 @@ namespace Memory
         /// <param name="search">array of bytes to search for, OR your ini code label.</param>
         /// <param name="file">ini file (OPTIONAL)</param>
         /// <returns>Address found or 0 if none.</returns>
-        public Int64 AoBScan(string search, string file = "")
+        public Int64 AoBScan(string search, string file = "", bool writable = true, bool executable = true)
         {
-            return AoBScan("0x00", long.MaxValue, search, file);
+            return AoBScan("0x00", long.MaxValue, search, file, writable, executable);
         }
 
         /// <summary>
@@ -1634,7 +1634,7 @@ namespace Memory
         /// <param name="file">ini file (OPTIONAL)</param>
         /// <returns></returns>
         [Obsolete("Use overload")]
-        public Int64 AoBScan(string code, Int64 end, string search, string file = "")
+        public Int64 AoBScan(string code, Int64 end, string search, string file = "", bool writable = true, bool executable = true)
         {
             Int64 start = (Int64)(getCode(code, file).ToUInt64());
             var memRegionList = new List<MemoryRegionResult>();
@@ -1707,6 +1707,9 @@ namespace Memory
                                         ((memInfo.Protect & PAGE_EXECUTE_READ) > 0) ||
                                         ((memInfo.Protect & PAGE_EXECUTE_READWRITE) > 0) ||
                                         ((memInfo.Protect & PAGE_EXECUTE_WRITECOPY) > 0);
+
+                    isWritable &= writable;
+                    isExecutable &= executable;
 
                     isValid &= isWritable || isExecutable;
                 }
