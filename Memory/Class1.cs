@@ -844,6 +844,11 @@ namespace Memory
                     size = 1;
                 }
             }
+            else if (type == "double")
+            {
+                memory = BitConverter.GetBytes(Convert.ToDouble(write));
+                size = 8;
+            }
             else if (type == "long")
             {
                 memory = BitConverter.GetBytes(Convert.ToInt64(write));
@@ -886,6 +891,11 @@ namespace Memory
             {
                 memory = BitConverter.GetBytes(Convert.ToInt32(write));
                 size = 4;
+            }
+            else if (type == "double")
+            {
+                memory = BitConverter.GetBytes(Convert.ToDouble(write));
+                size = 8;
             }
             else if (type == "byte")
             {
