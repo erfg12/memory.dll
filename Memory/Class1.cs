@@ -852,7 +852,7 @@ namespace Memory
             else if (type == "long")
             {
                 memory = BitConverter.GetBytes(Convert.ToInt64(write));
-                size = 16;
+                size = 8;
             }
             else if (type == "string")
             {
@@ -895,6 +895,11 @@ namespace Memory
             else if (type == "double")
             {
                 memory = BitConverter.GetBytes(Convert.ToDouble(write));
+                size = 8;
+            }
+            else if (type == "long")
+            {
+                memory = BitConverter.GetBytes(Convert.ToInt64(write));
                 size = 8;
             }
             else if (type == "byte")
