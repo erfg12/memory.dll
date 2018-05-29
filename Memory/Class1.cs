@@ -1254,7 +1254,7 @@ namespace Memory
 
             UIntPtr theCode;
             theCode = getCode(code, file);
-            IntPtr address = new IntPtr((long)theCode);
+            IntPtr address = startVal((long)theCode);
 
             // if x64 we need to try to allocate near the address so we dont run into the +-2GB limit of the 0xE9 jmp
 
@@ -1621,7 +1621,7 @@ namespace Memory
                 //arrLength += buffer.Length;
 
                 proc_min_address_l += (Int64)memInfo.RegionSize;
-                proc_min_address = new IntPtr(proc_min_address_l);
+                proc_min_address = startVal(proc_min_address_l);
             }
 
 
@@ -1641,7 +1641,18 @@ namespace Memory
         {
             return await AoBScan(0, long.MaxValue, search, writable, executable, file);
         }
-        
+
+        public IntPtr startVal(long value)
+        {
+            IntPtr m_value;
+#if WIN32
+            m_value = (void *)checked((uint)value);
+#else
+            m_value = (IntPtr)value;
+#endif
+            return m_value;
+        }
+
         /// <summary>
         /// Array of Byte scan.
         /// </summary>
@@ -1698,7 +1709,7 @@ namespace Memory
 
             Debug.Write("[DEBUG] memory scan starting... (min:0x" + proc_min_address.ToInt64().ToString(mSize()) + " max:0x" + proc_max_address.ToInt64().ToString(mSize()) + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
 
-            IntPtr currentBaseAddress = new IntPtr(start);
+            IntPtr currentBaseAddress = startVal(start);
 
             MEMORY_BASIC_INFORMATION memInfo = new MEMORY_BASIC_INFORMATION();
             while (VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64() != 0 &&
@@ -1733,7 +1744,7 @@ namespace Memory
 
                 if (!isValid)
                 {
-                    currentBaseAddress = new IntPtr(memInfo.BaseAddress.ToInt64() + memInfo.RegionSize);
+                    currentBaseAddress = startVal(memInfo.BaseAddress.ToInt64() + memInfo.RegionSize);
                     continue;
                 }
 
@@ -1745,8 +1756,7 @@ namespace Memory
                     RegionBase = memInfo.BaseAddress
                 };
 
-                currentBaseAddress =
-                    new IntPtr(memInfo.BaseAddress.ToInt64() + memInfo.RegionSize);
+                currentBaseAddress = startVal(memInfo.BaseAddress.ToInt64() + memInfo.RegionSize);
 
                 if (memRegionList.Count > 0)
                 {
