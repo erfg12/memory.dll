@@ -1254,7 +1254,7 @@ namespace Memory
 
             UIntPtr theCode;
             theCode = getCode(code, file);
-            IntPtr address = startVal((long)theCode);
+            IntPtr address = CreateIntPtr((long)theCode);
 
             // if x64 we need to try to allocate near the address so we dont run into the +-2GB limit of the 0xE9 jmp
 
@@ -1621,7 +1621,7 @@ namespace Memory
                 //arrLength += buffer.Length;
 
                 proc_min_address_l += (Int64)memInfo.RegionSize;
-                proc_min_address = startVal(proc_min_address_l);
+                proc_min_address = CreateIntPtr(proc_min_address_l);
             }
 
 
@@ -1642,7 +1642,7 @@ namespace Memory
             return await AoBScan(0, long.MaxValue, search, writable, executable, file);
         }
 
-        public IntPtr startVal(long value)
+        public IntPtr CreateIntPtr(long value)
         {
             IntPtr m_value;
 #if WIN32
@@ -1709,7 +1709,7 @@ namespace Memory
 
             Debug.Write("[DEBUG] memory scan starting... (min:0x" + proc_min_address.ToInt64().ToString(mSize()) + " max:0x" + proc_max_address.ToInt64().ToString(mSize()) + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
 
-            IntPtr currentBaseAddress = startVal(start);
+            IntPtr currentBaseAddress = CreateIntPtr(start);
 
             MEMORY_BASIC_INFORMATION memInfo = new MEMORY_BASIC_INFORMATION();
             while (VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64() != 0 &&
@@ -1744,7 +1744,7 @@ namespace Memory
 
                 if (!isValid)
                 {
-                    currentBaseAddress = startVal(memInfo.BaseAddress.ToInt64() + memInfo.RegionSize);
+                    currentBaseAddress = CreateIntPtr(memInfo.BaseAddress.ToInt64() + memInfo.RegionSize);
                     continue;
                 }
 
@@ -1756,7 +1756,7 @@ namespace Memory
                     RegionBase = memInfo.BaseAddress
                 };
 
-                currentBaseAddress = startVal(memInfo.BaseAddress.ToInt64() + memInfo.RegionSize);
+                currentBaseAddress = CreateIntPtr(memInfo.BaseAddress.ToInt64() + memInfo.RegionSize);
 
                 if (memRegionList.Count > 0)
                 {
