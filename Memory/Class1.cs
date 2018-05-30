@@ -270,7 +270,7 @@ namespace Memory
         {
             if (!isAdmin())
             {
-                Debug.Write("WARNING: You are NOT running this program as admin! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
+                Debug.WriteLine("WARNING: You are NOT running this program as admin! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
                 MessageBox.Show("WARNING: You are NOT running this program as admin!");
             }
 
@@ -280,12 +280,18 @@ namespace Memory
                     return true;
 
                 if (pid <= 0)
+                {
+                    Debug.WriteLine("ERROR: OpenProcess given proc ID 0.");
                     return false;
+                }
 
                 theProc = Process.GetProcessById(pid);
-                
+
                 if (theProc != null && !theProc.Responding)
+                {
+                    Debug.WriteLine("ERROR: OpenProcess: Process is not responding or null.");
                     return false;
+                }
 
                 pHandle = OpenProcess(0x1F0FFF, true, pid);
                 Process.EnterDebugMode();
@@ -306,7 +312,10 @@ namespace Memory
 
                 return true;
             }
-            catch { return false; }
+            catch {
+                Debug.WriteLine("ERROR: OpenProcess has crashed.");
+                return false;
+            }
         }
 
        
