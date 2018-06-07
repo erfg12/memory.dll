@@ -8,9 +8,9 @@ namespace Memory
 {
     struct MemoryRegionResult
     {
-        public IntPtr CurrentBaseAddress { get; set; }
+        public UIntPtr CurrentBaseAddress { get; set; }
         public long RegionSize { get; set; }
-        public IntPtr RegionBase { get; set; }
+        public UIntPtr RegionBase { get; set; }
 
     }
 }
