@@ -1842,9 +1842,6 @@ namespace Memory
 
             for (int index = start; index <= body.Length - pattern.Length; index++)
             {
-                if (index == 0x154620)
-                    index = 0x154620;
-
                 if (((body[index] & masks[0]) == (pattern[0] & masks[0])))
                 {
                     var match = true;
