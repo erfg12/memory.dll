@@ -32,14 +32,14 @@ namespace Memory
 #if WINXP
 #else
         [DllImport("kernel32.dll", EntryPoint = "VirtualQueryEx")]
-        public static extern UIntPtr Native_VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress,
+        public static extern UIntPtr Native_VirtualQueryEx(IntPtr hProcess, UIntPtr lpAddress,
             out MEMORY_BASIC_INFORMATION32 lpBuffer, UIntPtr dwLength);
 
         [DllImport("kernel32.dll", EntryPoint = "VirtualQueryEx")]
-        public static extern UIntPtr Native_VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress,
+        public static extern UIntPtr Native_VirtualQueryEx(IntPtr hProcess, UIntPtr lpAddress,
             out MEMORY_BASIC_INFORMATION64 lpBuffer, UIntPtr dwLength);
 
-        public UIntPtr VirtualQueryEx(IntPtr hProcess, IntPtr lpAddress,
+        public UIntPtr VirtualQueryEx(IntPtr hProcess, UIntPtr lpAddress,
             out MEMORY_BASIC_INFORMATION lpBuffer)
         {
             UIntPtr retVal;
@@ -107,7 +107,7 @@ namespace Memory
         [DllImport("kernel32.dll")]
         static extern bool WriteProcessMemory(
             IntPtr hProcess,
-            IntPtr lpBaseAddress,
+            UIntPtr lpBaseAddress,
             string lpBuffer,
             UIntPtr nSize,
             out IntPtr lpNumberOfBytesWritten
@@ -128,7 +128,7 @@ namespace Memory
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         static extern bool VirtualFreeEx(
             IntPtr hProcess,
-            IntPtr lpAddress,
+            UIntPtr lpAddress,
             UIntPtr dwSize,
             uint dwFreeType
             );
@@ -137,12 +137,12 @@ namespace Memory
         private static extern bool ReadProcessMemory(IntPtr hProcess, UIntPtr lpBaseAddress, [Out] byte[] lpBuffer, UIntPtr nSize, IntPtr lpNumberOfBytesRead);
 
         [DllImport("kernel32.dll")]
-        private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, IntPtr nSize, out long lpNumberOfBytesRead);
+        private static extern bool ReadProcessMemory(IntPtr hProcess, UIntPtr lpBaseAddress, [Out] byte[] lpBuffer, UIntPtr nSize, out ulong lpNumberOfBytesRead);
 
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
-        static extern IntPtr VirtualAllocEx(
+        static extern UIntPtr VirtualAllocEx(
             IntPtr hProcess,
-            IntPtr lpAddress,
+            UIntPtr lpAddress,
             uint dwSize,
             uint flAllocationType,
             uint flProtect
@@ -178,7 +178,7 @@ namespace Memory
 
         // Added to avoid casting to UIntPtr
         [DllImport("kernel32.dll")]
-        private static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, UIntPtr nSize, out IntPtr lpNumberOfBytesWritten);
+        private static extern bool WriteProcessMemory(IntPtr hProcess, UIntPtr lpBaseAddress, byte[] lpBuffer, UIntPtr nSize, out IntPtr lpNumberOfBytesWritten);
 
         [DllImport("kernel32")]
         public static extern IntPtr CreateRemoteThread(
@@ -186,7 +186,7 @@ namespace Memory
           IntPtr lpThreadAttributes,
           uint dwStackSize,
           UIntPtr lpStartAddress, // raw Pointer into remote process  
-          IntPtr lpParameter,
+          UIntPtr lpParameter,
           uint dwCreationFlags,
           out IntPtr lpThreadId
         );
@@ -230,7 +230,6 @@ namespace Memory
         public IntPtr pHandle;
 
         public Process theProc = null;
-        public byte[] dumpBytes;
 
         internal enum MINIDUMP_TYPE
         {
@@ -949,7 +948,7 @@ namespace Memory
         /// </summary>
         /// <param name="address">Address to write to</param>
         /// <param name="write">Byte array to write to</param>
-        public void writeBytes(IntPtr address, byte[] write)
+        public void writeBytes(UIntPtr address, byte[] write)
         {
             WriteProcessMemory(pHandle, address, write, (UIntPtr)write.Length, out IntPtr bytesRead);
         }
@@ -1215,15 +1214,15 @@ namespace Memory
                 return;
 
             int LenWrite = strDLLName.Length + 1;
-            IntPtr AllocMem = (IntPtr)VirtualAllocEx(pHandle, (IntPtr)null, (uint)LenWrite, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+            UIntPtr AllocMem = VirtualAllocEx(pHandle, (UIntPtr)null, (uint)LenWrite, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
             WriteProcessMemory(pHandle, AllocMem, strDLLName, (UIntPtr)LenWrite, out bytesout);
-            UIntPtr Injector = (UIntPtr)GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
+            UIntPtr Injector = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
 
             if (Injector == null)
                 return;
 
-            IntPtr hThread = (IntPtr)CreateRemoteThread(pHandle, (IntPtr)null, 0, Injector, AllocMem, 0, out bytesout);
+            IntPtr hThread = CreateRemoteThread(pHandle, (IntPtr)null, 0, Injector, AllocMem, 0, out bytesout);
             if (hThread == null)
                 return;
 
@@ -1242,8 +1241,8 @@ namespace Memory
             return;
         }
 
-        #if WINXP
-        #else
+#if WINXP
+#else
         /// <summary>
         /// Creates a code cave to write custom opcodes in target process
         /// </summary>
@@ -1254,34 +1253,34 @@ namespace Memory
         /// <param name="file">ini file to look in</param>
         /// <remarks>Please ensure that you use the proper replaceCount
         /// if you replace halfway in an instruction you may cause bad things</remarks>
-        /// <returns>IntPtr to created code cave for use for later deallocation</returns>
-        public IntPtr CreateCodeCave(string code, byte[] newBytes, int replaceCount, int size = 0x10000, string file = "")
+        /// <returns>UIntPtr to created code cave for use for later deallocation</returns>
+        public UIntPtr CreateCodeCave(string code, byte[] newBytes, int replaceCount, int size = 0x10000, string file = "")
         {
             if (replaceCount < 5)
-                return IntPtr.Zero; // returning IntPtr.Zero instead of throwing an exception
-                                    // to better match existing code
+                return UIntPtr.Zero; // returning UIntPtr.Zero instead of throwing an exception
+                                     // to better match existing code
 
             UIntPtr theCode;
             theCode = getCode(code, file);
-            IntPtr address = CreateIntPtr((long)theCode);
+            UIntPtr address = theCode;
 
             // if x64 we need to try to allocate near the address so we dont run into the +-2GB limit of the 0xE9 jmp
 
-            IntPtr caveAddress = IntPtr.Zero;
-            IntPtr prefered = address;
+            UIntPtr caveAddress = UIntPtr.Zero;
+            UIntPtr prefered = address;
 
-            for(var i = 0; i < 10 && caveAddress == IntPtr.Zero; i++)
+            for(var i = 0; i < 10 && caveAddress == UIntPtr.Zero; i++)
             {
                 caveAddress = VirtualAllocEx(pHandle, FindFreeBlockForRegion(prefered, (uint)newBytes.Length),
                                              (uint)size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
-                if (caveAddress == IntPtr.Zero)
-                    prefered = IntPtr.Add(prefered, 0x10000);
+                if (caveAddress == UIntPtr.Zero)
+                    prefered = UIntPtr.Add(prefered, 0x10000);
             }
 
             // Failed to allocate memory around the address we wanted let windows handle it and hope for the best?
-            if (caveAddress == IntPtr.Zero)
-                caveAddress = VirtualAllocEx(pHandle, IntPtr.Zero, (uint)size, MEM_COMMIT | MEM_RESERVE,
+            if (caveAddress == UIntPtr.Zero)
+                caveAddress = VirtualAllocEx(pHandle, UIntPtr.Zero, (uint)size, MEM_COMMIT | MEM_RESERVE,
                                              PAGE_EXECUTE_READWRITE);
 
             int nopsNeeded = replaceCount > 5 ? replaceCount - 5 : 0;
@@ -1311,13 +1310,13 @@ namespace Memory
             return caveAddress;
         }
         
-        private IntPtr FindFreeBlockForRegion(IntPtr baseAddress, uint size)
+        private UIntPtr FindFreeBlockForRegion(UIntPtr baseAddress, uint size)
         {
-            IntPtr minAddress = IntPtr.Subtract(baseAddress, 0x70000000);
-            IntPtr maxAddress = IntPtr.Add(baseAddress, 0x70000000);
+            UIntPtr minAddress = UIntPtr.Subtract(baseAddress, 0x70000000);
+            UIntPtr maxAddress = UIntPtr.Add(baseAddress, 0x70000000);
 
-            IntPtr ret = IntPtr.Zero;
-            IntPtr tmpAddress = IntPtr.Zero;
+            UIntPtr ret = UIntPtr.Zero;
+            UIntPtr tmpAddress = UIntPtr.Zero;
 
             GetSystemInfo(out SYSTEM_INFO si);
 
@@ -1339,13 +1338,13 @@ namespace Memory
 
             MEMORY_BASIC_INFORMATION mbi;
 
-            IntPtr current = minAddress;
-            IntPtr previous = current;
+            UIntPtr current = minAddress;
+            UIntPtr previous = current;
 
             while (VirtualQueryEx(pHandle, current, out mbi).ToUInt64() != 0)
             {
                 if ((long)mbi.BaseAddress > (long)maxAddress)
-                    return IntPtr.Zero;  // No memory found, let windows handle
+                    return UIntPtr.Zero;  // No memory found, let windows handle
 
                 if (mbi.State == MEM_FREE && mbi.RegionSize > size)
                 {
@@ -1360,17 +1359,17 @@ namespace Memory
                         if((mbi.RegionSize - offset) >= size)
                         {
                             // yup there is enough
-                            tmpAddress = IntPtr.Add(tmpAddress, offset);
+                            tmpAddress = UIntPtr.Add(tmpAddress, offset);
 
                             if((long)tmpAddress < (long)baseAddress)
                             {
-                                tmpAddress = IntPtr.Add(tmpAddress, (int)(mbi.RegionSize - offset - size));
+                                tmpAddress = UIntPtr.Add(tmpAddress, (int)(mbi.RegionSize - offset - size));
 
                                 if ((long)tmpAddress > (long)baseAddress)
                                     tmpAddress = baseAddress;
 
                                 // decrease tmpAddress until its alligned properly
-                                tmpAddress = IntPtr.Subtract(tmpAddress, (int)((long)tmpAddress % si.allocationGranularity));
+                                tmpAddress = UIntPtr.Subtract(tmpAddress, (int)((long)tmpAddress % si.allocationGranularity));
                             }
 
                             // if the difference is closer then use that
@@ -1386,14 +1385,14 @@ namespace Memory
                                                                  // (so to the end of the region - size and
                                                                  // aligned by system allocation granularity)
                         {
-                            tmpAddress = IntPtr.Add(tmpAddress, (int)(mbi.RegionSize - size));
+                            tmpAddress = UIntPtr.Add(tmpAddress, (int)(mbi.RegionSize - size));
 
                             if ((long)tmpAddress > (long)baseAddress)
                                 tmpAddress = baseAddress;
 
                             // decrease until aligned properly
                             tmpAddress =
-                                IntPtr.Subtract(tmpAddress, (int)((long)tmpAddress % si.allocationGranularity));
+                                UIntPtr.Subtract(tmpAddress, (int)((long)tmpAddress % si.allocationGranularity));
                         }
 
                         if (Math.Abs((long)tmpAddress - (long)baseAddress) < Math.Abs((long)ret - (long)baseAddress))
@@ -1405,7 +1404,7 @@ namespace Memory
                     mbi.RegionSize += si.allocationGranularity - (mbi.RegionSize % si.allocationGranularity);
 
                 previous = current;
-                current = IntPtr.Add(mbi.BaseAddress, (int)mbi.RegionSize);
+                current = UIntPtr.Add(mbi.BaseAddress, (int)mbi.RegionSize);
 
                 if ((long)current > (long)maxAddress)
                     return ret;
@@ -1543,8 +1542,8 @@ namespace Memory
             public ushort processorArchitecture;
             ushort reserved;
             public uint pageSize;
-            public IntPtr minimumApplicationAddress;
-            public IntPtr maximumApplicationAddress;
+            public UIntPtr minimumApplicationAddress;
+            public UIntPtr maximumApplicationAddress;
             public IntPtr activeProcessorMask;
             public uint numberOfProcessors;
             public uint processorType;
@@ -1555,8 +1554,8 @@ namespace Memory
 
         public struct MEMORY_BASIC_INFORMATION32
         {
-            public IntPtr BaseAddress;
-            public IntPtr AllocationBase;
+            public UIntPtr BaseAddress;
+            public UIntPtr AllocationBase;
             public uint AllocationProtect;
             public uint RegionSize;
             public uint State;
@@ -1566,8 +1565,8 @@ namespace Memory
 
         public struct MEMORY_BASIC_INFORMATION64
         {
-            public IntPtr BaseAddress;
-            public IntPtr AllocationBase;
+            public UIntPtr BaseAddress;
+            public UIntPtr AllocationBase;
             public uint AllocationProtect;
             public uint __alignment1;
             public ulong RegionSize;
@@ -1579,8 +1578,8 @@ namespace Memory
 
         public struct MEMORY_BASIC_INFORMATION
         {
-            public IntPtr BaseAddress;
-            public IntPtr AllocationBase;
+            public UIntPtr BaseAddress;
+            public UIntPtr AllocationBase;
             public uint AllocationProtect;
             public long RegionSize;
             public uint State;
@@ -1604,8 +1603,8 @@ namespace Memory
             SYSTEM_INFO sys_info = new SYSTEM_INFO();
             GetSystemInfo(out sys_info);
 
-            IntPtr proc_min_address = sys_info.minimumApplicationAddress;
-            IntPtr proc_max_address = sys_info.maximumApplicationAddress;
+            UIntPtr proc_min_address = sys_info.minimumApplicationAddress;
+            UIntPtr proc_max_address = sys_info.maximumApplicationAddress;
 
             // saving the values as long ints so I won't have to do a lot of casts later
             Int64 proc_min_address_l = (Int64)proc_min_address; //(Int64)procs.MainModule.BaseAddress;
@@ -1630,7 +1629,7 @@ namespace Memory
                 //arrLength += buffer.Length;
 
                 proc_min_address_l += (Int64)memInfo.RegionSize;
-                proc_min_address = CreateIntPtr(proc_min_address_l);
+                proc_min_address = new UIntPtr((ulong)proc_min_address_l);
             }
 
 
@@ -1651,17 +1650,6 @@ namespace Memory
             return await AoBScan(0, long.MaxValue, search, writable, executable, file);
         }
 
-        public IntPtr CreateIntPtr(long value)
-        {
-            IntPtr m_value;
-#if WIN32
-            m_value = (void *)checked((uint)value);
-#else
-            m_value = (IntPtr)value;
-#endif
-            return m_value;
-        }
-
         /// <summary>
         /// Array of Byte scan.
         /// </summary>
@@ -1675,6 +1663,8 @@ namespace Memory
         public async Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool writable = false, bool executable = true, string file = "")
         {
             var memRegionList = new List<MemoryRegionResult>();
+
+	        long maxBufferLength = 0;
 
             string memCode = LoadCode(search, file);
 
@@ -1707,28 +1697,28 @@ namespace Memory
             SYSTEM_INFO sys_info = new SYSTEM_INFO();
             GetSystemInfo(out sys_info);
 
-            IntPtr proc_min_address = sys_info.minimumApplicationAddress;
-            IntPtr proc_max_address = sys_info.maximumApplicationAddress;
+            UIntPtr proc_min_address = sys_info.minimumApplicationAddress;
+            UIntPtr proc_max_address = sys_info.maximumApplicationAddress;
 
-            if (start < proc_min_address.ToInt64())
-                start = proc_min_address.ToInt64();
+            if (start < (long)proc_min_address.ToUInt64())
+                start = (long)proc_min_address.ToUInt64();
 
-            if (end > proc_max_address.ToInt64())
-                end = proc_max_address.ToInt64();
+            if (end > (long)proc_max_address.ToUInt64())
+                end = (long)proc_max_address.ToUInt64();
 
-            Debug.Write("[DEBUG] memory scan starting... (min:0x" + proc_min_address.ToInt64().ToString(mSize()) + " max:0x" + proc_max_address.ToInt64().ToString(mSize()) + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+            Debug.Write("[DEBUG] memory scan starting... (min:0x" + proc_min_address.ToUInt64().ToString(mSize()) + " max:0x" + proc_max_address.ToUInt64().ToString(mSize()) + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
 
-            IntPtr currentBaseAddress = CreateIntPtr(start);
+            UIntPtr currentBaseAddress = new UIntPtr((ulong)start);
 
-            MEMORY_BASIC_INFORMATION memInfo = new MEMORY_BASIC_INFORMATION();
-            while (VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64() != 0 &&
-                   (ulong)currentBaseAddress.ToInt64() < (ulong)end &&
-                   (ulong)currentBaseAddress.ToInt64() + (ulong)memInfo.RegionSize >
-                   (ulong)currentBaseAddress.ToInt64())
+	        MEMORY_BASIC_INFORMATION memInfo = new MEMORY_BASIC_INFORMATION();
+			while (VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64() != 0 &&
+                   currentBaseAddress.ToUInt64() < (ulong)end &&
+                   currentBaseAddress.ToUInt64() + (ulong)memInfo.RegionSize >
+                   currentBaseAddress.ToUInt64())
             {
 
                 bool isValid = memInfo.State == MEM_COMMIT;
-                isValid &= ((ulong)memInfo.BaseAddress.ToInt64() < (ulong)proc_max_address.ToInt64());
+                isValid &= memInfo.BaseAddress.ToUInt64() < (ulong)proc_max_address.ToUInt64();
                 isValid &= ((memInfo.Protect & PAGE_GUARD) == 0);
                 isValid &= ((memInfo.Protect & PAGE_NOACCESS) == 0);
                 isValid &= (memInfo.Type == MEM_PRIVATE) || (memInfo.Type == MEM_IMAGE);
@@ -1753,7 +1743,7 @@ namespace Memory
 
                 if (!isValid)
                 {
-                    currentBaseAddress = CreateIntPtr(memInfo.BaseAddress.ToInt64() + memInfo.RegionSize);
+                    currentBaseAddress = new UIntPtr(memInfo.BaseAddress.ToUInt64() + (ulong)memInfo.RegionSize);
                     continue;
                 }
 
@@ -1765,7 +1755,7 @@ namespace Memory
                     RegionBase = memInfo.BaseAddress
                 };
 
-                currentBaseAddress = CreateIntPtr(memInfo.BaseAddress.ToInt64() + memInfo.RegionSize);
+                currentBaseAddress = new UIntPtr(memInfo.BaseAddress.ToUInt64() + (ulong)memInfo.RegionSize);
 
                 if (memRegionList.Count > 0)
                 {
@@ -1780,23 +1770,44 @@ namespace Memory
                             RegionSize = previousRegion.RegionSize + memInfo.RegionSize
                         };
 
-                        continue;
+
+	                    if (memRegionList[memRegionList.Count - 1].RegionSize > maxBufferLength)
+		                    maxBufferLength = memRegionList[memRegionList.Count - 1].RegionSize;
+
+						continue;
                     }
                 }
+
+	            if (memRegion.RegionSize > maxBufferLength)
+		            maxBufferLength = memRegion.RegionSize;
 
                 memRegionList.Add(memRegion);
             }
 
             ConcurrentBag<long> bagResult = new ConcurrentBag<long>();
+			
+			// Allocate memory for the region buffer now
+	        byte[] dumpBufferBytes = new byte[maxBufferLength];
+
 
             Parallel.ForEach(memRegionList,
                              (item, parallelLoopState, index) =>
                              {
-                                 long[] compareResults = CompareScan(item, stringByteArray, mask);
+								 byte[] aobPattern = new byte[stringByteArray.Length];
+
+								 for (int i = 0; i < stringByteArray.Length; i++)
+		                             aobPattern[i] = (byte)(Convert.ToByte(stringByteArray[i], 16) & mask[i]);
+
+	                             if (mask.Length != aobPattern.Length)
+		                             throw new ArgumentException($"{nameof(aobPattern)}.Length != {nameof(mask)}.Length");
+
+								 long[] compareResults = CompareScan(item, aobPattern, mask, dumpBufferBytes);
 
                                  foreach(long result in compareResults)
                                     bagResult.Add(result);
                              });
+
+	        dumpBufferBytes = null;
 
             return bagResult.ToList().OrderBy(c => c);
         }
@@ -1816,25 +1827,18 @@ namespace Memory
             return  (await AoBScan(start, end, search, true, true, file)).FirstOrDefault();
         }
         
-        private long[] CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask)
+        private long[] CompareScan(MemoryRegionResult item, byte[] aobPattern, byte[] mask, byte[] buffer = null)
         {
-            if (mask.Length != aobToFind.Length)
-                throw new ArgumentException($"{nameof(aobToFind)}.Length != {nameof(mask)}.Length");
+	        if (buffer == null)
+		        buffer = new byte[item.RegionSize];
 
-            byte[] buffer = new byte[item.RegionSize];
-            ReadProcessMemory(pHandle, item.CurrentBaseAddress, buffer, (IntPtr)item.RegionSize, out long bytesRead);
+            ReadProcessMemory(pHandle, item.CurrentBaseAddress, buffer, (UIntPtr)item.RegionSize, out ulong bytesRead);
 
-
-            byte[] aobPattern = new byte[aobToFind.Length];
-
-            for(int i = 0; i < aobToFind.Length; i++)
-                aobPattern[i] = (byte)(Convert.ToByte(aobToFind[i], 16) & mask[i]);
-
-            int result = 0 - aobToFind.Length;
+            int result = 0 - aobPattern.Length;
             List<long> ret = new List<long>();
             do
             {
-                result = FindPattern(buffer, aobPattern, mask, result + aobToFind.Length);
+                result = FindPattern(buffer, item.RegionSize, aobPattern, mask, result + aobPattern.Length);
 
                 if (result >= 0)
                     ret.Add((long)item.CurrentBaseAddress + result);
@@ -1844,24 +1848,25 @@ namespace Memory
             return ret.ToArray();
         }
 
-        private int FindPattern(byte[] body, byte[] pattern, byte[] masks, int start = 0)
+        private int FindPattern(byte[] body, long maxLength, byte[] pattern, byte[] masks, int start = 0)
         {
             int foundIndex = -1;
 
-            if (body.Length <= 0 || pattern.Length <= 0 || start > body.Length - pattern.Length ||
-                pattern.Length > body.Length) return foundIndex;
+	        if (maxLength == 0)
+		        maxLength = body.Length;
 
-            for (int index = start; index <= body.Length - pattern.Length; index++)
+            if (maxLength <= 0 || pattern.Length <= 0 || start > maxLength - pattern.Length ||
+                pattern.Length > maxLength) return foundIndex;
+
+            for (int index = start; index <= maxLength - pattern.Length; index++)
             {
-                if (index == 0x154620)
-                    index = 0x154620;
-
                 if (((body[index] & masks[0]) == (pattern[0] & masks[0])))
                 {
                     var match = true;
                     for (int index2 = 1; index2 <= pattern.Length - 1; index2++)
                     {
-                        if ((body[index + index2] & masks[index2]) == (pattern[index2] & masks[index2])) continue;
+                        if ((body[index + index2] & masks[index2]) == (pattern[index2] & masks[index2]))
+	                        continue;
                         match = false;
                         break;
 
