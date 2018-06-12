@@ -230,7 +230,6 @@ namespace Memory
         public IntPtr pHandle;
 
         public Process theProc = null;
-        public byte[] dumpBytes;
 
         internal enum MINIDUMP_TYPE
         {
@@ -1665,6 +1664,8 @@ namespace Memory
         {
             var memRegionList = new List<MemoryRegionResult>();
 
+	        long maxBufferLength = 0;
+
             string memCode = LoadCode(search, file);
 
             string[] stringByteArray = memCode.Split(' ');
@@ -1709,8 +1710,8 @@ namespace Memory
 
             UIntPtr currentBaseAddress = new UIntPtr((ulong)start);
 
-            MEMORY_BASIC_INFORMATION memInfo = new MEMORY_BASIC_INFORMATION();
-            while (VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64() != 0 &&
+	        MEMORY_BASIC_INFORMATION memInfo = new MEMORY_BASIC_INFORMATION();
+			while (VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64() != 0 &&
                    currentBaseAddress.ToUInt64() < (ulong)end &&
                    currentBaseAddress.ToUInt64() + (ulong)memInfo.RegionSize >
                    currentBaseAddress.ToUInt64())
@@ -1769,23 +1770,44 @@ namespace Memory
                             RegionSize = previousRegion.RegionSize + memInfo.RegionSize
                         };
 
-                        continue;
+
+	                    if (memRegionList[memRegionList.Count - 1].RegionSize > maxBufferLength)
+		                    maxBufferLength = memRegionList[memRegionList.Count - 1].RegionSize;
+
+						continue;
                     }
                 }
+
+	            if (memRegion.RegionSize > maxBufferLength)
+		            maxBufferLength = memRegion.RegionSize;
 
                 memRegionList.Add(memRegion);
             }
 
             ConcurrentBag<long> bagResult = new ConcurrentBag<long>();
+			
+			// Allocate memory for the region buffer now
+	        byte[] dumpBufferBytes = new byte[maxBufferLength];
+
 
             Parallel.ForEach(memRegionList,
                              (item, parallelLoopState, index) =>
                              {
-                                 long[] compareResults = CompareScan(item, stringByteArray, mask);
+								 byte[] aobPattern = new byte[stringByteArray.Length];
+
+								 for (int i = 0; i < stringByteArray.Length; i++)
+		                             aobPattern[i] = (byte)(Convert.ToByte(stringByteArray[i], 16) & mask[i]);
+
+	                             if (mask.Length != aobPattern.Length)
+		                             throw new ArgumentException($"{nameof(aobPattern)}.Length != {nameof(mask)}.Length");
+
+								 long[] compareResults = CompareScan(item, aobPattern, mask, dumpBufferBytes);
 
                                  foreach(long result in compareResults)
                                     bagResult.Add(result);
                              });
+
+	        dumpBufferBytes = null;
 
             return bagResult.ToList().OrderBy(c => c);
         }
@@ -1805,25 +1827,18 @@ namespace Memory
             return  (await AoBScan(start, end, search, true, true, file)).FirstOrDefault();
         }
         
-        private long[] CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask)
+        private long[] CompareScan(MemoryRegionResult item, byte[] aobPattern, byte[] mask, byte[] buffer = null)
         {
-            if (mask.Length != aobToFind.Length)
-                throw new ArgumentException($"{nameof(aobToFind)}.Length != {nameof(mask)}.Length");
+	        if (buffer == null)
+		        buffer = new byte[item.RegionSize];
 
-            byte[] buffer = new byte[item.RegionSize];
             ReadProcessMemory(pHandle, item.CurrentBaseAddress, buffer, (UIntPtr)item.RegionSize, out ulong bytesRead);
 
-
-            byte[] aobPattern = new byte[aobToFind.Length];
-
-            for(int i = 0; i < aobToFind.Length; i++)
-                aobPattern[i] = (byte)(Convert.ToByte(aobToFind[i], 16) & mask[i]);
-
-            int result = 0 - aobToFind.Length;
+            int result = 0 - aobPattern.Length;
             List<long> ret = new List<long>();
             do
             {
-                result = FindPattern(buffer, aobPattern, mask, result + aobToFind.Length);
+                result = FindPattern(buffer, aobPattern, mask, result + aobPattern.Length);
 
                 if (result >= 0)
                     ret.Add((long)item.CurrentBaseAddress + result);
@@ -1847,7 +1862,8 @@ namespace Memory
                     var match = true;
                     for (int index2 = 1; index2 <= pattern.Length - 1; index2++)
                     {
-                        if ((body[index + index2] & masks[index2]) == (pattern[index2] & masks[index2])) continue;
+                        if ((body[index + index2] & masks[index2]) == (pattern[index2] & masks[index2]))
+	                        continue;
                         match = false;
                         break;
 
