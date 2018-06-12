@@ -1838,7 +1838,7 @@ namespace Memory
             List<long> ret = new List<long>();
             do
             {
-                result = FindPattern(buffer, aobPattern, mask, result + aobPattern.Length);
+                result = FindPattern(buffer, item.RegionSize, aobPattern, mask, result + aobPattern.Length);
 
                 if (result >= 0)
                     ret.Add((long)item.CurrentBaseAddress + result);
@@ -1848,14 +1848,17 @@ namespace Memory
             return ret.ToArray();
         }
 
-        private int FindPattern(byte[] body, byte[] pattern, byte[] masks, int start = 0)
+        private int FindPattern(byte[] body, long maxLength, byte[] pattern, byte[] masks, int start = 0)
         {
             int foundIndex = -1;
 
-            if (body.Length <= 0 || pattern.Length <= 0 || start > body.Length - pattern.Length ||
-                pattern.Length > body.Length) return foundIndex;
+	        if (maxLength == 0)
+		        maxLength = body.Length;
 
-            for (int index = start; index <= body.Length - pattern.Length; index++)
+            if (maxLength <= 0 || pattern.Length <= 0 || start > maxLength - pattern.Length ||
+                pattern.Length > maxLength) return foundIndex;
+
+            for (int index = start; index <= maxLength - pattern.Length; index++)
             {
                 if (((body[index] & masks[0]) == (pattern[0] & masks[0])))
                 {
