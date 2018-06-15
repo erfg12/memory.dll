@@ -40,3 +40,5 @@ Dim m As New Memory.Mem
 <span style="font-weight:bold;">IMPORTANT:</span> Your program must run with admin privileges! <a href="https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges">Click here to learn how.</a>
 
 <a href="https://github.com/erfg12/memory.dll/wiki" target="_BLANK">Now you can use m.FUNCTIONS in your project! Click here for wiki docs.</a>
+
+<a href="mailto:newgmobile@gmail.com" target="_BLANK">Want your trainer to appear on newagesoldier.com? Send me an email with your trainer, game and version.</a>
