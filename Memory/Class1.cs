@@ -1784,32 +1784,50 @@ namespace Memory
                 memRegionList.Add(memRegion);
             }
 
-            ConcurrentBag<long> bagResult = new ConcurrentBag<long>();
-			
-			// Allocate memory for the region buffer now
-	        byte[] dumpBufferBytes = new byte[maxBufferLength];
+            ConcurrentBag<long> results = new ConcurrentBag<long>();
+            ConcurrentQueue<byte[]> dataBuffers = new ConcurrentQueue<byte[]>();
+            for (var i = 0; i < Environment.ProcessorCount; i++)
+            {
+                dataBuffers.Enqueue(new byte[maxBufferLength]);
+            }
+
+            byte[] aobPattern = new byte[stringByteArray.Length];
+
+            for (int i = 0; i < stringByteArray.Length; i++)
+                aobPattern[i] = (byte)(Convert.ToByte(stringByteArray[i], 16) & mask[i]);
+
+            if (mask.Length != aobPattern.Length)
+                throw new ArgumentException($"{nameof(aobPattern)}.Length != {nameof(mask)}.Length");
+
+            Parallel.For(0, memRegionList.Count,
+                new ParallelOptions {MaxDegreeOfParallelism = Environment.ProcessorCount},
+                (index, state) =>
+                {
+                    for(var i = 0; i < 5 || !dataBuffers.IsEmpty; i++)
+                    {
+                        Task.Delay(100);
+                    }
+
+                    if (!dataBuffers.TryDequeue(out var buffer))
+                        buffer = null;
+
+                    long[] compareResults = CompareScan(memRegionList[index], aobPattern, mask, buffer);
+                    foreach (var item in compareResults)
+                    {
+                        results.Add(item);
+                    }
 
 
-            Parallel.ForEach(memRegionList,
-                             (item, parallelLoopState, index) =>
-                             {
-								 byte[] aobPattern = new byte[stringByteArray.Length];
+                    if (buffer != null)
+                        dataBuffers.Enqueue(buffer);
+                });
 
-								 for (int i = 0; i < stringByteArray.Length; i++)
-		                             aobPattern[i] = (byte)(Convert.ToByte(stringByteArray[i], 16) & mask[i]);
+            // We empty the data bufers to try and help the GC
+            while (dataBuffers.TryDequeue(out var buffer))
+            {
+            }
 
-	                             if (mask.Length != aobPattern.Length)
-		                             throw new ArgumentException($"{nameof(aobPattern)}.Length != {nameof(mask)}.Length");
-
-								 long[] compareResults = CompareScan(item, aobPattern, mask, dumpBufferBytes);
-
-                                 foreach(long result in compareResults)
-                                    bagResult.Add(result);
-                             });
-
-	        dumpBufferBytes = null;
-
-            return bagResult.ToList().OrderBy(c => c);
+            return results.OrderBy(c => c);
         }
 
         /// <summary>
