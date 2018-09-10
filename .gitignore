@@ -321,3 +321,5 @@ ASALocalRun/
 
 # MSBuild Binary and Structured Log
 *.binlog
+/Memory/Memory.nuspec
+/Memory/nuget.exe
