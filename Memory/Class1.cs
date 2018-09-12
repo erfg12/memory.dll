@@ -8,7 +8,6 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
 using System.Globalization;
-using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Security.Principal;
 using System.Threading.Tasks;
