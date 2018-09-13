@@ -1674,7 +1674,7 @@ namespace Memory
             {
                 string ba = stringByteArray[i];
 
-                if (ba == "??")
+                if (ba == "??" || ba.Length == 1 && ba == "?")
                 {
                     mask[i] = 0x00;
                     stringByteArray[i] = "0x00";
