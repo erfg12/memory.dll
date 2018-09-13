@@ -571,13 +571,13 @@ namespace Memory
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <param name="length">length of bytes to read (OPTIONAL)</param>
         /// <returns></returns>
-        public string readString(string code, string file = "", int length = 32)
+        public string readString(string code, string file = "", int length = 255)
         {
             byte[] memoryNormal = new byte[length];
             UIntPtr theCode;
             theCode = getCode(code, file);
             if (ReadProcessMemory(pHandle, theCode, memoryNormal, (UIntPtr)length, IntPtr.Zero))
-                return Encoding.UTF8.GetString(memoryNormal);
+                return Encoding.UTF8.GetString(memoryNormal).Split('\0')[0];
             else
                 return "";
         }
