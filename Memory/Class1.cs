@@ -8,7 +8,6 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
 using System.Globalization;
-using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Security.Principal;
 using System.Threading.Tasks;
@@ -569,16 +568,20 @@ namespace Memory
         /// Read a string value from an address.
         /// </summary>
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
-        /// <param name="file">path and name of ini file. (OPTIONAL)</param>
-        /// <param name="length">length of bytes to read (OPTIONAL)</param>
+	/// <param name="file">path and name of ini file. (OPTIONAL)</param>  
+	/// <param name="length">length of bytes to read (OPTIONAL)</param>
+        /// <param name="zeroTerminated">determines if the string will be splited at null char.</param>
+	/// <param name="encoding">the encoding that will be used for GetString.</param>
         /// <returns></returns>
-        public string readString(string code, string file = "", int length = 32)
+        public string readString(string code, string file = "", int length = 32, bool zeroTerminated = false, Encoding encoding = null)
         {
+            if (encoding == null)
+                encoding = Encoding.UTF8;
             byte[] memoryNormal = new byte[length];
             UIntPtr theCode;
             theCode = getCode(code, file);
             if (ReadProcessMemory(pHandle, theCode, memoryNormal, (UIntPtr)length, IntPtr.Zero))
-                return Encoding.UTF8.GetString(memoryNormal);
+                return (zeroTerminated) ? encoding.GetString(memoryNormal).Split('\0')[0] : encoding.GetString(memoryNormal);
             else
                 return "";
         }
@@ -1673,7 +1676,7 @@ namespace Memory
             {
                 string ba = stringByteArray[i];
 
-                if (ba == "??")
+                if (ba == "??" || ba.Length == 1 && ba == "?")
                 {
                     mask[i] = 0x00;
                     stringByteArray[i] = "0x00";
