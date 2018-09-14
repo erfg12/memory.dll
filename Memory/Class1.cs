@@ -8,7 +8,6 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
 using System.Globalization;
-using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Security.Principal;
 using System.Threading.Tasks;
@@ -545,24 +544,31 @@ namespace Memory
         /// </summary>
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        /// <param name="round">Round the value to 2 decimal places</param>
         /// <returns></returns>
-        public float readFloat(string code, string file = "")
+        public float readFloat(string code, string file = "", bool round = true)
         {
             byte[] memory = new byte[4];
 
             UIntPtr theCode;
             theCode = getCode(code, file);
-            if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
+            try
             {
-                float address = BitConverter.ToSingle(memory, 0);
-                float returnValue = (float)Math.Round(address, 2);
-                if (returnValue < -99999 || returnValue > 99999)
-                    return 0;
-                else
+                if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
+                {
+                    float address = BitConverter.ToSingle(memory, 0);
+                    float returnValue = (float)address;
+                    if (round)
+                        returnValue = (float)Math.Round(address, 2);
                     return returnValue;
+                }
+                else
+                    return 0;
             }
-            else
+            catch
+            {
                 return 0;
+            }
         }
 
         /// <summary>
@@ -571,16 +577,49 @@ namespace Memory
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <param name="length">length of bytes to read (OPTIONAL)</param>
+        /// <param name="zeroTerminated">terminate string at null char</param>
         /// <returns></returns>
-        public string readString(string code, string file = "", int length = 32)
+        public string readString(string code, string file = "", int length = 32, bool zeroTerminated = true)
         {
             byte[] memoryNormal = new byte[length];
             UIntPtr theCode;
             theCode = getCode(code, file);
             if (ReadProcessMemory(pHandle, theCode, memoryNormal, (UIntPtr)length, IntPtr.Zero))
-                return Encoding.UTF8.GetString(memoryNormal);
+                return (zeroTerminated) ? Encoding.UTF8.GetString(memoryNormal).Split('\0')[0] : Encoding.UTF8.GetString(memoryNormal);
             else
                 return "";
+        }
+
+        /// <summary>
+        /// Read a double value
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        /// <param name="round">Round the value to 2 decimal places</param>
+        /// <returns></returns>
+        public double readDouble(string code, string file = "", bool round = true)
+        {
+            byte[] memory = new byte[8];
+
+            UIntPtr theCode;
+            theCode = getCode(code, file);
+            try
+            {
+                if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)8, IntPtr.Zero))
+                {
+                    double address = BitConverter.ToDouble(memory, 0);
+                    double returnValue = (double)address;
+                    if (round)
+                        returnValue = (double)Math.Round(address, 2);
+                    return returnValue;
+                }
+                else
+                    return 0;
+            }
+            catch
+            {
+                return 0;
+            }
         }
 
         public int readUIntPtr(UIntPtr code)
@@ -1673,7 +1712,7 @@ namespace Memory
             {
                 string ba = stringByteArray[i];
 
-                if (ba == "??")
+                if (ba == "??" || (ba.Length == 1 && ba == "?"))
                 {
                     mask[i] = 0x00;
                     stringByteArray[i] = "0x00";
