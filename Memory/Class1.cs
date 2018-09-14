@@ -576,7 +576,7 @@ namespace Memory
         public string readString(string code, string file = "", int length = 32, bool zeroTerminated = false, Encoding encoding = null)
         {
             if (encoding == null)
-                encoding = Encoding.Default;
+                encoding = Encoding.UTF8;
             byte[] memoryNormal = new byte[length];
             UIntPtr theCode;
             theCode = getCode(code, file);
