@@ -1664,14 +1664,12 @@ namespace Memory
         {
             var memRegionList = new List<MemoryRegionResult>();
 
-	        long maxBufferLength = 0;
-
             string memCode = LoadCode(search, file);
 
             string[] stringByteArray = memCode.Split(' ');
             byte[] mask = new byte[stringByteArray.Length];
 
-            for(var i = 0; i < stringByteArray.Length; i++)
+            for (var i = 0; i < stringByteArray.Length; i++)
             {
                 string ba = stringByteArray[i];
 
@@ -1710,8 +1708,8 @@ namespace Memory
 
             UIntPtr currentBaseAddress = new UIntPtr((ulong)start);
 
-	        MEMORY_BASIC_INFORMATION memInfo = new MEMORY_BASIC_INFORMATION();
-			while (VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64() != 0 &&
+            MEMORY_BASIC_INFORMATION memInfo = new MEMORY_BASIC_INFORMATION();
+            while (VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64() != 0 &&
                    currentBaseAddress.ToUInt64() < (ulong)end &&
                    currentBaseAddress.ToUInt64() + (ulong)memInfo.RegionSize >
                    currentBaseAddress.ToUInt64())
@@ -1770,44 +1768,23 @@ namespace Memory
                             RegionSize = previousRegion.RegionSize + memInfo.RegionSize
                         };
 
-
-	                    if (memRegionList[memRegionList.Count - 1].RegionSize > maxBufferLength)
-		                    maxBufferLength = memRegionList[memRegionList.Count - 1].RegionSize;
-
-						continue;
+                        continue;
                     }
                 }
-
-	            if (memRegion.RegionSize > maxBufferLength)
-		            maxBufferLength = memRegion.RegionSize;
 
                 memRegionList.Add(memRegion);
             }
 
             ConcurrentBag<long> bagResult = new ConcurrentBag<long>();
-			
-			// Allocate memory for the region buffer now
-	        byte[] dumpBufferBytes = new byte[maxBufferLength];
-
 
             Parallel.ForEach(memRegionList,
                              (item, parallelLoopState, index) =>
                              {
-								 byte[] aobPattern = new byte[stringByteArray.Length];
+                                 long[] compareResults = CompareScan(item, stringByteArray, mask);
 
-								 for (int i = 0; i < stringByteArray.Length; i++)
-		                             aobPattern[i] = (byte)(Convert.ToByte(stringByteArray[i], 16) & mask[i]);
-
-	                             if (mask.Length != aobPattern.Length)
-		                             throw new ArgumentException($"{nameof(aobPattern)}.Length != {nameof(mask)}.Length");
-
-								 long[] compareResults = CompareScan(item, aobPattern, mask, dumpBufferBytes);
-
-                                 foreach(long result in compareResults)
-                                    bagResult.Add(result);
+                                 foreach (long result in compareResults)
+                                     bagResult.Add(result);
                              });
-
-	        dumpBufferBytes = null;
 
             return bagResult.ToList().OrderBy(c => c);
         }
@@ -1826,19 +1803,26 @@ namespace Memory
 
             return  (await AoBScan(start, end, search, true, true, file)).FirstOrDefault();
         }
-        
-        private long[] CompareScan(MemoryRegionResult item, byte[] aobPattern, byte[] mask, byte[] buffer = null)
-        {
-	        if (buffer == null)
-		        buffer = new byte[item.RegionSize];
 
+        private long[] CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask)
+        {
+            if (mask.Length != aobToFind.Length)
+                throw new ArgumentException($"{nameof(aobToFind)}.Length != {nameof(mask)}.Length");
+
+            byte[] buffer = new byte[item.RegionSize];
             ReadProcessMemory(pHandle, item.CurrentBaseAddress, buffer, (UIntPtr)item.RegionSize, out ulong bytesRead);
 
-            int result = 0 - aobPattern.Length;
+
+            byte[] aobPattern = new byte[aobToFind.Length];
+
+            for (int i = 0; i < aobToFind.Length; i++)
+                aobPattern[i] = (byte)(Convert.ToByte(aobToFind[i], 16) & mask[i]);
+
+            int result = 0 - aobToFind.Length;
             List<long> ret = new List<long>();
             do
             {
-                result = FindPattern(buffer, item.RegionSize, aobPattern, mask, result + aobPattern.Length);
+                result = FindPattern(buffer, aobPattern, mask, result + aobToFind.Length);
 
                 if (result >= 0)
                     ret.Add((long)item.CurrentBaseAddress + result);
@@ -1848,25 +1832,21 @@ namespace Memory
             return ret.ToArray();
         }
 
-        private int FindPattern(byte[] body, long maxLength, byte[] pattern, byte[] masks, int start = 0)
+        private int FindPattern(byte[] body, byte[] pattern, byte[] masks, int start = 0)
         {
             int foundIndex = -1;
 
-	        if (maxLength == 0)
-		        maxLength = body.Length;
+            if (body.Length <= 0 || pattern.Length <= 0 || start > body.Length - pattern.Length ||
+                pattern.Length > body.Length) return foundIndex;
 
-            if (maxLength <= 0 || pattern.Length <= 0 || start > maxLength - pattern.Length ||
-                pattern.Length > maxLength) return foundIndex;
-
-            for (int index = start; index <= maxLength - pattern.Length; index++)
+            for (int index = start; index <= body.Length - pattern.Length; index++)
             {
                 if (((body[index] & masks[0]) == (pattern[0] & masks[0])))
                 {
                     var match = true;
                     for (int index2 = 1; index2 <= pattern.Length - 1; index2++)
                     {
-                        if ((body[index + index2] & masks[index2]) == (pattern[index2] & masks[index2]))
-	                        continue;
+                        if ((body[index + index2] & masks[index2]) == (pattern[index2] & masks[index2])) continue;
                         match = false;
                         break;
 
@@ -1881,7 +1861,7 @@ namespace Memory
 
             return foundIndex;
         }
-        
+
 #endif
     }
 }
