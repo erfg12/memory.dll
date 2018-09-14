@@ -568,12 +568,12 @@ namespace Memory
         /// Read a string value from an address.
         /// </summary>
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+	/// <param name="file">path and name of ini file. (OPTIONAL)</param>  
 	/// <param name="length">length of bytes to read (OPTIONAL)</param>
-        /// <param name="encoding">the encoding that will be used for GetString.</param>
         /// <param name="zeroTerminated">determines if the string will be splited at null char.</param>
-        /// <param name="file">path and name of ini file. (OPTIONAL)</param>        
+	/// <param name="encoding">the encoding that will be used for GetString.</param>
         /// <returns></returns>
-        public string readString(string code, int length = 255, bool zeroTerminated = false, Encoding encoding = null, string file = "")
+        public string readString(string code, string file = "", int length = 32, bool zeroTerminated = false, Encoding encoding = null)
         {
             if (encoding == null)
                 encoding = Encoding.Default;
