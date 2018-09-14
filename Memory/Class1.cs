@@ -571,6 +571,25 @@ namespace Memory
             }
         }
 
+        public double readDouble(string code, string file = "")
+        {
+            byte[] memory = new byte[8];
+
+            UIntPtr theCode;
+            theCode = getCode(code, file);
+            if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)8, IntPtr.Zero))
+            {
+                double address = BitConverter.ToDouble(memory, 0);
+                double returnValue = (double)Math.Round(address, 2);
+                if (returnValue < -99999 || returnValue > 99999)
+                    return 0;
+                else
+                    return returnValue;
+            }
+            else
+                return 0;
+        }
+
         /// <summary>
         /// Read a string value from an address.
         /// </summary>
