@@ -997,12 +997,13 @@ namespace Memory
         /// <summary>
         /// Convert code from string to real address. If path is not blank, will pull from ini file.
         /// </summary>
-        /// <param name="name">label in ini file</param>
-        /// <param name="path">path to ini file</param>
+        /// <param name="name">label in ini file or code</param>
+        /// <param name="path">path to ini file (OPTIONAL)</param>
         /// <param name="size">size of address (default is 8)</param>
         /// <returns></returns>
-        private UIntPtr getCode(string name, string path, int size = 8)
+        private UIntPtr getCode(string name, string path = "", int size = 8)
         {
+            string theCode = "";
             if (is64bit())
             {
                 //Debug.WriteLine("Changing to 64bit code...");
@@ -1010,7 +1011,10 @@ namespace Memory
                 return get64bitCode(name, path, size); //jump over to 64bit code grab
             }
 
-            string theCode = LoadCode(name, path);
+            if (path != "")
+                theCode = LoadCode(name, path);
+            else
+                theCode = name;
 
             if (theCode == "")
             {
@@ -1122,13 +1126,18 @@ namespace Memory
         /// <summary>
         /// Convert code from string to real address. If path is not blank, will pull from ini file.
         /// </summary>
-        /// <param name="name">label in ini file</param>
-        /// <param name="path">path to ini file</param>
+        /// <param name="name">label in ini file or code</param>
+        /// <param name="path">path to ini file (OPTIONAL)</param>
         /// <param name="size">size of address (default is 16)</param>
         /// <returns></returns>
-        private UIntPtr get64bitCode(string name, string path, int size = 16)
+        private UIntPtr get64bitCode(string name, string path = "", int size = 16)
         {
-            string theCode = LoadCode(name, path);
+            string theCode = "";
+            if (path != "")
+                theCode = LoadCode(name, path);
+            else
+                theCode = name;
+
             if (theCode == "")
                 return UIntPtr.Zero;
             string newOffsets = theCode;
