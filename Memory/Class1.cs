@@ -1001,7 +1001,7 @@ namespace Memory
         /// <param name="path">path to ini file (OPTIONAL)</param>
         /// <param name="size">size of address (default is 8)</param>
         /// <returns></returns>
-        private UIntPtr getCode(string name, string path = "", int size = 8)
+        public UIntPtr getCode(string name, string path = "", int size = 8)
         {
             string theCode = "";
             if (is64bit())
@@ -1130,7 +1130,7 @@ namespace Memory
         /// <param name="path">path to ini file (OPTIONAL)</param>
         /// <param name="size">size of address (default is 16)</param>
         /// <returns></returns>
-        private UIntPtr get64bitCode(string name, string path = "", int size = 16)
+        public UIntPtr get64bitCode(string name, string path = "", int size = 16)
         {
             string theCode = "";
             if (path != "")
