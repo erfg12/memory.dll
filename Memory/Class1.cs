@@ -831,7 +831,7 @@ namespace Memory
         ///Write to memory address. See https://github.com/erfg12/memory.dll/wiki/writeMemory() for more information.
         ///</summary>
         ///<param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
-        ///<param name="type">byte, bytes, float, int, string or long.</param>
+        ///<param name="type">byte, 2bytes, bytes, float, int, string, double or long.</param>
         ///<param name="write">value to write to address.</param>
         ///<param name="file">path and name of .ini file (OPTIONAL)</param>
         public bool writeMemory(string code, string type, string write, string file = "")
