@@ -138,6 +138,9 @@ namespace Memory
         [DllImport("kernel32.dll")]
         private static extern bool ReadProcessMemory(IntPtr hProcess, UIntPtr lpBaseAddress, [Out] byte[] lpBuffer, UIntPtr nSize, out ulong lpNumberOfBytesRead);
 
+        [DllImport("kernel32.dll")]
+        private static extern bool ReadProcessMemory(IntPtr hProcess, UIntPtr lpBaseAddress, [Out] IntPtr lpBuffer, UIntPtr nSize, out ulong lpNumberOfBytesRead);
+
         [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
         static extern UIntPtr VirtualAllocEx(
             IntPtr hProcess,
@@ -1715,6 +1718,8 @@ namespace Memory
             string memCode = LoadCode(search, file);
 
             string[] stringByteArray = memCode.Split(' ');
+
+            byte[] aobPattern = new byte[stringByteArray.Length];
             byte[] mask = new byte[stringByteArray.Length];
 
             for (var i = 0; i < stringByteArray.Length; i++)
@@ -1739,6 +1744,10 @@ namespace Memory
                 else
                     mask[i] = 0xFF;
             }
+
+
+            for (int i = 0; i < stringByteArray.Length; i++)
+                aobPattern[i] = (byte)(Convert.ToByte(stringByteArray[i], 16) & mask[i]);
 
             SYSTEM_INFO sys_info = new SYSTEM_INFO();
             GetSystemInfo(out sys_info);
@@ -1828,7 +1837,7 @@ namespace Memory
             Parallel.ForEach(memRegionList,
                              (item, parallelLoopState, index) =>
                              {
-                                 long[] compareResults = CompareScan(item, stringByteArray, mask);
+                                 long[] compareResults = CompareScan(item, aobPattern, mask);
 
                                  foreach (long result in compareResults)
                                      bagResult.Add(result);
@@ -1852,30 +1861,31 @@ namespace Memory
             return  (await AoBScan(start, end, search, true, true, file)).FirstOrDefault();
         }
 
-        private long[] CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask)
+        private long[] CompareScan(MemoryRegionResult item, byte[] aobPattern, byte[] mask)
         {
-            if (mask.Length != aobToFind.Length)
-                throw new ArgumentException($"{nameof(aobToFind)}.Length != {nameof(mask)}.Length");
+            if (mask.Length != aobPattern.Length)
+                throw new ArgumentException($"{nameof(aobPattern)}.Length != {nameof(mask)}.Length");
 
-            byte[] buffer = new byte[item.RegionSize];
+            IntPtr buffer = Marshal.AllocHGlobal((int)item.RegionSize);
+
             ReadProcessMemory(pHandle, item.CurrentBaseAddress, buffer, (UIntPtr)item.RegionSize, out ulong bytesRead);
 
-
-            byte[] aobPattern = new byte[aobToFind.Length];
-
-            for (int i = 0; i < aobToFind.Length; i++)
-                aobPattern[i] = (byte)(Convert.ToByte(aobToFind[i], 16) & mask[i]);
-
-            int result = 0 - aobToFind.Length;
+            int result = 0 - aobPattern.Length;
             List<long> ret = new List<long>();
-            do
+            unsafe
             {
-                result = FindPattern(buffer, aobPattern, mask, result + aobToFind.Length);
+                do
+                {
 
-                if (result >= 0)
-                    ret.Add((long)item.CurrentBaseAddress + result);
+                    result = FindPattern((byte*)buffer.ToPointer(), (int)bytesRead, aobPattern, mask, result + aobPattern.Length);
 
-            } while (result != -1);
+                    if (result >= 0)
+                        ret.Add((long) item.CurrentBaseAddress + result);
+
+                } while (result != -1);
+            }
+
+            Marshal.FreeHGlobal(buffer);
 
             return ret.ToArray();
         }
@@ -1888,6 +1898,36 @@ namespace Memory
                 pattern.Length > body.Length) return foundIndex;
 
             for (int index = start; index <= body.Length - pattern.Length; index++)
+            {
+                if (((body[index] & masks[0]) == (pattern[0] & masks[0])))
+                {
+                    var match = true;
+                    for (int index2 = 1; index2 <= pattern.Length - 1; index2++)
+                    {
+                        if ((body[index + index2] & masks[index2]) == (pattern[index2] & masks[index2])) continue;
+                        match = false;
+                        break;
+
+                    }
+
+                    if (!match) continue;
+
+                    foundIndex = index;
+                    break;
+                }
+            }
+
+            return foundIndex;
+        }
+
+        private unsafe int FindPattern(byte* body, int bodyLength, byte[] pattern, byte[] masks, int start = 0)
+        {
+            int foundIndex = -1;
+
+            if (bodyLength <= 0 || pattern.Length <= 0 || start > bodyLength - pattern.Length ||
+                pattern.Length > bodyLength) return foundIndex;
+
+            for (int index = start; index <= bodyLength - pattern.Length; index++)
             {
                 if (((body[index] & masks[0]) == (pattern[0] & masks[0])))
                 {
