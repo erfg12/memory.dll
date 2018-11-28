@@ -7,3 +7,5 @@ NuGet has the latest compiled releases. https://www.nuget.org/packages/Memory.dl
 Use Visual Studio to get it! Project > Manage NuGet Packages... > Browse > Search "memory.dll".
 
 memory.dll now requires 4.7.1 .NET framework! You can re-compile memory.dll at a lower framework with the compile flag "WINXP". However, AoB scanning will not work at anything lower than 4.7.1.
+
+![https://discord.gg/9d7fB5a](https://i1.wp.com/community.sliver.tv/wp-content/uploads/2018/09/discooord.png)
