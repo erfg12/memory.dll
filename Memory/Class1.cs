@@ -51,6 +51,9 @@ namespace Memory
                 MEMORY_BASIC_INFORMATION64 tmp64 = new MEMORY_BASIC_INFORMATION64();
                 retVal = Native_VirtualQueryEx(hProcess, lpAddress, out tmp64, new UIntPtr((uint)Marshal.SizeOf(tmp64)));
 
+                if (retVal == UIntPtr.Zero)
+                    Debug.WriteLine("[Error] VirtualQueryEx: Make sure you build as the same as game platform (x64)");
+
                 lpBuffer.BaseAddress = tmp64.BaseAddress;
                 lpBuffer.AllocationBase = tmp64.AllocationBase;
                 lpBuffer.AllocationProtect = tmp64.AllocationProtect;
@@ -65,6 +68,9 @@ namespace Memory
             MEMORY_BASIC_INFORMATION32 tmp32 = new MEMORY_BASIC_INFORMATION32();
 
             retVal = Native_VirtualQueryEx(hProcess, lpAddress, out tmp32, new UIntPtr((uint)Marshal.SizeOf(tmp32)));
+
+            if (retVal == UIntPtr.Zero)
+                Debug.WriteLine("[Error] VirtualQueryEx: Make sure you build as the same as game platform (x86)");
 
             lpBuffer.BaseAddress = tmp32.BaseAddress;
             lpBuffer.AllocationBase = tmp32.AllocationBase;
