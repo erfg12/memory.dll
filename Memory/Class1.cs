@@ -20,6 +20,11 @@ namespace Memory
     /// </summary>
     public class Mem
     {
+        public bool _debug { get; set; }
+        public Mem(bool Debug = false)
+        {
+            _debug = Debug;
+        }
         #region DllImports
         [DllImport("kernel32.dll")]
         public static extern IntPtr OpenProcess(
@@ -223,6 +228,16 @@ namespace Memory
 
         #endregion
 
+
+        public enum AoBSpeed
+        {
+            Lowest = 3,
+            BelowNormal = 5,
+            Normal = 9,
+            AboveNormal = 12,
+            Highest = 1
+        }
+
         /// <summary>
         /// The process handle that was opened. (Use OpenProcess function to populate this variable)
         /// </summary>
@@ -269,7 +284,8 @@ namespace Memory
             if (!isAdmin())
             {
                 Debug.WriteLine("WARNING: You are NOT running this program as admin! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
-                MessageBox.Show("WARNING: You are NOT running this program as admin!");
+                if (_debug)
+                    MessageBox.Show("WARNING: You are NOT running this program as admin!");
             }
 
             try
@@ -279,7 +295,8 @@ namespace Memory
 
                 if (pid <= 0)
                 {
-                    Debug.WriteLine("ERROR: OpenProcess given proc ID 0.");
+                    if (_debug)
+                        Debug.WriteLine("ERROR: OpenProcess given proc ID 0.");
                     return false;
                 }
 
@@ -287,7 +304,8 @@ namespace Memory
 
                 if (theProc != null && !theProc.Responding)
                 {
-                    Debug.WriteLine("ERROR: OpenProcess: Process is not responding or null.");
+                    if (_debug)
+                        Debug.WriteLine("ERROR: OpenProcess: Process is not responding or null.");
                     return false;
                 }
 
@@ -306,12 +324,14 @@ namespace Memory
                 // Lets set the process to 64bit or not here (cuts down on api calls)
                 Is64Bit = Environment.Is64BitOperatingSystem && (IsWow64Process(pHandle, out bool retVal) && !retVal);
 
-                Debug.WriteLine("Program is operating at Administrative level. Process #" + theProc + " is open and modules are stored.");
+                if (_debug)
+                    Debug.WriteLine("Program is operating at Administrative level. Process #" + theProc + " is open and modules are stored.");
 
                 return true;
             }
             catch {
-                Debug.WriteLine("ERROR: OpenProcess has crashed.");
+                if (_debug)
+                    Debug.WriteLine("ERROR: OpenProcess has crashed.");
                 return false;
             }
         }
@@ -451,7 +471,8 @@ namespace Memory
                     return 0;
             } catch
             {
-                Debug.WriteLine("ERROR: LoadIntCode function crashed!");
+                if (_debug)
+                    Debug.WriteLine("ERROR: LoadIntCode function crashed!");
                 return 0;
             }
         }
@@ -964,7 +985,8 @@ namespace Memory
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
 
-            Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:[O]" + theCode + " [N]" + newCode + " MQTY:" + moveQty + "] " + String.Join(",", memory) + Environment.NewLine);
+            if (_debug)
+                Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:[O]" + theCode + " [N]" + newCode + " MQTY:" + moveQty + "] " + String.Join(",", memory) + Environment.NewLine);
             Thread.Sleep(1000);
             return WriteProcessMemory(pHandle, newCode, memory, (UIntPtr)size, IntPtr.Zero);
         }
@@ -1067,8 +1089,11 @@ namespace Memory
                         }
                         catch
                         {
-                            Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
-                            Debug.WriteLine("Modules: " + string.Join(",", modules));
+                            if (_debug)
+                            {
+                                Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
+                                Debug.WriteLine("Modules: " + string.Join(",", modules));
+                            }
                         }
                     }
                     ReadProcessMemory(pHandle, (UIntPtr)((int)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
@@ -1112,8 +1137,12 @@ namespace Memory
                         }
                         catch
                         {
-                            Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
-                            Debug.WriteLine("Modules: " + string.Join(",", modules));
+                            if (_debug)
+                            {
+                                Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
+                                Debug.WriteLine("Modules: " + string.Join(",", modules));
+                            }
+                                
                         }
                     }
                 }
@@ -1177,8 +1206,11 @@ namespace Memory
                         }
                         catch
                         {
-                            Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
-                            Debug.WriteLine("Modules: " + string.Join(",", modules));
+                            if (_debug)
+                            {
+                                Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
+                                Debug.WriteLine("Modules: " + string.Join(",", modules));
+                            }
                         }
                     }
                     ReadProcessMemory(pHandle, (UIntPtr)((Int64)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
@@ -1221,8 +1253,11 @@ namespace Memory
                         }
                         catch
                         {
-                            Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
-                            Debug.WriteLine("Modules: " + string.Join(",", modules));
+                            if (_debug)
+                            {
+                                Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
+                                Debug.WriteLine("Modules: " + string.Join(",", modules));
+                            }
                         }
                     }
                 }
@@ -1647,7 +1682,8 @@ namespace Memory
         /// </summary>
         public bool DumpMemory(string file = "dump.dmp")
         {
-            Debug.Write("[DEBUG] memory dump starting... (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+            if (_debug)
+                Debug.Write("[DEBUG] memory dump starting... (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
             SYSTEM_INFO sys_info = new SYSTEM_INFO();
             GetSystemInfo(out sys_info);
 
@@ -1680,8 +1716,8 @@ namespace Memory
                 proc_min_address = new UIntPtr((ulong)proc_min_address_l);
             }
 
-
-            Debug.Write("[DEBUG] memory dump completed. Saving dump file to " + file + ". (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+            if (_debug)
+                Debug.Write("[DEBUG] memory dump completed. Saving dump file to " + file + ". (" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
             return true;
         }
 
@@ -1693,9 +1729,9 @@ namespace Memory
         /// <param name="executable">Include executable addresses in scan</param>
         /// <param name="file">ini file (OPTIONAL)</param>
         /// <returns>IEnumerable of all addresses found.</returns>
-        public async Task<IEnumerable<long>> AoBScan(string search, bool writable = false, bool executable = true, string file = "")
+        public async Task<IEnumerable<long>> AoBScan(string search, bool writable = false, bool executable = true, string file = "", AoBSpeed speedMode = AoBSpeed.Highest)
         {
-            return await AoBScan(0, long.MaxValue, search, writable, executable, file);
+            return await AoBScan(0, long.MaxValue, search, writable, executable, file, speedMode);
         }
 
         /// <summary>
@@ -1708,7 +1744,7 @@ namespace Memory
         /// <param name="writable">Include writable addresses in scan</param>
         /// <param name="executable">Include executable addresses in scan</param>
         /// <returns>IEnumerable of all addresses found.</returns>
-        public async Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool writable = false, bool executable = true, string file = "")
+        public async Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool writable = false, bool executable = true, string file = "", AoBSpeed speedMode = AoBSpeed.Highest)
         {
             var memRegionList = new List<MemoryRegionResult>();
 
@@ -1752,7 +1788,8 @@ namespace Memory
             if (end > (long)proc_max_address.ToUInt64())
                 end = (long)proc_max_address.ToUInt64();
 
-            Debug.Write("[DEBUG] memory scan starting... (min:0x" + proc_min_address.ToUInt64().ToString(mSize()) + " max:0x" + proc_max_address.ToUInt64().ToString(mSize()) + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
+            if (_debug)
+                Debug.Write("[DEBUG] memory scan starting... (min:0x" + proc_min_address.ToUInt64().ToString(mSize()) + " max:0x" + proc_max_address.ToUInt64().ToString(mSize()) + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
 
             UIntPtr currentBaseAddress = new UIntPtr((ulong)start);
 
@@ -1825,14 +1862,13 @@ namespace Memory
 
             ConcurrentBag<long> bagResult = new ConcurrentBag<long>();
 
-            Parallel.ForEach(memRegionList,
-                             (item, parallelLoopState, index) =>
-                             {
-                                 long[] compareResults = CompareScan(item, stringByteArray, mask);
+            Parallel.ForEach(memRegionList, (item, parallelLoopState, index) =>
+            {
+                long[] compareResults = CompareScan(item, stringByteArray, mask, speedMode);
 
-                                 foreach (long result in compareResults)
-                                     bagResult.Add(result);
-                             });
+                foreach (long result in compareResults)
+                    bagResult.Add(result);
+            });
 
             return bagResult.ToList().OrderBy(c => c);
         }
@@ -1845,14 +1881,14 @@ namespace Memory
         /// <param name="search">array of bytes to search for or your ini code label</param>
         /// <param name="file">ini file</param>
         /// <returns>First address found</returns>
-        public async Task<long> AoBScan(string code, long end, string search, string file ="")
+        public async Task<long> AoBScan(string code, long end, string search, string file = "", AoBSpeed speedMode = AoBSpeed.Highest)
         {
             long start = (long)getCode(code, file).ToUInt64();
 
-            return  (await AoBScan(start, end, search, true, true, file)).FirstOrDefault();
+            return  (await AoBScan(start, end, search, true, true, file, speedMode)).FirstOrDefault();
         }
 
-        private long[] CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask)
+        private long[] CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask, AoBSpeed speedMode)
         {
             if (mask.Length != aobToFind.Length)
                 throw new ArgumentException($"{nameof(aobToFind)}.Length != {nameof(mask)}.Length");
@@ -1870,7 +1906,7 @@ namespace Memory
             List<long> ret = new List<long>();
             do
             {
-                result = FindPattern(buffer, aobPattern, mask, result + aobToFind.Length);
+                result = FindPattern(buffer, aobPattern, mask, result + aobToFind.Length, speedMode);
 
                 if (result >= 0)
                     ret.Add((long)item.CurrentBaseAddress + result);
@@ -1880,8 +1916,9 @@ namespace Memory
             return ret.ToArray();
         }
 
-        private int FindPattern(byte[] body, byte[] pattern, byte[] masks, int start = 0)
+        private int FindPattern(byte[] body, byte[] pattern, byte[] masks, int start, AoBSpeed speedMode)
         {
+            int counter = 0;
             int foundIndex = -1;
 
             if (body.Length <= 0 || pattern.Length <= 0 || start > body.Length - pattern.Length ||
@@ -1897,7 +1934,6 @@ namespace Memory
                         if ((body[index + index2] & masks[index2]) == (pattern[index2] & masks[index2])) continue;
                         match = false;
                         break;
-
                     }
 
                     if (!match) continue;
@@ -1905,8 +1941,17 @@ namespace Memory
                     foundIndex = index;
                     break;
                 }
-            }
 
+                if (speedMode != AoBSpeed.Highest)
+                {
+                    counter++;
+                    if (counter >= (int)speedMode * 8000)
+                    {
+                        Thread.Sleep(1);
+                        counter = 0;
+                    }
+                }
+            }
             return foundIndex;
         }
 
