@@ -21,7 +21,7 @@ namespace Memory
     public class Mem
     {
         public bool _debug { get; set; }
-        public Mem(bool Debug = false)
+        public Mem(bool Debug = true)
         {
             _debug = Debug;
         }
@@ -227,16 +227,6 @@ namespace Memory
         private uint MEM_IMAGE = 0x1000000;
 
         #endregion
-
-
-        public enum AoBSpeed
-        {
-            Lowest = 3,
-            BelowNormal = 5,
-            Normal = 9,
-            AboveNormal = 12,
-            Highest = 1
-        }
 
         /// <summary>
         /// The process handle that was opened. (Use OpenProcess function to populate this variable)
@@ -1721,6 +1711,7 @@ namespace Memory
             return true;
         }
 
+        #region AoB Scan
         /// <summary>
         /// Array of byte scan.
         /// </summary>
@@ -1728,10 +1719,11 @@ namespace Memory
         /// <param name="writable">Include writable addresses in scan</param>
         /// <param name="executable">Include executable addresses in scan</param>
         /// <param name="file">ini file (OPTIONAL)</param>
+        /// <param name="Throttle">Slow the AoB scan. Higher the number, the higher the scan.</param>
         /// <returns>IEnumerable of all addresses found.</returns>
-        public async Task<IEnumerable<long>> AoBScan(string search, bool writable = false, bool executable = true, string file = "", AoBSpeed speedMode = AoBSpeed.Highest)
+        public async Task<IEnumerable<long>> AoBScan(string search, bool writable = false, bool executable = true, string file = "", int Throttle = 0)
         {
-            return await AoBScan(0, long.MaxValue, search, writable, executable, file, speedMode);
+            return await AoBScan(0, long.MaxValue, search, writable, executable, file, Throttle);
         }
 
         /// <summary>
@@ -1743,8 +1735,9 @@ namespace Memory
         /// <param name="file">ini file (OPTIONAL)</param>
         /// <param name="writable">Include writable addresses in scan</param>
         /// <param name="executable">Include executable addresses in scan</param>
+        /// <param name="Throttle">Slow the AoB scan. Higher the number, the higher the scan.</param>
         /// <returns>IEnumerable of all addresses found.</returns>
-        public async Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool writable = false, bool executable = true, string file = "", AoBSpeed speedMode = AoBSpeed.Highest)
+        public async Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool writable = false, bool executable = true, string file = "", int Throttle = 0)
         {
             var memRegionList = new List<MemoryRegionResult>();
 
@@ -1864,7 +1857,7 @@ namespace Memory
 
             Parallel.ForEach(memRegionList, (item, parallelLoopState, index) =>
             {
-                long[] compareResults = CompareScan(item, stringByteArray, mask, speedMode);
+                long[] compareResults = CompareScan(item, stringByteArray, mask, Throttle);
 
                 foreach (long result in compareResults)
                     bagResult.Add(result);
@@ -1880,15 +1873,16 @@ namespace Memory
         /// <param name="end">ending address</param>
         /// <param name="search">array of bytes to search for or your ini code label</param>
         /// <param name="file">ini file</param>
+        /// <param name="Throttle">Slow the AoB scan. Higher the number, the higher the scan.</param>
         /// <returns>First address found</returns>
-        public async Task<long> AoBScan(string code, long end, string search, string file = "", AoBSpeed speedMode = AoBSpeed.Highest)
+        public async Task<long> AoBScan(string code, long end, string search, string file = "", int Throttle = 0)
         {
             long start = (long)getCode(code, file).ToUInt64();
 
-            return  (await AoBScan(start, end, search, true, true, file, speedMode)).FirstOrDefault();
+            return  (await AoBScan(start, end, search, true, true, file, Throttle)).FirstOrDefault();
         }
 
-        private long[] CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask, AoBSpeed speedMode)
+        private long[] CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask, int Throttle)
         {
             if (mask.Length != aobToFind.Length)
                 throw new ArgumentException($"{nameof(aobToFind)}.Length != {nameof(mask)}.Length");
@@ -1906,7 +1900,7 @@ namespace Memory
             List<long> ret = new List<long>();
             do
             {
-                result = FindPattern(buffer, aobPattern, mask, result + aobToFind.Length, speedMode);
+                result = FindPattern(buffer, aobPattern, mask, result + aobToFind.Length, Throttle);
 
                 if (result >= 0)
                     ret.Add((long)item.CurrentBaseAddress + result);
@@ -1916,7 +1910,7 @@ namespace Memory
             return ret.ToArray();
         }
 
-        private int FindPattern(byte[] body, byte[] pattern, byte[] masks, int start, AoBSpeed speedMode)
+        private int FindPattern(byte[] body, byte[] pattern, byte[] masks, int start, int Throttle)
         {
             int counter = 0;
             int foundIndex = -1;
@@ -1942,19 +1936,16 @@ namespace Memory
                     break;
                 }
 
-                if (speedMode != AoBSpeed.Highest)
+                counter++;
+                if (counter >= Throttle)
                 {
-                    counter++;
-                    if (counter >= (int)speedMode * 8000)
-                    {
-                        Thread.Sleep(1);
-                        counter = 0;
-                    }
+                    Thread.Sleep(1);
+                    counter = 0;
                 }
             }
             return foundIndex;
         }
-
+        #endregion
 #endif
     }
 }
