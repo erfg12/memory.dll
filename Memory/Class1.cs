@@ -291,7 +291,6 @@ namespace Memory
                 }
 
                 theProc = Process.GetProcessById(pid);
-
                 if (theProc != null && !theProc.Responding)
                 {
                     if (_debug)
@@ -308,7 +307,6 @@ namespace Memory
                 }
 
                 mainModule = theProc.MainModule;
-
                 getModules();
 
                 // Lets set the process to 64bit or not here (cuts down on api calls)
@@ -319,9 +317,9 @@ namespace Memory
 
                 return true;
             }
-            catch {
+            catch (Exception ex) {
                 if (_debug)
-                    Debug.WriteLine("ERROR: OpenProcess has crashed.");
+                    Debug.WriteLine($"ERROR: OpenProcess has crashed. '{ex.Message}'");
                 return false;
             }
         }
@@ -1721,7 +1719,7 @@ namespace Memory
         /// <param name="file">ini file (OPTIONAL)</param>
         /// <param name="Throttle">Slow the AoB scan. Higher the number, the higher the scan.</param>
         /// <returns>IEnumerable of all addresses found.</returns>
-        public async Task<IEnumerable<long>> AoBScan(string search, bool writable = false, bool executable = true, string file = "", int Throttle = 0)
+        public async Task<IEnumerable<long>> AoBScan(string search, bool writable = false, bool executable = true, string file = "", int Throttle = int.MaxValue)
         {
             return await AoBScan(0, long.MaxValue, search, writable, executable, file, Throttle);
         }
@@ -1737,7 +1735,7 @@ namespace Memory
         /// <param name="executable">Include executable addresses in scan</param>
         /// <param name="Throttle">Slow the AoB scan. Higher the number, the higher the scan.</param>
         /// <returns>IEnumerable of all addresses found.</returns>
-        public async Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool writable = false, bool executable = true, string file = "", int Throttle = 0)
+        public async Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool writable = false, bool executable = true, string file = "", int Throttle = int.MaxValue)
         {
             var memRegionList = new List<MemoryRegionResult>();
 
@@ -1875,7 +1873,7 @@ namespace Memory
         /// <param name="file">ini file</param>
         /// <param name="Throttle">Slow the AoB scan. Higher the number, the higher the scan.</param>
         /// <returns>First address found</returns>
-        public async Task<long> AoBScan(string code, long end, string search, string file = "", int Throttle = 0)
+        public async Task<long> AoBScan(string code, long end, string search, string file = "", int Throttle = int.MaxValue)
         {
             long start = (long)getCode(code, file).ToUInt64();
 
