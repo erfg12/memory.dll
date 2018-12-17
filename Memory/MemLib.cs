@@ -1726,9 +1726,9 @@ namespace Memory
         /// <param name="file">ini file (OPTIONAL)</param>
         /// <param name="Throttle">Slow the AoB scan. Higher the number, the higher the scan.</param>
         /// <returns>IEnumerable of all addresses found.</returns>
-        public async Task<AoBOutput> AoBScan(AoBInput search, bool writable = false, bool executable = true, string file = "", int Throttle = int.MaxValue)
+        public async Task<AoBOutput> AoBScan(AoBInput search, bool writable = false, bool executable = true, string file = "")
         {
-            return await AoBScan(0, long.MaxValue, search, writable, executable, file, Throttle);
+            return await AoBScan(0, long.MaxValue, search, writable, executable, file);
         }
 
         /// <summary>
@@ -1742,7 +1742,7 @@ namespace Memory
         /// <param name="executable">Include executable addresses in scan</param>
         /// <param name="Throttle">Slow the AoB scan. Higher the number, the higher the scan.</param>
         /// <returns>IEnumerable of all addresses found.</returns>
-        public async Task<AoBOutput> AoBScan(long start, long end, AoBInput search, bool writable = false, bool executable = true, string file = "", int Throttle = int.MaxValue)
+        public async Task<AoBOutput> AoBScan(long start, long end, AoBInput search, bool writable = false, bool executable = true, string file = "")
         {
             var memRegionList = new List<MemoryRegionResult>();
             var AobInputs = new List<AoBInputBytes>();
@@ -1882,7 +1882,7 @@ namespace Memory
             {
                 foreach (var AoBInput in AobInputs)
                 {
-                    long[] compareResults = CompareScan(item, AoBInput.Sig, AoBInput.Mask, Throttle).OrderBy(c => c).ToArray();
+                    long[] compareResults = CompareScan(item, AoBInput.Sig, AoBInput.Mask).OrderBy(c => c).ToArray();
                     lock (localLock)
                         Result.Add(AoBInput.AoBName, compareResults);
                 }
@@ -1891,7 +1891,7 @@ namespace Memory
             return Result;
         }
 
-        private long[] CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask, int Throttle)
+        private long[] CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask)
         {
             if (mask.Length != aobToFind.Length)
                 throw new ArgumentException($"{nameof(aobToFind)}.Length != {nameof(mask)}.Length");
@@ -1909,7 +1909,7 @@ namespace Memory
             List<long> ret = new List<long>();
             do
             {
-                result = FindPattern(buffer, aobPattern, mask, result + aobToFind.Length, Throttle);
+                result = FindPattern(buffer, aobPattern, mask, result + aobToFind.Length);
 
                 if (result >= 0)
                     ret.Add((long)item.CurrentBaseAddress + result);
@@ -1919,7 +1919,7 @@ namespace Memory
             return ret.ToArray();
         }
 
-        private int FindPattern(byte[] body, byte[] pattern, byte[] masks, int start, int Throttle)
+        private int FindPattern(byte[] body, byte[] pattern, byte[] masks, int start)
         {
             int foundIndex = -1;
 
