@@ -21,6 +21,8 @@ namespace Memory
     public class Mem
     {
         public bool _debug { get; set; }
+        public int MaxDegreeOfParalle { get; set; } = 2;
+
         public Mem(bool Debug = true)
         {
             _debug = Debug;
@@ -317,14 +319,15 @@ namespace Memory
 
                 return true;
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 if (_debug)
                     Debug.WriteLine($"ERROR: OpenProcess has crashed. '{ex.Message}'");
                 return false;
             }
         }
 
-       
+
         /// <summary>
         /// Open the PC game process with all security and access rights.
         /// </summary>
@@ -361,8 +364,9 @@ namespace Memory
         public bool Is64Bit
         {
             get { return _is64Bit; }
-            private set { _is64Bit = value; }
+            set { _is64Bit = value; }
         }
+
 
 
         /// <summary>
@@ -457,7 +461,8 @@ namespace Memory
                     return intValue;
                 else
                     return 0;
-            } catch
+            }
+            catch
             {
                 if (_debug)
                     Debug.WriteLine("ERROR: LoadIntCode function crashed!");
@@ -1030,7 +1035,8 @@ namespace Memory
             {
                 //Debug.WriteLine("ERROR: LoadCode returned blank. NAME:" + name + " PATH:" + path);
                 return UIntPtr.Zero;
-            } else
+            }
+            else
             {
                 //Debug.WriteLine("Found code=" + theCode + " NAME:" + name + " PATH:" + path);
             }
@@ -1052,7 +1058,7 @@ namespace Memory
                 foreach (string oldOffsets in newerOffsets)
                 {
                     string test = oldOffsets;
-                    if (oldOffsets.Contains("0x")) test = oldOffsets.Replace("0x","");
+                    if (oldOffsets.Contains("0x")) test = oldOffsets.Replace("0x", "");
                     offsetsList.Add(Int32.Parse(test, NumberStyles.HexNumber));
                 }
                 int[] offsets = offsetsList.ToArray();
@@ -1130,7 +1136,7 @@ namespace Memory
                                 Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
                                 Debug.WriteLine("Modules: " + string.Join(",", modules));
                             }
-                                
+
                         }
                     }
                 }
@@ -1340,7 +1346,7 @@ namespace Memory
             UIntPtr caveAddress = UIntPtr.Zero;
             UIntPtr prefered = address;
 
-            for(var i = 0; i < 10 && caveAddress == UIntPtr.Zero; i++)
+            for (var i = 0; i < 10 && caveAddress == UIntPtr.Zero; i++)
             {
                 caveAddress = VirtualAllocEx(pHandle, FindFreeBlockForRegion(prefered, (uint)newBytes.Length),
                                              (uint)size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
@@ -1363,7 +1369,7 @@ namespace Memory
             jmpBytes[0] = 0xE9;
             BitConverter.GetBytes(offset).CopyTo(jmpBytes, 1);
 
-            for(var i = 5; i < jmpBytes.Length; i++)
+            for (var i = 5; i < jmpBytes.Length; i++)
             {
                 jmpBytes[i] = 0x90;
             }
@@ -1380,7 +1386,7 @@ namespace Memory
 
             return caveAddress;
         }
-        
+
         private UIntPtr FindFreeBlockForRegion(UIntPtr baseAddress, uint size)
         {
             UIntPtr minAddress = UIntPtr.Subtract(baseAddress, 0x70000000);
@@ -1427,12 +1433,12 @@ namespace Memory
                                            ((long)tmpAddress % si.allocationGranularity));
 
                         // Check if there is enough left
-                        if((mbi.RegionSize - offset) >= size)
+                        if ((mbi.RegionSize - offset) >= size)
                         {
                             // yup there is enough
                             tmpAddress = UIntPtr.Add(tmpAddress, offset);
 
-                            if((long)tmpAddress < (long)baseAddress)
+                            if ((long)tmpAddress < (long)baseAddress)
                             {
                                 tmpAddress = UIntPtr.Add(tmpAddress, (int)(mbi.RegionSize - offset - size));
 
@@ -1452,9 +1458,9 @@ namespace Memory
                     {
                         tmpAddress = mbi.BaseAddress;
 
-                        if((long)tmpAddress < (long)baseAddress) // try to get it the cloest possible 
-                                                                 // (so to the end of the region - size and
-                                                                 // aligned by system allocation granularity)
+                        if ((long)tmpAddress < (long)baseAddress) // try to get it the cloest possible 
+                                                                  // (so to the end of the region - size and
+                                                                  // aligned by system allocation granularity)
                         {
                             tmpAddress = UIntPtr.Add(tmpAddress, (int)(mbi.RegionSize - size));
 
@@ -1557,7 +1563,8 @@ namespace Memory
             }
         }
 
-        public byte[] fileToBytes(string path, bool dontDelete = false) {
+        public byte[] fileToBytes(string path, bool dontDelete = false)
+        {
             byte[] newArray = File.ReadAllBytes(path);
             if (!dontDelete)
                 File.Delete(path);
@@ -1719,7 +1726,7 @@ namespace Memory
         /// <param name="file">ini file (OPTIONAL)</param>
         /// <param name="Throttle">Slow the AoB scan. Higher the number, the higher the scan.</param>
         /// <returns>IEnumerable of all addresses found.</returns>
-        public async Task<IEnumerable<long>> AoBScan(string search, bool writable = false, bool executable = true, string file = "", int Throttle = int.MaxValue)
+        public async Task<AoBOutput> AoBScan(AoBInput search, bool writable = false, bool executable = true, string file = "", int Throttle = int.MaxValue)
         {
             return await AoBScan(0, long.MaxValue, search, writable, executable, file, Throttle);
         }
@@ -1735,36 +1742,43 @@ namespace Memory
         /// <param name="executable">Include executable addresses in scan</param>
         /// <param name="Throttle">Slow the AoB scan. Higher the number, the higher the scan.</param>
         /// <returns>IEnumerable of all addresses found.</returns>
-        public async Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool writable = false, bool executable = true, string file = "", int Throttle = int.MaxValue)
+        public async Task<AoBOutput> AoBScan(long start, long end, AoBInput search, bool writable = false, bool executable = true, string file = "", int Throttle = int.MaxValue)
         {
             var memRegionList = new List<MemoryRegionResult>();
-
-            string memCode = LoadCode(search, file);
-
-            string[] stringByteArray = memCode.Split(' ');
-            byte[] mask = new byte[stringByteArray.Length];
-
-            for (var i = 0; i < stringByteArray.Length; i++)
+            var AobInputs = new List<AoBInputBytes>();
+            foreach (var item in search)
             {
-                string ba = stringByteArray[i];
+                string memCode = LoadCode(item.Value, file);
 
-                if (ba == "??" || (ba.Length == 1 && ba == "?"))
+                string[] stringByteArray = memCode.Split(' ');
+                byte[] mask = new byte[stringByteArray.Length];
+
+                for (var i = 0; i < stringByteArray.Length; i++)
                 {
-                    mask[i] = 0x00;
-                    stringByteArray[i] = "0x00";
+                    string ba = stringByteArray[i];
+
+                    if (ba == "??" || (ba.Length == 1 && ba == "?"))
+                    {
+                        mask[i] = 0x00;
+                        stringByteArray[i] = "0x00";
+                    }
+                    else if (Char.IsLetterOrDigit(ba[0]) && ba[1] == '?')
+                    {
+                        mask[i] = 0xF0;
+                        stringByteArray[i] = ba[0] + "0";
+                    }
+                    else if (Char.IsLetterOrDigit(ba[1]) && ba[0] == '?')
+                    {
+                        mask[i] = 0x0F;
+                        stringByteArray[i] = "0" + ba[1];
+                    }
+                    else
+                    {
+                        mask[i] = 0xFF;
+                    }
                 }
-                else if (Char.IsLetterOrDigit(ba[0]) && ba[1] == '?')
-                {
-                    mask[i] = 0xF0;
-                    stringByteArray[i] = ba[0] + "0";
-                }
-                else if (Char.IsLetterOrDigit(ba[1]) && ba[0] == '?')
-                {
-                    mask[i] = 0x0F;
-                    stringByteArray[i] = "0" + ba[1];
-                }
-                else
-                    mask[i] = 0xFF;
+
+                AobInputs.Add(new AoBInputBytes(item.Key, stringByteArray, mask));
             }
 
             SYSTEM_INFO sys_info = new SYSTEM_INFO();
@@ -1785,14 +1799,11 @@ namespace Memory
             UIntPtr currentBaseAddress = new UIntPtr((ulong)start);
 
             MEMORY_BASIC_INFORMATION memInfo = new MEMORY_BASIC_INFORMATION();
-            while (VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64() != 0 &&
-                   currentBaseAddress.ToUInt64() < (ulong)end &&
-                   currentBaseAddress.ToUInt64() + (ulong)memInfo.RegionSize >
-                   currentBaseAddress.ToUInt64())
+            while (VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64() != 0 && currentBaseAddress.ToUInt64() < (ulong)end &&
+                   currentBaseAddress.ToUInt64() + (ulong)memInfo.RegionSize > currentBaseAddress.ToUInt64())
             {
-
                 bool isValid = memInfo.State == MEM_COMMIT;
-                isValid &= memInfo.BaseAddress.ToUInt64() < (ulong)proc_max_address.ToUInt64();
+                isValid &= memInfo.BaseAddress.ToUInt64() < proc_max_address.ToUInt64();
                 isValid &= ((memInfo.Protect & PAGE_GUARD) == 0);
                 isValid &= ((memInfo.Protect & PAGE_NOACCESS) == 0);
                 isValid &= (memInfo.Type == MEM_PRIVATE) || (memInfo.Type == MEM_IMAGE);
@@ -1851,33 +1862,33 @@ namespace Memory
                 memRegionList.Add(memRegion);
             }
 
-            ConcurrentBag<long> bagResult = new ConcurrentBag<long>();
+            AoBOutput Result = new AoBOutput();
 
-            Parallel.ForEach(memRegionList, (item, parallelLoopState, index) =>
+            if (_debug)
+                Debug.WriteLine("Scanning " + memRegionList.Count + " memRegion");
+
+            object localLock = new object();
+
+            //foreach (var item in memRegionList)
+            //{
+            //    foreach (var AoBInput in AobInputs)
+            //    {
+            //        long[] compareResults = CompareScan(item, AoBInput.Sig, AoBInput.Mask, Throttle).OrderBy(c => c).ToArray();
+            //        lock (localLock)
+            //            Result.Add(AoBInput.AoBName, compareResults);
+            //    }
+            //}
+            Parallel.ForEach(memRegionList, new ParallelOptions { MaxDegreeOfParallelism = MaxDegreeOfParalle }, (item, parallelLoopState, index) =>
             {
-                long[] compareResults = CompareScan(item, stringByteArray, mask, Throttle);
-
-                foreach (long result in compareResults)
-                    bagResult.Add(result);
+                foreach (var AoBInput in AobInputs)
+                {
+                    long[] compareResults = CompareScan(item, AoBInput.Sig, AoBInput.Mask, Throttle).OrderBy(c => c).ToArray();
+                    lock (localLock)
+                        Result.Add(AoBInput.AoBName, compareResults);
+                }
             });
 
-            return bagResult.ToList().OrderBy(c => c);
-        }
-
-        /// <summary>
-        /// Array of bytes scan
-        /// </summary>
-        /// <param name="code">Starting address or ini label</param>
-        /// <param name="end">ending address</param>
-        /// <param name="search">array of bytes to search for or your ini code label</param>
-        /// <param name="file">ini file</param>
-        /// <param name="Throttle">Slow the AoB scan. Higher the number, the higher the scan.</param>
-        /// <returns>First address found</returns>
-        public async Task<long> AoBScan(string code, long end, string search, string file = "", int Throttle = int.MaxValue)
-        {
-            long start = (long)getCode(code, file).ToUInt64();
-
-            return  (await AoBScan(start, end, search, true, true, file, Throttle)).FirstOrDefault();
+            return Result;
         }
 
         private long[] CompareScan(MemoryRegionResult item, string[] aobToFind, byte[] mask, int Throttle)
@@ -1910,7 +1921,6 @@ namespace Memory
 
         private int FindPattern(byte[] body, byte[] pattern, byte[] masks, int start, int Throttle)
         {
-            int counter = 0;
             int foundIndex = -1;
 
             if (body.Length <= 0 || pattern.Length <= 0 || start > body.Length - pattern.Length ||
@@ -1932,13 +1942,6 @@ namespace Memory
 
                     foundIndex = index;
                     break;
-                }
-
-                counter++;
-                if (counter >= Throttle)
-                {
-                    Thread.Sleep(1);
-                    counter = 0;
                 }
             }
             return foundIndex;
