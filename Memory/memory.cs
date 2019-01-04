@@ -38,6 +38,9 @@ namespace Memory
         public static extern UIntPtr Native_VirtualQueryEx(IntPtr hProcess, UIntPtr lpAddress,
             out MEMORY_BASIC_INFORMATION64 lpBuffer, UIntPtr dwLength);
 
+        [DllImport("kernel32.dll")]
+        static extern uint GetLastError();
+
         public UIntPtr VirtualQueryEx(IntPtr hProcess, UIntPtr lpAddress,
             out MEMORY_BASIC_INFORMATION lpBuffer)
         {
@@ -1135,7 +1138,7 @@ namespace Memory
         /// <summary>
         /// Convert code from string to real address. If path is not blank, will pull from ini file.
         /// </summary>
-        /// <param name="name">label in ini file or code</param>
+        /// <param name="name">label in ini file OR code</param>
         /// <param name="path">path to ini file (OPTIONAL)</param>
         /// <param name="size">size of address (default is 16)</param>
         /// <returns></returns>
@@ -1770,17 +1773,18 @@ namespace Memory
             if (end > (long)proc_max_address.ToUInt64())
                 end = (long)proc_max_address.ToUInt64();
 
-            Debug.Write("[DEBUG] memory scan starting... (min:0x" + proc_min_address.ToUInt64().ToString(mSize()) + " max:0x" + proc_max_address.ToUInt64().ToString(mSize()) + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
-
+            Debug.WriteLine("[DEBUG] memory scan starting... (min:0x" + proc_min_address.ToUInt64().ToString(mSize()) + " max:0x" + proc_max_address.ToUInt64().ToString(mSize()) + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")");
             UIntPtr currentBaseAddress = new UIntPtr((ulong)start);
 
             MEMORY_BASIC_INFORMATION memInfo = new MEMORY_BASIC_INFORMATION();
+
+            //Debug.WriteLine("[DEBUG] start:0x" + start.ToString("X8") + " curBase:0x" + currentBaseAddress.ToUInt64().ToString("X8") + " end:0x" + end.ToString("X8") + " size:0x" + memInfo.RegionSize.ToString("X8") + " vAloc:" + VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64().ToString());
+
             while (VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64() != 0 &&
                    currentBaseAddress.ToUInt64() < (ulong)end &&
                    currentBaseAddress.ToUInt64() + (ulong)memInfo.RegionSize >
                    currentBaseAddress.ToUInt64())
             {
-
                 bool isValid = memInfo.State == MEM_COMMIT;
                 isValid &= memInfo.BaseAddress.ToUInt64() < (ulong)proc_max_address.ToUInt64();
                 isValid &= ((memInfo.Protect & PAGE_GUARD) == 0);
@@ -1811,7 +1815,6 @@ namespace Memory
                     continue;
                 }
 
-
                 MemoryRegionResult memRegion = new MemoryRegionResult
                 {
                     CurrentBaseAddress = currentBaseAddress,
@@ -1820,6 +1823,8 @@ namespace Memory
                 };
 
                 currentBaseAddress = new UIntPtr(memInfo.BaseAddress.ToUInt64() + (ulong)memInfo.RegionSize);
+
+                //Console.WriteLine("SCAN start:" + memRegion.RegionBase.ToString() + " end:" + currentBaseAddress.ToString());
 
                 if (memRegionList.Count > 0)
                 {
@@ -1851,6 +1856,8 @@ namespace Memory
                                  foreach (long result in compareResults)
                                      bagResult.Add(result);
                              });
+
+            Debug.WriteLine("[DEBUG] memory scan completed. (time:" + DateTime.Now.ToString("h:mm:ss tt") + ")");
 
             return bagResult.ToList().OrderBy(c => c);
         }
