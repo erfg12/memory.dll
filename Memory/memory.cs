@@ -1066,7 +1066,7 @@ namespace Memory
                     {
                         string theAddr = moduleName[0];
                         if (theAddr.Contains("0x")) theAddr = theAddr.Replace("0x", "");
-                        altModule = (IntPtr)Int32.Parse(theAddr, NumberStyles.AllowHexSpecifier | NumberStyles.AllowLeadingSign);
+                        altModule = (IntPtr)Int32.Parse(theAddr, NumberStyles.HexNumber);
                     }
                     else
                     {
@@ -1204,15 +1204,15 @@ namespace Memory
                 else // no offsets
                     ReadProcessMemory(pHandle, (UIntPtr)(offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
-                UInt64 num1 = BitConverter.ToUInt64(memoryAddress, 0);
+                Int64 num1 = BitConverter.ToInt64(memoryAddress, 0);
 
                 UIntPtr base1 = (UIntPtr)0;
 
                 for (int i = 1; i < offsets.Length; i++)
                 {
-                    base1 = new UIntPtr(num1 + Convert.ToUInt64(offsets[i]));
+                    base1 = new UIntPtr(Convert.ToUInt64(num1 + offsets[i]));
                     ReadProcessMemory(pHandle, base1, memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                    num1 = BitConverter.ToUInt64(memoryAddress, 0);
+                    num1 = BitConverter.ToInt64(memoryAddress, 0);
                 }
                 return base1;
             }
