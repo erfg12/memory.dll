@@ -1043,7 +1043,16 @@ namespace Memory
                 {
                     string test = oldOffsets;
                     if (oldOffsets.Contains("0x")) test = oldOffsets.Replace("0x","");
-                    offsetsList.Add(Int32.Parse(test, NumberStyles.HexNumber));
+                    int preParse = 0;
+                    if (!oldOffsets.Contains("-"))
+                        preParse = Int32.Parse(test, NumberStyles.AllowHexSpecifier);
+                    else
+                    {
+                        test = test.Replace("-", "");
+                        preParse = Int32.Parse(test, NumberStyles.AllowHexSpecifier);
+                        preParse = preParse * -1;
+                    }
+                    offsetsList.Add(preParse);
                 }
                 int[] offsets = offsetsList.ToArray();
 
@@ -1057,7 +1066,7 @@ namespace Memory
                     {
                         string theAddr = moduleName[0];
                         if (theAddr.Contains("0x")) theAddr = theAddr.Replace("0x", "");
-                        altModule = (IntPtr)Int32.Parse(theAddr, NumberStyles.HexNumber);
+                        altModule = (IntPtr)Int32.Parse(theAddr, NumberStyles.AllowHexSpecifier | NumberStyles.AllowLeadingSign);
                     }
                     else
                     {
@@ -1082,13 +1091,13 @@ namespace Memory
 
                 for (int i = 1; i < offsets.Length; i++)
                 {
-                    base1 = new UIntPtr(num1 + Convert.ToUInt32(offsets[i]));
+                    base1 = new UIntPtr(Convert.ToUInt32(num1 + offsets[i]));
                     ReadProcessMemory(pHandle, base1, memoryAddress, (UIntPtr)size, IntPtr.Zero);
                     num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
                 }
                 return base1;
             }
-            else
+            else // no offsets
             {
                 int trueCode = Convert.ToInt32(newOffsets, 16);
                 IntPtr altModule = IntPtr.Zero;
@@ -1157,7 +1166,16 @@ namespace Memory
                 {
                     string test = oldOffsets;
                     if (oldOffsets.Contains("0x")) test = oldOffsets.Replace("0x", "");
-                    offsetsList.Add(Int64.Parse(test, System.Globalization.NumberStyles.HexNumber));
+                    Int64 preParse = 0;
+                    if (!oldOffsets.Contains("-"))
+                        preParse = Int64.Parse(test, NumberStyles.AllowHexSpecifier);
+                    else
+                    {
+                        test = test.Replace("-", "");
+                        preParse = Int64.Parse(test, NumberStyles.AllowHexSpecifier);
+                        preParse = preParse * -1;
+                    }
+                    offsetsList.Add(preParse);
                 }
                 Int64[] offsets = offsetsList.ToArray();
 
@@ -1183,7 +1201,7 @@ namespace Memory
                     }
                     ReadProcessMemory(pHandle, (UIntPtr)((Int64)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
                 }
-                else
+                else // no offsets
                     ReadProcessMemory(pHandle, (UIntPtr)(offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
                 UInt64 num1 = BitConverter.ToUInt64(memoryAddress, 0);
