@@ -47,7 +47,7 @@ namespace Memory
             UIntPtr retVal;
 
             // TODO: Need to change this to only check once.
-            if (Is64Bit)
+            if (Is64Bit || IntPtr.Size == 8)
             {
                 // 64 bit
                 MEMORY_BASIC_INFORMATION64 tmp64 = new MEMORY_BASIC_INFORMATION64();
