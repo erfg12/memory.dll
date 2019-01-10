@@ -8,4 +8,4 @@ Use Visual Studio to get it! Project > Manage NuGet Packages... > Browse > Searc
 
 memory.dll requires 4.5 .NET framework! You can re-compile memory.dll at a lower framework with the compile flag "WINXP".
 
-![https://discord.gg/9d7fB5a](https://i1.wp.com/community.sliver.tv/wp-content/uploads/2018/09/discooord.png)
+[Join our Discord for support.](https://discord.gg/9d7fB5a)
