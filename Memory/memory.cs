@@ -314,7 +314,7 @@ namespace Memory
                 return true;
             }
             catch {
-                Debug.WriteLine("ERROR: OpenProcess has crashed.");
+                Debug.WriteLine("ERROR: OpenProcess has crashed. Are you trying to hack a x64 game? https://github.com/erfg12/memory.dll/wiki/64bit-Games");
                 return false;
             }
         }
