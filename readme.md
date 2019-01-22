@@ -6,6 +6,6 @@ NuGet has the latest compiled releases. https://www.nuget.org/packages/Memory.dl
 
 Use Visual Studio to get it! Project > Manage NuGet Packages... > Browse > Search "memory.dll".
 
-memory.dll requires 4.5 .NET framework! You can re-compile memory.dll at a lower framework with the compile flag "WINXP".
+memory.dll requires minimum 4.5 .NET framework! You can re-compile memory.dll at a lower framework with the compile flag "WINXP".
 
 [Join our Discord for support.](https://discord.gg/9d7fB5a)
