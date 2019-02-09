@@ -38,13 +38,16 @@ namespace Memory
         public static extern UIntPtr Native_VirtualQueryEx(IntPtr hProcess, UIntPtr lpAddress,
             out MEMORY_BASIC_INFORMATION64 lpBuffer, UIntPtr dwLength);
 
+        [DllImport("kernel32.dll")]
+        static extern uint GetLastError();
+
         public UIntPtr VirtualQueryEx(IntPtr hProcess, UIntPtr lpAddress,
             out MEMORY_BASIC_INFORMATION lpBuffer)
         {
             UIntPtr retVal;
 
             // TODO: Need to change this to only check once.
-            if (Is64Bit)
+            if (Is64Bit || IntPtr.Size == 8)
             {
                 // 64 bit
                 MEMORY_BASIC_INFORMATION64 tmp64 = new MEMORY_BASIC_INFORMATION64();
@@ -314,7 +317,7 @@ namespace Memory
                 return true;
             }
             catch {
-                Debug.WriteLine("ERROR: OpenProcess has crashed.");
+                Debug.WriteLine("ERROR: OpenProcess has crashed. Are you trying to hack a x64 game? https://github.com/erfg12/memory.dll/wiki/64bit-Games");
                 return false;
             }
         }
@@ -1046,7 +1049,16 @@ namespace Memory
                 {
                     string test = oldOffsets;
                     if (oldOffsets.Contains("0x")) test = oldOffsets.Replace("0x","");
-                    offsetsList.Add(Int32.Parse(test, NumberStyles.HexNumber));
+                    int preParse = 0;
+                    if (!oldOffsets.Contains("-"))
+                        preParse = Int32.Parse(test, NumberStyles.AllowHexSpecifier);
+                    else
+                    {
+                        test = test.Replace("-", "");
+                        preParse = Int32.Parse(test, NumberStyles.AllowHexSpecifier);
+                        preParse = preParse * -1;
+                    }
+                    offsetsList.Add(preParse);
                 }
                 int[] offsets = offsetsList.ToArray();
 
@@ -1085,13 +1097,13 @@ namespace Memory
 
                 for (int i = 1; i < offsets.Length; i++)
                 {
-                    base1 = new UIntPtr(num1 + Convert.ToUInt32(offsets[i]));
+                    base1 = new UIntPtr(Convert.ToUInt32(num1 + offsets[i]));
                     ReadProcessMemory(pHandle, base1, memoryAddress, (UIntPtr)size, IntPtr.Zero);
                     num1 = BitConverter.ToUInt32(memoryAddress, 0); //ToUInt64 causes arithmetic overflow.
                 }
                 return base1;
             }
-            else
+            else // no offsets
             {
                 int trueCode = Convert.ToInt32(newOffsets, 16);
                 IntPtr altModule = IntPtr.Zero;
@@ -1129,7 +1141,7 @@ namespace Memory
         /// <summary>
         /// Convert code from string to real address. If path is not blank, will pull from ini file.
         /// </summary>
-        /// <param name="name">label in ini file or code</param>
+        /// <param name="name">label in ini file OR code</param>
         /// <param name="path">path to ini file (OPTIONAL)</param>
         /// <param name="size">size of address (default is 16)</param>
         /// <returns></returns>
@@ -1160,7 +1172,16 @@ namespace Memory
                 {
                     string test = oldOffsets;
                     if (oldOffsets.Contains("0x")) test = oldOffsets.Replace("0x", "");
-                    offsetsList.Add(Int64.Parse(test, System.Globalization.NumberStyles.HexNumber));
+                    Int64 preParse = 0;
+                    if (!oldOffsets.Contains("-"))
+                        preParse = Int64.Parse(test, NumberStyles.AllowHexSpecifier);
+                    else
+                    {
+                        test = test.Replace("-", "");
+                        preParse = Int64.Parse(test, NumberStyles.AllowHexSpecifier);
+                        preParse = preParse * -1;
+                    }
+                    offsetsList.Add(preParse);
                 }
                 Int64[] offsets = offsetsList.ToArray();
 
@@ -1186,18 +1207,18 @@ namespace Memory
                     }
                     ReadProcessMemory(pHandle, (UIntPtr)((Int64)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
                 }
-                else
+                else // no offsets
                     ReadProcessMemory(pHandle, (UIntPtr)(offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
 
-                UInt64 num1 = BitConverter.ToUInt64(memoryAddress, 0);
+                Int64 num1 = BitConverter.ToInt64(memoryAddress, 0);
 
                 UIntPtr base1 = (UIntPtr)0;
 
                 for (int i = 1; i < offsets.Length; i++)
                 {
-                    base1 = new UIntPtr(num1 + Convert.ToUInt64(offsets[i]));
+                    base1 = new UIntPtr(Convert.ToUInt64(num1 + offsets[i]));
                     ReadProcessMemory(pHandle, base1, memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                    num1 = BitConverter.ToUInt64(memoryAddress, 0);
+                    num1 = BitConverter.ToInt64(memoryAddress, 0);
                 }
                 return base1;
             }
@@ -1761,17 +1782,18 @@ namespace Memory
             if (end > (long)proc_max_address.ToUInt64())
                 end = (long)proc_max_address.ToUInt64();
 
-            Debug.Write("[DEBUG] memory scan starting... (min:0x" + proc_min_address.ToUInt64().ToString(mSize()) + " max:0x" + proc_max_address.ToUInt64().ToString(mSize()) + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")" + Environment.NewLine);
-
+            Debug.WriteLine("[DEBUG] memory scan starting... (min:0x" + proc_min_address.ToUInt64().ToString(mSize()) + " max:0x" + proc_max_address.ToUInt64().ToString(mSize()) + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")");
             UIntPtr currentBaseAddress = new UIntPtr((ulong)start);
 
             MEMORY_BASIC_INFORMATION memInfo = new MEMORY_BASIC_INFORMATION();
+
+            //Debug.WriteLine("[DEBUG] start:0x" + start.ToString("X8") + " curBase:0x" + currentBaseAddress.ToUInt64().ToString("X8") + " end:0x" + end.ToString("X8") + " size:0x" + memInfo.RegionSize.ToString("X8") + " vAloc:" + VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64().ToString());
+
             while (VirtualQueryEx(pHandle, currentBaseAddress, out memInfo).ToUInt64() != 0 &&
                    currentBaseAddress.ToUInt64() < (ulong)end &&
                    currentBaseAddress.ToUInt64() + (ulong)memInfo.RegionSize >
                    currentBaseAddress.ToUInt64())
             {
-
                 bool isValid = memInfo.State == MEM_COMMIT;
                 isValid &= memInfo.BaseAddress.ToUInt64() < (ulong)proc_max_address.ToUInt64();
                 isValid &= ((memInfo.Protect & PAGE_GUARD) == 0);
@@ -1802,7 +1824,6 @@ namespace Memory
                     continue;
                 }
 
-
                 MemoryRegionResult memRegion = new MemoryRegionResult
                 {
                     CurrentBaseAddress = currentBaseAddress,
@@ -1811,6 +1832,8 @@ namespace Memory
                 };
 
                 currentBaseAddress = new UIntPtr(memInfo.BaseAddress.ToUInt64() + (ulong)memInfo.RegionSize);
+
+                //Console.WriteLine("SCAN start:" + memRegion.RegionBase.ToString() + " end:" + currentBaseAddress.ToString());
 
                 if (memRegionList.Count > 0)
                 {
@@ -1842,6 +1865,8 @@ namespace Memory
                                  foreach (long result in compareResults)
                                      bagResult.Add(result);
                              });
+
+            Debug.WriteLine("[DEBUG] memory scan completed. (time:" + DateTime.Now.ToString("h:mm:ss tt") + ")");
 
             return bagResult.ToList().OrderBy(c => c);
         }
