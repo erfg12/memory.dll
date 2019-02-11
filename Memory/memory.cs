@@ -1070,10 +1070,15 @@ namespace Memory
             {
                 //Debug.WriteLine("ERROR: LoadCode returned blank. NAME:" + name + " PATH:" + path);
                 return UIntPtr.Zero;
-            } else
+            }
+            else
             {
                 //Debug.WriteLine("Found code=" + theCode + " NAME:" + name + " PATH:" + path);
             }
+
+            // remove spaces
+            if (theCode.Contains(" "))
+                theCode.Replace(" ", String.Empty);
 
             if (!theCode.Contains("+") && !theCode.Contains(",")) return new UIntPtr(Convert.ToUInt32(theCode, 16));
 
@@ -1199,6 +1204,11 @@ namespace Memory
 
             if (theCode == "")
                 return UIntPtr.Zero;
+
+            // remove spaces
+            if (theCode.Contains(" "))
+                theCode.Replace(" ", String.Empty);
+
             string newOffsets = theCode;
             if (theCode.Contains("+"))
                 newOffsets = theCode.Substring(theCode.IndexOf('+') + 1);
