@@ -267,7 +267,7 @@ namespace Memory
         }
 
         /// <summary>
-        /// Freeze a value to an address
+        /// Freeze a value to an address.
         /// </summary>
         /// <param name="address">Your address</param>
         /// <param name="type">byte, 2bytes, bytes, float, int, string, double or long.</param>
@@ -276,9 +276,17 @@ namespace Memory
         public void FreezeValue(string address, string type, string value, string file = "")
         {
             CancellationTokenSource cts = new CancellationTokenSource();
-            FreezeTokenSrcs.Add(address, cts);
+            
+            if (FreezeTokenSrcs.ContainsKey(address))
+            {
+                Debug.WriteLine("Changing Freezing Address " + address + " Value " + value);
+                FreezeTokenSrcs[address].Cancel();
+                FreezeTokenSrcs.Remove(address);
+            }
+            else 
+                Debug.WriteLine("Adding Freezing Address " + address + " Value " + value);
 
-            Debug.WriteLine("Freezing Address " + address + " Value " + value);
+            FreezeTokenSrcs.Add(address, cts);
 
             Task.Factory.StartNew(() =>
             {
