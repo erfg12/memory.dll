@@ -234,7 +234,7 @@ namespace Memory
         /// The process handle that was opened. (Use OpenProcess function to populate this variable)
         /// </summary>
         public IntPtr pHandle;
-
+        Dictionary<string, CancellationTokenSource> FreezeTokenSrcs = new Dictionary<string, CancellationTokenSource>();
         public Process theProc = null;
 
         internal enum MINIDUMP_TYPE
@@ -264,6 +264,40 @@ namespace Memory
                     return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Freeze a value to an address
+        /// </summary>
+        /// <param name="address">Your address</param>
+        /// <param name="type">byte, 2bytes, bytes, float, int, string, double or long.</param>
+        /// <param name="value">Value to freeze</param>
+        /// <param name="file">ini file to read address from (OPTIONAL)</param>
+        public void FreezeValue(string address, string type, string value, string file = "")
+        {
+            CancellationTokenSource cts = new CancellationTokenSource();
+            FreezeTokenSrcs.Add(address, cts);
+
+            Debug.WriteLine("Freezing Address " + address + " Value " + value);
+
+            Task.Factory.StartNew(() =>
+            {
+                while (!cts.Token.IsCancellationRequested)
+                {
+                    writeMemory(address, type, value, file);
+                }
+            },
+            cts.Token);
+        }
+
+        /// <summary>
+        /// Unfreeze a frozen value at an address
+        /// </summary>
+        /// <param name="address">address where frozen value is stored</param>
+        public void UnfreezeValue(string address)
+        {
+            Debug.WriteLine("Un-Freezing Address " + address);
+            FreezeTokenSrcs[address].Cancel();
         }
 
         /// <summary>
