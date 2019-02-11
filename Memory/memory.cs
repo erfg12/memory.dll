@@ -306,6 +306,7 @@ namespace Memory
         {
             Debug.WriteLine("Un-Freezing Address " + address);
             FreezeTokenSrcs[address].Cancel();
+            FreezeTokenSrcs.Remove(address);
         }
 
         /// <summary>
