@@ -1,5 +1,4 @@
 # DESCRIPTION
----
 Create great PC game cheat trainers with ease!
 
 [Available on NuGet!](https://www.nuget.org/packages/Memory.dll/) Open Visual Studio ```Project > Manage NuGet Packages... > Browse > Type in "memory.dll"```
@@ -9,11 +8,9 @@ Create great PC game cheat trainers with ease!
 **DOCUMENTATION** :: [Wiki Pages](https://github.com/erfg12/memory.dll/wiki)
 
 # EXAMPLE CODE
----
 [C# Game Trainer Git Repo](https://github.com/erfg12/Game-Trainers)
 
 # FEATURES
----
 * Built with C# for .NET projects.
 * Check if process is running (ID or name) and open, all in 1 function.
 * 32bit and 64bit games supported.
@@ -29,5 +26,4 @@ Create great PC game cheat trainers with ease!
 * Freeze values
     
 # VIDEOS
----
 [![New Age Soldiers Video](https://img.youtube.com/vi/OKJsbDDh5CE/0.jpg)](https://www.youtube.com/watch?v=OKJsbDDh5CE)
