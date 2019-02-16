@@ -825,15 +825,42 @@ namespace Memory
         /// <returns></returns>
         public int readByte(string code, string file = "")
         {
-            byte[] memoryTiny = new byte[4];
+            byte[] memoryTiny = new byte[1];
 
-            UIntPtr theCode;
-            theCode = getCode(code, file);
+            UIntPtr theCode = getCode(code, file);
 
-            if (ReadProcessMemory(pHandle, theCode, memoryTiny, (UIntPtr)1, IntPtr.Zero))
-                return BitConverter.ToInt32(memoryTiny, 0);
-            else
-                return 0;
+            if (ReadProcessMemory(pHandle, theCode, memoryTiny, (UIntPtr) 1, IntPtr.Zero))
+                return memoryTiny[0];
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Reads a byte from memory and splits it into bits
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="file">path and file name of ini file. (OPTIONAL)</param>
+        /// <returns>Array of 8 booleans representing each bit of the byte read</returns>
+        public bool[] readBits(string code, string file = "")
+        {
+            byte[] buf = new byte[1];
+
+            UIntPtr theCode = getCode(code, file);
+
+            bool[] ret = new bool[8];
+
+            if (!ReadProcessMemory(pHandle, theCode, buf, (UIntPtr) 1, IntPtr.Zero))
+                return ret;
+            
+
+            if (!BitConverter.IsLittleEndian)
+                throw new Exception("Should be little endian");
+
+            for (var i = 0; i < 8; i++)
+                ret[i] = Convert.ToBoolean(buf[0] & (1 << i));
+
+            return ret;
+
         }
 
         public int readPByte(UIntPtr address, string code, string file = "")
@@ -1030,6 +1057,30 @@ namespace Memory
             UIntPtr theCode;
             theCode = getCode(code, file);
             WriteProcessMemory(pHandle, theCode, write, (UIntPtr)write.Length, IntPtr.Zero);
+        }
+
+        /// <summary>
+        /// Takes an array of 8 booleans and writes to a single byte
+        /// </summary>
+        /// <param name="code">address to write to</param>
+        /// <param name="bits">Array of 8 booleans to write</param>
+        /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        public void writeBits(string code, bool[] bits, string file = "")
+        {
+            if(bits.Length != 8)
+                throw new ArgumentException("Not enough bits for a whole byte", nameof(bits));
+
+            byte[] buf = new byte[1];
+
+            UIntPtr theCode = getCode(code, file);
+
+            for (var i = 0; i < 8; i++)
+            {
+                if (bits[i])
+                    buf[0] |= (byte)(1 << i);
+            }
+
+            WriteProcessMemory(pHandle, theCode, buf, (UIntPtr) 1, IntPtr.Zero);
         }
 
         /// <summary>
