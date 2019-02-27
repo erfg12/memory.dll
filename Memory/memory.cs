@@ -293,6 +293,7 @@ namespace Memory
                 while (!cts.Token.IsCancellationRequested)
                 {
                     writeMemory(address, type, value, file);
+                    Thread.Sleep(25);
                 }
             },
             cts.Token);
