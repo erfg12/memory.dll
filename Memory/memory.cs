@@ -280,8 +280,15 @@ namespace Memory
             if (FreezeTokenSrcs.ContainsKey(address))
             {
                 Debug.WriteLine("Changing Freezing Address " + address + " Value " + value);
-                FreezeTokenSrcs[address].Cancel();
-                FreezeTokenSrcs.Remove(address);
+                try
+                {
+                    FreezeTokenSrcs[address].Cancel();
+                    FreezeTokenSrcs.Remove(address);
+                }
+                catch
+                {
+                    Debug.WriteLine("ERROR: Avoided a crash. Address " + address + " was not frozen.");
+                }
             }
             else 
                 Debug.WriteLine("Adding Freezing Address " + address + " Value " + value);
@@ -306,8 +313,15 @@ namespace Memory
         public void UnfreezeValue(string address)
         {
             Debug.WriteLine("Un-Freezing Address " + address);
-            FreezeTokenSrcs[address].Cancel();
-            FreezeTokenSrcs.Remove(address);
+            try
+            {
+                FreezeTokenSrcs[address].Cancel();
+                FreezeTokenSrcs.Remove(address);
+            }
+            catch
+            {
+                Debug.WriteLine("ERROR: Address " + address + " was not frozen.");
+            }
         }
 
         /// <summary>
