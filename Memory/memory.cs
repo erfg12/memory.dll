@@ -935,30 +935,30 @@ namespace Memory
             UIntPtr theCode;
             theCode = getCode(code, file);
 
-            if (type == "float")
+            if (type.ToLower() == "float")
             {
                 memory = BitConverter.GetBytes(Convert.ToSingle(write));
                 size = 4;
             }
-            else if (type == "int")
+            else if (type.ToLower() == "int")
             {
                 memory = BitConverter.GetBytes(Convert.ToInt32(write));
                 size = 4;
             }
-            else if (type == "byte")
+            else if (type.ToLower() == "byte")
             {
                 memory = new byte[1];
                 memory[0] = Convert.ToByte(write, 16);
                 size = 1;
             }
-            else if (type == "2bytes")
+            else if (type.ToLower() == "2bytes")
             {
                 memory = new byte[2];
                 memory[0] = (byte)(Convert.ToInt32(write) % 256);
                 memory[1] = (byte)(Convert.ToInt32(write) / 256);
                 size = 2;
             }
-            else if (type == "bytes")
+            else if (type.ToLower() == "bytes")
             {
                 if (write.Contains(",") || write.Contains(" ")) //check if it's a proper array
                 {
@@ -984,26 +984,26 @@ namespace Memory
                     size = 1;
                 }
             }
-            else if (type == "double")
+            else if (type.ToLower() == "double")
             {
                 memory = BitConverter.GetBytes(Convert.ToDouble(write));
                 size = 8;
             }
-            else if (type == "long")
+            else if (type.ToLower() == "long")
             {
                 memory = BitConverter.GetBytes(Convert.ToInt64(write));
                 size = 8;
             }
-            else if (type == "string")
+            else if (type.ToLower() == "string")
             {
                 memory = new byte[write.Length];
-                if (stringEncoding == "ascii")
+                if (stringEncoding.ToLower() == "ascii")
                     memory = System.Text.Encoding.ASCII.GetBytes(write);
-                else if (stringEncoding == "unicode")
+                else if (stringEncoding.ToLower() == "unicode")
                     memory = System.Text.Encoding.Unicode.GetBytes(write);
-                else if (stringEncoding == "utf32")
+                else if (stringEncoding.ToLower() == "utf32")
                     memory = System.Text.Encoding.UTF32.GetBytes(write);
-                else if (stringEncoding == "utf7")
+                else if (stringEncoding.ToLower() == "utf7")
                     memory = System.Text.Encoding.UTF7.GetBytes(write);
                 else
                     memory = System.Text.Encoding.UTF8.GetBytes(write);
