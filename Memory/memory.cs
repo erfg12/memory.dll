@@ -926,8 +926,8 @@ namespace Memory
         ///<param name="type">byte, 2bytes, bytes, float, int, string, double or long.</param>
         ///<param name="write">value to write to address.</param>
         ///<param name="file">path and name of .ini file (OPTIONAL)</param>
-        ///<param name="stringEncoding">utf8 (DEFAULT), ascii, unicode, utf32, utf7</param>
-        public bool writeMemory(string code, string type, string write, string file = "", string stringEncoding = "")
+        ///<param name="stringEncoding">System.Text.Encoding.UTF8 (DEFAULT). Other options: ascii, unicode, utf32, utf7</param>
+        public bool writeMemory(string code, string type, string write, string file = "", System.Text.Encoding stringEncoding = null)
         {
             byte[] memory = new byte[4];
             int size = 4;
@@ -997,16 +997,10 @@ namespace Memory
             else if (type.ToLower() == "string")
             {
                 memory = new byte[write.Length];
-                if (stringEncoding.ToLower() == "ascii")
-                    memory = System.Text.Encoding.ASCII.GetBytes(write);
-                else if (stringEncoding.ToLower() == "unicode")
-                    memory = System.Text.Encoding.Unicode.GetBytes(write);
-                else if (stringEncoding.ToLower() == "utf32")
-                    memory = System.Text.Encoding.UTF32.GetBytes(write);
-                else if (stringEncoding.ToLower() == "utf7")
-                    memory = System.Text.Encoding.UTF7.GetBytes(write);
-                else
+                if (stringEncoding == null)
                     memory = System.Text.Encoding.UTF8.GetBytes(write);
+                else
+                    memory = stringEncoding.GetBytes(write);
                 size = write.Length;
             }
             //Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:" + theCode + "] " + String.Join(",", memory) + Environment.NewLine);
