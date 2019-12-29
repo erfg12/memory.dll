@@ -996,12 +996,11 @@ namespace Memory
             }
             else if (type.ToLower() == "string")
             {
-                memory = new byte[write.Length];
                 if (stringEncoding == null)
                     memory = System.Text.Encoding.UTF8.GetBytes(write);
                 else
                     memory = stringEncoding.GetBytes(write);
-                size = write.Length;
+                size = memory.Length;
             }
             //Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:" + theCode + "] " + String.Join(",", memory) + Environment.NewLine);
             return WriteProcessMemory(pHandle, theCode, memory, (UIntPtr)size, IntPtr.Zero);
