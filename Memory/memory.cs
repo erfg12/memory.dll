@@ -1427,7 +1427,7 @@ namespace Memory
         /// <remarks>Please ensure that you use the proper replaceCount
         /// if you replace halfway in an instruction you may cause bad things</remarks>
         /// <returns>UIntPtr to created code cave for use for later deallocation</returns>
-        public UIntPtr CreateCodeCave(string code, byte[] newBytes, int replaceCount, int size = 0x10000, string file = "")
+        public UIntPtr CreateCodeCave(string code, byte[] newBytes, int replaceCount, int allocationSize = 0x10000, string file = "")
         {
             if (replaceCount < 5)
                 return UIntPtr.Zero; // returning UIntPtr.Zero instead of throwing an exception
