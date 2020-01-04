@@ -299,7 +299,7 @@ namespace Memory
             {
                 while (!cts.Token.IsCancellationRequested)
                 {
-                    writeMemory(address, type, value, file);
+                    WriteMemory(address, type, value, file);
                     Thread.Sleep(25);
                 }
             },
@@ -331,7 +331,7 @@ namespace Memory
         /// <returns></returns>
         public bool OpenProcess(int pid)
         {
-            if (!isAdmin())
+            if (!IsAdmin())
             {
                 Debug.WriteLine("WARNING: You are NOT running this program as admin! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
                 MessageBox.Show("WARNING: You are NOT running this program as admin!");
@@ -366,7 +366,7 @@ namespace Memory
 
                 mainModule = theProc.MainModule;
 
-                getModules();
+                GetModules();
 
                 // Lets set the process to 64bit or not here (cuts down on api calls)
                 Is64Bit = Environment.Is64BitOperatingSystem && (IsWow64Process(pHandle, out bool retVal) && !retVal);
@@ -389,14 +389,14 @@ namespace Memory
         /// <returns></returns>
         public bool OpenProcess(string proc)
         {
-            return OpenProcess(getProcIDFromName(proc));
+            return OpenProcess(GetProcIdFromName(proc));
         }
 
         /// <summary>
         /// Check if program is running with administrative privileges. Read about it here: https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges
         /// </summary>
         /// <returns></returns>
-        public bool isAdmin()
+        public bool IsAdmin()
         {
             using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
             {
@@ -409,11 +409,6 @@ namespace Memory
         /// Check if opened process is 64bit. Used primarily for getCode().
         /// </summary>
         /// <returns>True if 64bit false if 32bit.</returns>
-        public bool is64bit()
-        {
-            return Is64Bit;
-        }
-
         private bool _is64Bit;
         public bool Is64Bit
         {
@@ -425,7 +420,7 @@ namespace Memory
         /// <summary>
         /// Builds the process modules dictionary (names with addresses).
         /// </summary>
-        public void getModules()
+        public void GetModules()
         {
             if (theProc == null)
                 return;
@@ -438,7 +433,7 @@ namespace Memory
             }
         }
 
-        public void setFocus()
+        public void SetFocus()
         {
             //int style = GetWindowLong(procs.MainWindowHandle, -16);
             //if ((style & 0x20000000) == 0x20000000) //minimized
@@ -451,7 +446,7 @@ namespace Memory
         /// </summary>
         /// <param name="name">Example: "eqgame". Use task manager to find the name. Do not include .exe</param>
         /// <returns></returns>
-        public int getProcIDFromName(string name) //new 1.0.2 function
+        public int GetProcIdFromName(string name) //new 1.0.2 function
         {
             Process[] processlist = Process.GetProcesses();
 
@@ -467,24 +462,7 @@ namespace Memory
             return 0; //if we fail to find it
         }
 
-        /// <summary>
-        /// Convert a byte array to a literal string
-        /// </summary>
-        /// <param name="buffer">Byte array to convert to byte string</param>
-        /// <returns></returns>
-        public string byteArrayToString(byte[] buffer)
-        {
-            StringBuilder build = new StringBuilder();
-            int i = 1;
-            foreach (byte b in buffer)
-            {
-                build.Append(String.Format("0x{0:X}", b));
-                if (i < buffer.Count())
-                    build.Append(" ");
-                i++;
-            }
-            return build.ToString();
-        }
+
 
         /// <summary>
         /// Get code from ini file.
@@ -574,7 +552,7 @@ namespace Memory
         /// </summary>
         /// <param name="str">The string you want to sanitize.</param>
         /// <returns></returns>
-        public string sanitizeString(string str)
+        public string SanitizeString(string str)
         {
             StringBuilder sb = new StringBuilder();
             foreach (char c in str)
@@ -593,10 +571,10 @@ namespace Memory
         /// <param name="length">The maximum bytes to read.</param>
         /// <param name="file">path and name of ini file.</param>
         /// <returns>The bytes read or null</returns>
-        public byte[] readBytes(string code, long length, string file = "")
+        public byte[] ReadBytes(string code, long length, string file = "")
         {
             byte[] memory = new byte[length];
-            UIntPtr theCode = getCode(code, file);
+            UIntPtr theCode = GetCode(code, file);
 
             if (!ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)length, IntPtr.Zero))
                 return null;
@@ -611,12 +589,12 @@ namespace Memory
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <param name="round">Round the value to 2 decimal places</param>
         /// <returns></returns>
-        public float readFloat(string code, string file = "", bool round = true)
+        public float ReadFloat(string code, string file = "", bool round = true)
         {
             byte[] memory = new byte[4];
 
             UIntPtr theCode;
-            theCode = getCode(code, file);
+            theCode = GetCode(code, file);
             try
             {
                 if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
@@ -644,11 +622,11 @@ namespace Memory
         /// <param name="length">length of bytes to read (OPTIONAL)</param>
         /// <param name="zeroTerminated">terminate string at null char</param>
         /// <returns></returns>
-        public string readString(string code, string file = "", int length = 32, bool zeroTerminated = true)
+        public string ReadString(string code, string file = "", int length = 32, bool zeroTerminated = true)
         {
             byte[] memoryNormal = new byte[length];
             UIntPtr theCode;
-            theCode = getCode(code, file);
+            theCode = GetCode(code, file);
             if (ReadProcessMemory(pHandle, theCode, memoryNormal, (UIntPtr)length, IntPtr.Zero))
                 return (zeroTerminated) ? Encoding.UTF8.GetString(memoryNormal).Split('\0')[0] : Encoding.UTF8.GetString(memoryNormal);
             else
@@ -662,12 +640,12 @@ namespace Memory
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <param name="round">Round the value to 2 decimal places</param>
         /// <returns></returns>
-        public double readDouble(string code, string file = "", bool round = true)
+        public double ReadDouble(string code, string file = "", bool round = true)
         {
             byte[] memory = new byte[8];
 
             UIntPtr theCode;
-            theCode = getCode(code, file);
+            theCode = GetCode(code, file);
             try
             {
                 if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)8, IntPtr.Zero))
@@ -687,7 +665,7 @@ namespace Memory
             }
         }
 
-        public int readUIntPtr(UIntPtr code)
+        public int ReadUIntPtr(UIntPtr code)
         {
             byte[] memory = new byte[4];
             if (ReadProcessMemory(pHandle, code, memory, (UIntPtr)4, IntPtr.Zero))
@@ -702,11 +680,11 @@ namespace Memory
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <returns></returns>
-        public int readInt(string code, string file = "")
+        public int ReadInt(string code, string file = "")
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
-            theCode = getCode(code, file);
+            theCode = GetCode(code, file);
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
                 return BitConverter.ToInt32(memory, 0);
             else
@@ -719,12 +697,12 @@ namespace Memory
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <returns></returns>
-        public long readLong(string code, string file = "")
+        public long ReadLong(string code, string file = "")
         {
             byte[] memory = new byte[16];
             UIntPtr theCode;
 
-            theCode = getCode(code, file);
+            theCode = GetCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)16, IntPtr.Zero))
                 return BitConverter.ToInt64(memory, 0);
@@ -738,11 +716,11 @@ namespace Memory
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <returns></returns>
-        public UInt64 readUInt(string code, string file = "")
+        public UInt64 ReadUInt(string code, string file = "")
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
-            theCode = getCode(code, file);
+            theCode = GetCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
                 return BitConverter.ToUInt64(memory, 0);
@@ -757,11 +735,11 @@ namespace Memory
         /// <param name="moveQty">Quantity to move.</param>
         /// <param name="file">path and name of ini file (OPTIONAL)</param>
         /// <returns></returns>
-        public int read2ByteMove(string code, int moveQty, string file = "")
+        public int Read2ByteMove(string code, int moveQty, string file = "")
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
-            theCode = getCode(code, file);
+            theCode = GetCode(code, file);
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
 
@@ -778,11 +756,11 @@ namespace Memory
         /// <param name="moveQty">Quantity to move.</param>
         /// <param name="file">path and name of ini file (OPTIONAL)</param>
         /// <returns></returns>
-        public int readIntMove(string code, int moveQty, string file = "")
+        public int ReadIntMove(string code, int moveQty, string file = "")
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
-            theCode = getCode(code, file);
+            theCode = GetCode(code, file);
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
 
@@ -799,11 +777,11 @@ namespace Memory
         /// <param name="moveQty">Quantity to move.</param>
         /// <param name="file">path and name of ini file (OPTIONAL)</param>
         /// <returns></returns>
-        public ulong readUIntMove(string code, int moveQty, string file = "")
+        public ulong ReadUIntMove(string code, int moveQty, string file = "")
         {
             byte[] memory = new byte[8];
             UIntPtr theCode;
-            theCode = getCode(code, file, 8);
+            theCode = GetCode(code, file, 8);
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
 
@@ -819,12 +797,12 @@ namespace Memory
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and file name to ini file. (OPTIONAL)</param>
         /// <returns></returns>
-        public int read2Byte(string code, string file = "")
+        public int Read2Byte(string code, string file = "")
         {
             byte[] memoryTiny = new byte[4];
 
             UIntPtr theCode;
-            theCode = getCode(code, file);
+            theCode = GetCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memoryTiny, (UIntPtr)2, IntPtr.Zero))
                 return BitConverter.ToInt32(memoryTiny, 0);
@@ -838,11 +816,11 @@ namespace Memory
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and file name of ini file. (OPTIONAL)</param>
         /// <returns></returns>
-        public int readByte(string code, string file = "")
+        public int ReadByte(string code, string file = "")
         {
             byte[] memoryTiny = new byte[1];
 
-            UIntPtr theCode = getCode(code, file);
+            UIntPtr theCode = GetCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memoryTiny, (UIntPtr) 1, IntPtr.Zero))
                 return memoryTiny[0];
@@ -856,11 +834,11 @@ namespace Memory
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and file name of ini file. (OPTIONAL)</param>
         /// <returns>Array of 8 booleans representing each bit of the byte read</returns>
-        public bool[] readBits(string code, string file = "")
+        public bool[] ReadBits(string code, string file = "")
         {
             byte[] buf = new byte[1];
 
-            UIntPtr theCode = getCode(code, file);
+            UIntPtr theCode = GetCode(code, file);
 
             bool[] ret = new bool[8];
 
@@ -878,7 +856,7 @@ namespace Memory
 
         }
 
-        public int readPByte(UIntPtr address, string code, string file = "")
+        public int ReadPByte(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[4];
             if (ReadProcessMemory(pHandle, address + LoadIntCode(code, file), memory, (UIntPtr)1, IntPtr.Zero))
@@ -887,7 +865,7 @@ namespace Memory
                 return 0;
         }
 
-        public float readPFloat(UIntPtr address, string code, string file = "")
+        public float ReadPFloat(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[4];
             if (ReadProcessMemory(pHandle, address + LoadIntCode(code, file), memory, (UIntPtr)4, IntPtr.Zero))
@@ -899,7 +877,7 @@ namespace Memory
                 return 0;
         }
 
-        public int readPInt(UIntPtr address, string code, string file = "")
+        public int ReadPInt(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[4];
             if (ReadProcessMemory(pHandle, address + LoadIntCode(code, file), memory, (UIntPtr)4, IntPtr.Zero))
@@ -908,7 +886,7 @@ namespace Memory
                 return 0;
         }
 
-        public string readPString(UIntPtr address, string code, string file = "")
+        public string ReadPString(UIntPtr address, string code, string file = "")
         {
             byte[] memoryNormal = new byte[32];
             if (ReadProcessMemory(pHandle, address + LoadIntCode(code, file), memoryNormal, (UIntPtr)32, IntPtr.Zero))
@@ -927,13 +905,13 @@ namespace Memory
         ///<param name="write">value to write to address.</param>
         ///<param name="file">path and name of .ini file (OPTIONAL)</param>
         ///<param name="stringEncoding">System.Text.Encoding.UTF8 (DEFAULT). Other options: ascii, unicode, utf32, utf7</param>
-        public bool writeMemory(string code, string type, string write, string file = "", System.Text.Encoding stringEncoding = null)
+        public bool WriteMemory(string code, string type, string write, string file = "", System.Text.Encoding stringEncoding = null)
         {
             byte[] memory = new byte[4];
             int size = 4;
 
             UIntPtr theCode;
-            theCode = getCode(code, file);
+            theCode = GetCode(code, file);
 
             if (type.ToLower() == "float")
             {
@@ -1015,13 +993,13 @@ namespace Memory
         /// <param name="moveQty">quantity to move</param>
         /// <param name="file">path and name of .ini file (OPTIONAL)</param>
         /// <returns></returns>
-        public bool writeMove(string code, string type, string write, int moveQty, string file = "")
+        public bool WriteMove(string code, string type, string write, int moveQty, string file = "")
         {
             byte[] memory = new byte[4];
             int size = 4;
 
             UIntPtr theCode;
-            theCode = getCode(code, file);
+            theCode = GetCode(code, file);
 
             if (type == "float")
             {
@@ -1070,10 +1048,10 @@ namespace Memory
         /// <param name="code">address to write to</param>
         /// <param name="write">byte array to write</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
-        public void writeBytes(string code, byte[] write, string file = "")
+        public void WriteBytes(string code, byte[] write, string file = "")
         {
             UIntPtr theCode;
-            theCode = getCode(code, file);
+            theCode = GetCode(code, file);
             WriteProcessMemory(pHandle, theCode, write, (UIntPtr)write.Length, IntPtr.Zero);
         }
 
@@ -1083,14 +1061,14 @@ namespace Memory
         /// <param name="code">address to write to</param>
         /// <param name="bits">Array of 8 booleans to write</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
-        public void writeBits(string code, bool[] bits, string file = "")
+        public void WriteBits(string code, bool[] bits, string file = "")
         {
             if(bits.Length != 8)
                 throw new ArgumentException("Not enough bits for a whole byte", nameof(bits));
 
             byte[] buf = new byte[1];
 
-            UIntPtr theCode = getCode(code, file);
+            UIntPtr theCode = GetCode(code, file);
 
             for (var i = 0; i < 8; i++)
             {
@@ -1106,7 +1084,7 @@ namespace Memory
         /// </summary>
         /// <param name="address">Address to write to</param>
         /// <param name="write">Byte array to write to</param>
-        public void writeBytes(UIntPtr address, byte[] write)
+        public void WriteBytes(UIntPtr address, byte[] write)
         {
             WriteProcessMemory(pHandle, address, write, (UIntPtr)write.Length, out IntPtr bytesRead);
         }
@@ -1120,14 +1098,14 @@ namespace Memory
         /// <param name="path">path to ini file (OPTIONAL)</param>
         /// <param name="size">size of address (default is 8)</param>
         /// <returns></returns>
-        public UIntPtr getCode(string name, string path = "", int size = 8)
+        public UIntPtr GetCode(string name, string path = "", int size = 8)
         {
             string theCode = "";
-            if (is64bit())
+            if (Is64Bit)
             {
                 //Debug.WriteLine("Changing to 64bit code...");
                 if (size == 8) size = 16; //change to 64bit
-                return get64bitCode(name, path, size); //jump over to 64bit code grab
+                return Get64BitCode(name, path, size); //jump over to 64bit code grab
             }
 
             if (path != "")
@@ -1263,7 +1241,7 @@ namespace Memory
         /// <param name="path">path to ini file (OPTIONAL)</param>
         /// <param name="size">size of address (default is 16)</param>
         /// <returns></returns>
-        public UIntPtr get64bitCode(string name, string path = "", int size = 16)
+        public UIntPtr Get64BitCode(string name, string path = "", int size = 16)
         {
             string theCode = "";
             if (path != "")
@@ -1382,7 +1360,7 @@ namespace Memory
         /// <summary>
         /// Close the process when finished.
         /// </summary>
-        public void closeProcess()
+        public void CloseProcess()
         {
             if (pHandle == null)
                 return;
@@ -1394,8 +1372,8 @@ namespace Memory
         /// <summary>
         /// Inject a DLL file.
         /// </summary>
-        /// <param name="strDLLName">path and name of DLL file.</param>
-        public void InjectDLL(String strDLLName)
+        /// <param name="strDllName">path and name of DLL file.</param>
+        public void InjectDll(String strDllName)
         {
             IntPtr bytesout;
 
@@ -1408,16 +1386,16 @@ namespace Memory
             if (!theProc.Responding)
                 return;
 
-            int LenWrite = strDLLName.Length + 1;
-            UIntPtr AllocMem = VirtualAllocEx(pHandle, (UIntPtr)null, (uint)LenWrite, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+            int lenWrite = strDllName.Length + 1;
+            UIntPtr allocMem = VirtualAllocEx(pHandle, (UIntPtr)null, (uint)lenWrite, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-            WriteProcessMemory(pHandle, AllocMem, strDLLName, (UIntPtr)LenWrite, out bytesout);
-            UIntPtr Injector = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
+            WriteProcessMemory(pHandle, allocMem, strDllName, (UIntPtr)lenWrite, out bytesout);
+            UIntPtr injector = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
 
-            if (Injector == null)
+            if (injector == null)
                 return;
 
-            IntPtr hThread = CreateRemoteThread(pHandle, (IntPtr)null, 0, Injector, AllocMem, 0, out bytesout);
+            IntPtr hThread = CreateRemoteThread(pHandle, (IntPtr)null, 0, injector, allocMem, 0, out bytesout);
             if (hThread == null)
                 return;
 
@@ -1428,7 +1406,7 @@ namespace Memory
                     CloseHandle(hThread);
                 return;
             }
-            VirtualFreeEx(pHandle, AllocMem, (UIntPtr)0, 0x8000);
+            VirtualFreeEx(pHandle, allocMem, (UIntPtr)0, 0x8000);
 
             if (hThread != null)
                 CloseHandle(hThread);
@@ -1444,7 +1422,7 @@ namespace Memory
         /// <param name="code">Address to create the trampoline</param>
         /// <param name="newBytes">The opcodes to write in the code cave</param>
         /// <param name="replaceCount">The number of bytes being replaced</param>
-        /// <param name="size">size of the allocated region</param>
+        /// <param name="allocationSize">size of the allocated region</param>
         /// <param name="file">ini file to look in</param>
         /// <remarks>Please ensure that you use the proper replaceCount
         /// if you replace halfway in an instruction you may cause bad things</remarks>
@@ -1456,7 +1434,7 @@ namespace Memory
                                      // to better match existing code
 
             UIntPtr theCode;
-            theCode = getCode(code, file);
+            theCode = GetCode(code, file);
             UIntPtr address = theCode;
 
             // if x64 we need to try to allocate near the address so we dont run into the +-2GB limit of the 0xE9 jmp
@@ -1466,8 +1444,8 @@ namespace Memory
 
             for(var i = 0; i < 10 && caveAddress == UIntPtr.Zero; i++)
             {
-                caveAddress = VirtualAllocEx(pHandle, FindFreeBlockForRegion(prefered, (uint)newBytes.Length),
-                                             (uint)size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+                caveAddress = VirtualAllocEx(pHandle, FindFreeBlockForRegion(prefered, (uint)allocationSize),
+                                             (uint)allocationSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
                 if (caveAddress == UIntPtr.Zero)
                     prefered = UIntPtr.Add(prefered, 0x10000);
@@ -1475,7 +1453,7 @@ namespace Memory
 
             // Failed to allocate memory around the address we wanted let windows handle it and hope for the best?
             if (caveAddress == UIntPtr.Zero)
-                caveAddress = VirtualAllocEx(pHandle, UIntPtr.Zero, (uint)size, MEM_COMMIT | MEM_RESERVE,
+                caveAddress = VirtualAllocEx(pHandle, UIntPtr.Zero, (uint)allocationSize, MEM_COMMIT | MEM_RESERVE,
                                              PAGE_EXECUTE_READWRITE);
 
             int nopsNeeded = replaceCount > 5 ? replaceCount - 5 : 0;
@@ -1491,7 +1469,7 @@ namespace Memory
             {
                 jmpBytes[i] = 0x90;
             }
-            writeBytes(address, jmpBytes);
+            WriteBytes(address, jmpBytes);
 
             byte[] caveBytes = new byte[5 + newBytes.Length];
             offset = (int)(((long)address + jmpBytes.Length) - ((long)caveAddress + newBytes.Length) - 5);
@@ -1500,7 +1478,7 @@ namespace Memory
             caveBytes[newBytes.Length] = 0xE9;
             BitConverter.GetBytes(offset).CopyTo(caveBytes, newBytes.Length + 1);
 
-            writeBytes(caveAddress, caveBytes);
+            WriteBytes(caveAddress, caveBytes);
 
             return caveAddress;
         }
@@ -1681,16 +1659,16 @@ namespace Memory
             }
         }
 
-        public byte[] fileToBytes(string path, bool dontDelete = false) {
+        public byte[] FileToBytes(string path, bool dontDelete = false) {
             byte[] newArray = File.ReadAllBytes(path);
             if (!dontDelete)
                 File.Delete(path);
             return newArray;
         }
 
-        public string mSize()
+        public string MSize()
         {
-            if (is64bit())
+            if (Is64Bit)
                 return ("x16");
             else
                 return ("x8");
@@ -1782,7 +1760,7 @@ namespace Memory
             public uint Type;
         }
 
-        public ulong getMinAddress()
+        public ulong GetMinAddress()
         {
             SYSTEM_INFO SI;
             GetSystemInfo(out SI);
@@ -1939,7 +1917,7 @@ namespace Memory
                 if (end > (long)proc_max_address.ToUInt64())
                     end = (long)proc_max_address.ToUInt64();
 
-                Debug.WriteLine("[DEBUG] memory scan starting... (start:0x" + start.ToString(mSize()) + " end:0x" + end.ToString(mSize()) + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")");
+                Debug.WriteLine("[DEBUG] memory scan starting... (start:0x" + start.ToString(MSize()) + " end:0x" + end.ToString(MSize()) + " time:" + DateTime.Now.ToString("h:mm:ss tt") + ")");
                 UIntPtr currentBaseAddress = new UIntPtr((ulong)start);
 
                 MEMORY_BASIC_INFORMATION memInfo = new MEMORY_BASIC_INFORMATION();
@@ -2042,7 +2020,7 @@ namespace Memory
         /// <returns>First address found</returns>
         public async Task<long> AoBScan(string code, long end, string search, string file ="")
         {
-            long start = (long)getCode(code, file).ToUInt64();
+            long start = (long)GetCode(code, file).ToUInt64();
 
             return  (await AoBScan(start, end, search, true, true, true, file)).FirstOrDefault();
         }
