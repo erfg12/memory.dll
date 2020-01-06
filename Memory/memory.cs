@@ -1444,7 +1444,7 @@ namespace Memory
         /// <param name="code">Address to create the trampoline</param>
         /// <param name="newBytes">The opcodes to write in the code cave</param>
         /// <param name="replaceCount">The number of bytes being replaced</param>
-        /// <param name="allocationSize">size of the allocated region</param>
+        /// <param name="size">size of the allocated region</param>
         /// <param name="file">ini file to look in</param>
         /// <remarks>Please ensure that you use the proper replaceCount
         /// if you replace halfway in an instruction you may cause bad things</remarks>
