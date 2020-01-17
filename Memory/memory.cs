@@ -1427,7 +1427,7 @@ namespace Memory
         /// <remarks>Please ensure that you use the proper replaceCount
         /// if you replace halfway in an instruction you may cause bad things</remarks>
         /// <returns>UIntPtr to created code cave for use for later deallocation</returns>
-        public UIntPtr CreateCodeCave(string code, byte[] newBytes, int replaceCount, int allocationSize = 0x10000, string file = "")
+        public UIntPtr CreateCodeCave(string code, byte[] newBytes, int replaceCount, int size = 0x1000, string file = "")
         {
             if (replaceCount < 5)
                 return UIntPtr.Zero; // returning UIntPtr.Zero instead of throwing an exception
@@ -1444,8 +1444,8 @@ namespace Memory
 
             for(var i = 0; i < 10 && caveAddress == UIntPtr.Zero; i++)
             {
-                caveAddress = VirtualAllocEx(pHandle, FindFreeBlockForRegion(prefered, (uint)allocationSize),
-                                             (uint)allocationSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+                caveAddress = VirtualAllocEx(pHandle, FindFreeBlockForRegion(prefered, (uint)size),
+                                             (uint)size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
                 if (caveAddress == UIntPtr.Zero)
                     prefered = UIntPtr.Add(prefered, 0x10000);
