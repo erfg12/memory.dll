@@ -1453,7 +1453,7 @@ namespace Memory
 
             // Failed to allocate memory around the address we wanted let windows handle it and hope for the best?
             if (caveAddress == UIntPtr.Zero)
-                caveAddress = VirtualAllocEx(pHandle, UIntPtr.Zero, (uint)allocationSize, MEM_COMMIT | MEM_RESERVE,
+                caveAddress = VirtualAllocEx(pHandle, UIntPtr.Zero, (uint)size, MEM_COMMIT | MEM_RESERVE,
                                              PAGE_EXECUTE_READWRITE);
 
             int nopsNeeded = replaceCount > 5 ? replaceCount - 5 : 0;
