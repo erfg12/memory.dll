@@ -27,3 +27,6 @@ Create great PC game cheat trainers with ease!
     
 # VIDEOS
 [![New Age Soldiers Video](https://img.youtube.com/vi/OKJsbDDh5CE/0.jpg)](https://www.youtube.com/watch?v=OKJsbDDh5CE)
+
+# PATREON
+https://www.patreon.com/newage
