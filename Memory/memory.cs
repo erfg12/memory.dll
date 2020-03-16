@@ -452,6 +452,8 @@ namespace Memory
 
             if (name.Contains(".exe"))
                 name = name.Replace(".exe", "");
+            if (name.Contains(".bin")) // test
+                name = name.Replace(".bin", "");
 
             foreach (Process theprocess in processlist)
             {
@@ -1164,7 +1166,7 @@ namespace Memory
                 {
                     string[] moduleName = theCode.Split('+');
                     IntPtr altModule = IntPtr.Zero;
-                    if (!moduleName[0].Contains(".dll") && !moduleName[0].Contains(".exe"))
+                    if (!moduleName[0].ToLower().Contains(".dll") && !moduleName[0].ToLower().Contains(".exe") && !moduleName[0].ToLower().Contains(".bin"))
                     {
                         string theAddr = moduleName[0];
                         if (theAddr.Contains("0x")) theAddr = theAddr.Replace("0x", "");
@@ -1204,12 +1206,12 @@ namespace Memory
                 int trueCode = Convert.ToInt32(newOffsets, 16);
                 IntPtr altModule = IntPtr.Zero;
                 //Debug.WriteLine("newOffsets=" + newOffsets);
-                if (theCode.Contains("base") || theCode.Contains("main"))
+                if (theCode.ToLower().Contains("base") || theCode.ToLower().Contains("main"))
                     altModule = mainModule.BaseAddress;
-                else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
+                else if (!theCode.ToLower().Contains("base") && !theCode.ToLower().Contains("main") && theCode.Contains("+"))
                 {
                     string[] moduleName = theCode.Split('+');
-                    if (!moduleName[0].Contains(".dll") && !moduleName[0].Contains(".exe"))
+                    if (!moduleName[0].ToLower().Contains(".dll") && !moduleName[0].ToLower().Contains(".exe") && !moduleName[0].ToLower().Contains(".bin"))
                     {
                         string theAddr = moduleName[0];
                         if (theAddr.Contains("0x")) theAddr = theAddr.Replace("0x", "");
@@ -1292,7 +1294,7 @@ namespace Memory
                 {
                     string[] moduleName = theCode.Split('+');
                     IntPtr altModule = IntPtr.Zero;
-                    if (!moduleName[0].Contains(".dll") && !moduleName[0].Contains(".exe"))
+                    if (!moduleName[0].ToLower().Contains(".dll") && !moduleName[0].ToLower().Contains(".exe") && !moduleName[0].ToLower().Contains(".bin"))
                         altModule = (IntPtr)Int64.Parse(moduleName[0], System.Globalization.NumberStyles.HexNumber);
                     else
                     {
@@ -1332,7 +1334,7 @@ namespace Memory
                 else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
                 {
                     string[] moduleName = theCode.Split('+');
-                    if (!moduleName[0].Contains(".dll") && !moduleName[0].Contains(".exe"))
+                    if (!moduleName[0].ToLower().Contains(".dll") && !moduleName[0].ToLower().Contains(".exe") && !moduleName[0].ToLower().Contains(".bin"))
                     {
                         string theAddr = moduleName[0];
                         if (theAddr.Contains("0x")) theAddr = theAddr.Replace("0x", "");
