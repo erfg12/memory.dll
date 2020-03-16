@@ -450,9 +450,9 @@ namespace Memory
         {
             Process[] processlist = Process.GetProcesses();
 
-            if (name.Contains(".exe"))
+            if (name.ToLower().Contains(".exe"))
                 name = name.Replace(".exe", "");
-            if (name.Contains(".bin")) // test
+            if (name.ToLower().Contains(".bin")) // test
                 name = name.Replace(".bin", "");
 
             foreach (Process theprocess in processlist)
