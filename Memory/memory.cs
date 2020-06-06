@@ -337,18 +337,19 @@ namespace Memory
                 MessageBox.Show("WARNING: You are NOT running this program as admin!");
             }
 
+            if (pid <= 0)
+            {
+	            Debug.WriteLine("ERROR: OpenProcess given proc ID 0.");
+                return false;
+            }
+	            
+
+            if (theProc != null && theProc.Id == pid)
+	            return true;
+
             try
             {
-                if (theProc != null && theProc.Id == pid)
-                    return true;
-
-                if (pid <= 0)
-                {
-                    Debug.WriteLine("ERROR: OpenProcess given proc ID 0.");
-                    return false;
-                }
-
-                theProc = Process.GetProcessById(pid);
+	            theProc = Process.GetProcessById(pid);
 
                 if (theProc != null && !theProc.Responding)
                 {
@@ -362,6 +363,10 @@ namespace Memory
                 if (pHandle == IntPtr.Zero)
                 {
                     var eCode = Marshal.GetLastWin32Error();
+                    Debug.WriteLine("ERROR: OpenProcess has failed opening a handle to the target process (GetLastWin32ErrorCode: " + eCode + ")");
+                    Process.LeaveDebugMode();
+                    theProc = null;
+                    return false;
                 }
 
                 mainModule = theProc.MainModule;
