@@ -26,7 +26,8 @@ Create great PC game cheat trainers with ease!
 * Freeze values
     
 # VIDEOS
-[![New Age Soldiers Video](https://img.youtube.com/vi/OKJsbDDh5CE/0.jpg)](https://www.youtube.com/watch?v=OKJsbDDh5CE)
+- New Age Soldier's Video - https://www.youtube.com/watch?v=OKJsbDDh5CE
+- Guided Hacking's Video - https://www.youtube.com/watch?v=STPrGJ8eI8Y
 
 # PATREON
 https://www.patreon.com/newage
