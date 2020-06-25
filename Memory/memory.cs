@@ -153,6 +153,10 @@ namespace Memory
             uint flProtect
         );
 
+        [DllImport("kernel32.dll")]
+        static extern bool VirtualProtectEx(IntPtr hProcess, UIntPtr lpAddress,
+	        IntPtr dwSize, MemoryProtection flNewProtect, out MemoryProtection lpflOldProtect);
+
         [DllImport("kernel32.dll", CharSet = CharSet.Ansi, ExactSpelling = true)]
         public static extern UIntPtr GetProcAddress(
             IntPtr hModule,
@@ -569,6 +573,37 @@ namespace Memory
             }
             return sb.ToString();
         }
+
+        #region protection
+        [Flags]
+        public enum MemoryProtection : uint
+        {
+	        Execute = 0x10,
+	        ExecuteRead = 0x20,
+	        ExecuteReadWrite = 0x40,
+	        ExecuteWriteCopy = 0x80,
+	        NoAccess = 0x01,
+	        ReadOnly = 0x02,
+	        ReadWrite = 0x04,
+	        WriteCopy = 0x08,
+	        GuardModifierflag = 0x100,
+	        NoCacheModifierflag = 0x200,
+	        WriteCombineModifierflag = 0x400
+        }
+
+        public bool ChangeProtection(string code, MemoryProtection newProtection, out MemoryProtection oldProtection, string file = "")
+        {
+	        UIntPtr theCode = GetCode(code, file);
+	        if (theCode == UIntPtr.Zero 
+	            || pHandle == IntPtr.Zero)
+	        {
+		        oldProtection = default;
+		        return false;
+	        }
+
+	        return VirtualProtectEx(pHandle, theCode, (IntPtr)(Is64Bit ? 8 : 4), newProtection, out oldProtection);
+        }
+        #endregion
 
         #region readMemory
         /// <summary>
