@@ -594,6 +594,13 @@ namespace Memory
         public bool ChangeProtection(string code, MemoryProtection newProtection, out MemoryProtection oldProtection, string file = "")
         {
 	        UIntPtr theCode = GetCode(code, file);
+	        if (theCode == UIntPtr.Zero 
+	            || pHandle == IntPtr.Zero)
+	        {
+		        oldProtection = default;
+		        return false;
+	        }
+
 	        return VirtualProtectEx(pHandle, theCode, (IntPtr)(Is64Bit ? 8 : 4), newProtection, out oldProtection);
         }
         #endregion
