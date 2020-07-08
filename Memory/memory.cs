@@ -1428,12 +1428,18 @@ namespace Memory
             if (!theProc.Responding)
                 return;
 
+            UIntPtr test = new UIntPtr();
+            if (test == null)
+            {
+
+            }
+
             int lenWrite = strDllName.Length + 1;
             UIntPtr allocMem = VirtualAllocEx(pHandle, (UIntPtr)null, (uint)lenWrite, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
             if (allocMem == UIntPtr.Zero)
 	            return;
 
-            if (!WriteProcessMemory(pHandle, allocMem, strDllName, (UIntPtr) lenWrite, out IntPtr bytesWritten))
+            if (!WriteProcessMemory(pHandle, allocMem, strDllName, (UIntPtr) lenWrite, out _))
 	            return;
 
             UIntPtr injector = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
