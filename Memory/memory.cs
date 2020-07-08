@@ -1414,43 +1414,47 @@ namespace Memory
         /// <summary>
         /// Inject a DLL file.
         /// </summary>
-        /// <param name="strDllName">path and name of DLL file.</param>
+        /// <param name="strDllName">path and name of DLL file.</param>return;
         public void InjectDll(String strDllName)
         {
-            IntPtr bytesout;
+	        if (theProc == null 
+	            || pHandle == IntPtr.Zero
+	            || !File.Exists(strDllName))
+		        return;
 
-            foreach (ProcessModule pm in theProc.Modules)
-            {
-                if (pm.ModuleName.StartsWith("inject", StringComparison.InvariantCultureIgnoreCase))
-                    return;
-            }
+	        if (theProc.Modules.Cast<ProcessModule>().Any(pm => pm.ModuleName.StartsWith("inject", StringComparison.InvariantCultureIgnoreCase))) 
+		        return;
 
             if (!theProc.Responding)
                 return;
 
             int lenWrite = strDllName.Length + 1;
             UIntPtr allocMem = VirtualAllocEx(pHandle, (UIntPtr)null, (uint)lenWrite, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+            if (allocMem == UIntPtr.Zero)
+	            return;
 
-            WriteProcessMemory(pHandle, allocMem, strDllName, (UIntPtr)lenWrite, out bytesout);
+            if (!WriteProcessMemory(pHandle, allocMem, strDllName, (UIntPtr) lenWrite, out IntPtr bytesWritten))
+	            return;
+
             UIntPtr injector = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
+            if (injector == UIntPtr.Zero)
+	            return;
 
-            if (injector == null)
+            IntPtr hThread = CreateRemoteThread(pHandle, (IntPtr)null, 0, injector, allocMem, 0, out _);
+            if (hThread == IntPtr.Zero)
                 return;
 
-            IntPtr hThread = CreateRemoteThread(pHandle, (IntPtr)null, 0, injector, allocMem, 0, out bytesout);
-            if (hThread == null)
-                return;
-
-            int Result = WaitForSingleObject(hThread, 10 * 1000);
-            if (Result == 0x00000080L || Result == 0x00000102L)
+            int result = WaitForSingleObject(hThread, 10 * 1000);
+            if (result == 0x00000080L || result == 0x00000102L)
             {
-                if (hThread != null)
+                if (hThread != IntPtr.Zero)
                     CloseHandle(hThread);
                 return;
             }
+
             VirtualFreeEx(pHandle, allocMem, (UIntPtr)0, 0x8000);
 
-            if (hThread != null)
+            if (hThread != IntPtr.Zero)
                 CloseHandle(hThread);
 
             return;
