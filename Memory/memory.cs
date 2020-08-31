@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
 using System.Globalization;
-using System.Windows.Forms;
+//using System.Windows.Forms;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
@@ -338,7 +338,7 @@ namespace Memory
             if (!IsAdmin())
             {
                 Debug.WriteLine("WARNING: You are NOT running this program as admin! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
-                MessageBox.Show("WARNING: You are NOT running this program as admin!");
+                //MessageBox.Show("WARNING: You are NOT running this program as admin!");
             }
 
             if (pid <= 0)
