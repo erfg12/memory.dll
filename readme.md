@@ -1,14 +1,14 @@
 # DESCRIPTION
 Create great PC game cheat trainers with ease!
 
-[Available on NuGet!](https://www.nuget.org/packages/Memory.dll/) Open Visual Studio ```Project > Manage NuGet Packages... > Browse > Type in "memory.dll"```
+# DOCUMENTATION
+[Wiki Pages](https://github.com/erfg12/memory.dll/wiki)
 
-**SUPPORT** :: [Join Discord](https://discord.gg/9d7fB5a)
-
-**DOCUMENTATION** :: [Wiki Pages](https://github.com/erfg12/memory.dll/wiki)
-
-# EXAMPLE CODE
+# SAMPLE CODE
 [C# Game Trainer Git Repo](https://github.com/erfg12/Game-Trainers)
+
+# SUPPORT
+[Join Discord](https://discord.gg/9d7fB5a)
 
 # FEATURES
 * Built with C# for .NET projects.

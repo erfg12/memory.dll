@@ -1,0 +1,18 @@
+image: Visual Studio 2019
+platform: x64
+configuration: Debug
+
+after_build: 7z a Latest.zip %APPVEYOR_BUILD_FOLDER%\Memory\bin\Debug\*
+
+artifacts:
+  path: Latest.zip
+  name: Latest
+
+deploy:
+  - provider: GitHub
+    tag: Latest
+    release: Build $(APPVEYOR_REPO_COMMIT_TIMESTAMP)
+    description: Latest Compile Date %APPVEYOR_REPO_COMMIT_TIMESTAMP%
+    auth_token:
+      secure: selr4mVDE+XfNJ6jFTKiLTbSbDe8COHTNVRsFblZDVWS5/0qAFVym/Bcy/OoHRTT
+    artifact: Latest.zip
