@@ -17,7 +17,7 @@ Create great PC game cheat trainers with ease!
 * Freeze values
 
 # IMPORTANT NOTES
-We were kicked off NuGet, use this repo now.
+Memory.dll is no longer available on NuGet.
 
 # DOCUMENTATION
 [Wiki Pages](https://github.com/erfg12/memory.dll/wiki)
