@@ -1022,8 +1022,15 @@ namespace Memory
                     memory = stringEncoding.GetBytes(write);
                 size = memory.Length;
             }
+
             //Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:" + theCode + "] " + String.Join(",", memory) + Environment.NewLine);
-            return WriteProcessMemory(pHandle, theCode, memory, (UIntPtr)size, IntPtr.Zero);
+            bool WriteProcMem = false;
+            MemoryProtection OldMemProt = 0x00;
+
+            ChangeProtection(code, MemoryProtection.ExecuteReadWrite, out OldMemProt); // change protection
+            WriteProcMem = WriteProcessMemory(pHandle, theCode, memory, (UIntPtr)size, IntPtr.Zero);
+            ChangeProtection(code, OldMemProt, out _); // restore
+            return WriteProcMem;
         }
 
         /// <summary>
