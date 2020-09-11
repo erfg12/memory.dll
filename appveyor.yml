@@ -2,7 +2,7 @@ image: Visual Studio 2019
 platform: x64
 configuration: Debug
 
-after_build: 7z a Latest.zip %APPVEYOR_BUILD_FOLDER%\Memory\bin\Debug\*
+after_build: 7z a Latest.zip %APPVEYOR_BUILD_FOLDER%\Memory\bin\x64\Debug\*
 
 artifacts:
   path: Latest.zip
