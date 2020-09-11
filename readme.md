@@ -17,7 +17,9 @@ Create great PC game cheat trainers with ease!
 * Freeze values
 
 # IMPORTANT NOTES
-Memory.dll is no longer available on NuGet.
+Memory.dll is no longer available on NuGet. You can grab a pre-compiled dll at https://ci.appveyor.com/project/erfg12/memory-dll or download this project, open the sln file in VS, compile it and add the dll to your trainer's project.
+
+`Project` > `Add Project Reference...` > `Browse...` > `Select Memory.dll`
 
 # DOCUMENTATION
 [Wiki Pages](https://github.com/erfg12/memory.dll/wiki)
