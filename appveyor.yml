@@ -13,6 +13,7 @@ artifacts:
 
 deploy:
   - provider: GitHub
+    tag: $(APPVEYOR_BUILD_ID)
     release: Build $(APPVEYOR_REPO_COMMIT_TIMESTAMP)
     description: Latest Compile Date %APPVEYOR_REPO_COMMIT_TIMESTAMP%
     auth_token:
