@@ -2,6 +2,9 @@ image: Visual Studio 2019
 platform: x64
 configuration: Debug
 
+before_build:
+  - nuget restore
+
 after_build: 7z a Latest.zip %APPVEYOR_BUILD_FOLDER%\Memory\bin\x64\Debug\*
 
 artifacts:
