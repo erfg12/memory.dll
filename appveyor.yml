@@ -13,8 +13,11 @@ artifacts:
 
 deploy:
   - provider: GitHub
+    tag: Latest
     release: Build $(APPVEYOR_REPO_COMMIT_TIMESTAMP)
     description: Latest Compile Date %APPVEYOR_REPO_COMMIT_TIMESTAMP%
     auth_token:
       secure: aefoG8dMwSeQHm/FO6ydUZ591jX/M5fOms12ehz1obL4hnj8P7AIVrWqhztUK0cm
     artifact: Latest.zip
+    force_update: true
+    draft: false
