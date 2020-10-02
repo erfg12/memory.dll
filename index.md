@@ -5,10 +5,9 @@ layout: default
 # [](#header-1)Getting Started
 
 1. Open Visual Studio and make a new project.
-2. Add reference to Memory.dll.
-- <span class="highlight_this">Project</span> » <span class="highlight_this">Add Reference</span> » <span class="highlight_this">Browse...</span> » <span class="highlight_this">Select Memory.dll</span>
-3. <a href="https://github.com/erfg12/memory.dll/wiki/64bit-Games" target="_BLANK">Check if your game requires 64bit compiling.</a>
-4. <a href="https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges" target="_BLANK">Raise app privileges.</a>
+2. Add reference to Memory.dll.<br><span class="highlight_this">Project</span> » <span class="highlight_this">Add Reference</span> » <span class="highlight_this">Browse...</span> » <span class="highlight_this">Select Memory.dll</span>
+3. Check if your game requires 64bit compiling. <a href="https://github.com/erfg12/memory.dll/wiki/64bit-Games" target="_BLANK">READ</a>
+4. Raise app privileges.<a href="https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges" target="_BLANK">READ</a>
 
 You're ready to start using Memory.dll and building your game trainer!
 
