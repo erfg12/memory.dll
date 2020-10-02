@@ -6,10 +6,7 @@ layout: default
 
 <ul style="width:900px;">
 <li style="font-weight:bold;">Open Visual Studio and make a new project.</li>
-<li style="font-weight:bold;">Add reference to Memory.dll.
-<span class="highlight_this">Project</span> » <span class="highlight_this">Manage NuGet Packages...</span> » <span class="highlight_this">select Browse</span> » <span class="highlight_this">Search For Memory.dll</span>
-<ul>
-<li style="font-weight:bold;margin-top:5px;">Or, for manual installation...</li>
+<li style="font-weight:bold;">Add reference to Memory.dll.</li>
 <span class="highlight_this">Project</span> » <span class="highlight_this">Add Reference</span> » <span class="highlight_this">Browse...</span> » <span class="highlight_this">Select Memory.dll</span>
 </ul>
 </li>
