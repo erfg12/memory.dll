@@ -9,8 +9,6 @@ layout: default
 <li style="font-weight:bold;">Add reference to Memory.dll.</li>
 <span class="highlight_this">Project</span> » <span class="highlight_this">Add Reference</span> » <span class="highlight_this">Browse...</span> » <span class="highlight_this">Select Memory.dll</span>
 </ul>
-</li>
-</ul>
 
 # [](#header-1)C# App Usage
 
