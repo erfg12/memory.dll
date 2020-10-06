@@ -12,6 +12,6 @@ deploy:
     description: Latest Compile Date %APPVEYOR_REPO_COMMIT_TIMESTAMP%
     auth_token:
       secure: aefoG8dMwSeQHm/FO6ydUZ591jX/M5fOms12ehz1obL4hnj8P7AIVrWqhztUK0cm
-    artifact: '*.nupkg'
+    artifact: '%APPVEYOR_BUILD_FOLDER%\Memory\bin\Debug\*.nupkg'
     force_update: true
     draft: false
