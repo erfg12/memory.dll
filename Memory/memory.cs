@@ -206,6 +206,65 @@ namespace Memory
         [DllImport("user32.dll")]
         static extern bool SetForegroundWindow(IntPtr hWnd);
 
+        private enum SnapshotFlags : uint
+        {
+            HeapList = 0x00000001,
+            Process = 0x00000002,
+            Thread = 0x00000004,
+            Module = 0x00000008,
+            Module32 = 0x00000010,
+            Inherit = 0x80000000,
+            All = 0x0000001F,
+            NoHeaps = 0x40000000
+        }
+        //inner struct used only internally
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        private struct PROCESSENTRY32
+        {
+            const int MAX_PATH = 260;
+            internal UInt32 dwSize;
+            internal UInt32 cntUsage;
+            internal UInt32 th32ProcessID;
+            internal IntPtr th32DefaultHeapID;
+            internal UInt32 th32ModuleID;
+            internal UInt32 cntThreads;
+            internal UInt32 th32ParentProcessID;
+            internal Int32 pcPriClassBase;
+            internal UInt32 dwFlags;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_PATH)]
+            internal string szExeFile;
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+        public struct MODULEENTRY32
+        {
+            internal uint dwSize;
+            internal uint th32ModuleID;
+            internal uint th32ProcessID;
+            internal uint GlblcntUsage;
+            internal uint ProccntUsage;
+            internal IntPtr modBaseAddr;
+            internal uint modBaseSize;
+            internal IntPtr hModule;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
+            internal string szModule;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            internal string szExePath;
+        }
+
+        [DllImport("kernel32", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+        static extern IntPtr CreateToolhelp32Snapshot([In] UInt32 dwFlags, [In] UInt32 th32ProcessID);
+
+        [DllImport("kernel32", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+        static extern bool Process32First([In] IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
+        [DllImport("kernel32.dll")]
+        static extern bool Module32First(IntPtr hSnapshot, ref MODULEENTRY32 lpme);
+        [DllImport("kernel32.dll")]
+        static extern bool Module32Next(IntPtr hSnapshot, ref MODULEENTRY32 lpme);
+
+        [DllImport("kernel32", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+        static extern bool Process32Next([In] IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
+
         // privileges
         const int PROCESS_CREATE_THREAD = 0x0002;
         const int PROCESS_QUERY_INFORMATION = 0x0400;
@@ -379,7 +438,6 @@ namespace Memory
 
                 // Lets set the process to 64bit or not here (cuts down on api calls)
                 Is64Bit = Environment.Is64BitOperatingSystem && (IsWow64Process(pHandle, out bool retVal) && !retVal);
-
                 Debug.WriteLine("Program is operating at Administrative level. Process #" + theProc + " is open and modules are stored.");
 
                 return true;
@@ -425,7 +483,6 @@ namespace Memory
             private set { _is64Bit = value; }
         }
 
-
         /// <summary>
         /// Builds the process modules dictionary (names with addresses).
         /// </summary>
@@ -437,9 +494,35 @@ namespace Memory
             modules.Clear();
             foreach (ProcessModule Module in theProc.Modules)
             {
-                if (!string.IsNullOrEmpty(Module.ModuleName) && !modules.ContainsKey(Module.ModuleName))
+                //if (!string.IsNullOrEmpty(Module.ModuleName) && !modules.ContainsKey(Module.ModuleName))
                     modules.Add(Module.ModuleName, Module.BaseAddress);
             }
+
+            /*IntPtr handleToSnapshot = IntPtr.Zero;
+            try
+            {
+                handleToSnapshot = CreateToolhelp32Snapshot((uint)SnapshotFlags.Module, (uint)theProc.Id);
+                MODULEENTRY32 moduleEntry = new MODULEENTRY32();
+                if (Module32First(handleToSnapshot, ref moduleEntry))
+                {
+                    do
+                    {
+                        modules.Add(moduleEntry.szModule, moduleEntry.modBaseAddr);
+                    } while (Module32Next(handleToSnapshot, ref moduleEntry));
+                }
+                else
+                {
+                    Debug.WriteLine(string.Format("Failed with win32 error code {0}", Marshal.GetLastWin32Error()));
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(string.Format("Can't get the process. {0}", ex));
+            }
+            finally
+            {
+                CloseHandle(handleToSnapshot);
+            }*/
         }
 
         public void SetFocus()

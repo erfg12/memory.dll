@@ -7,6 +7,10 @@ before_build:
 
 after_build: '7z a Latest.zip %APPVEYOR_BUILD_FOLDER%\Memory\bin\Debug\*.nupkg'
 
+artifacts:
+  path: Latest.zip
+  name: Latest
+
 deploy:
   - provider: GitHub
     tag: $(APPVEYOR_BUILD_ID)
