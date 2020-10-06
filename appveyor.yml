@@ -5,12 +5,6 @@ configuration: Debug
 before_build:
   - nuget restore
 
-after_build: 7z a Latest.zip %APPVEYOR_BUILD_FOLDER%\Memory\bin\Debug\netstandard2.0\*
-
-artifacts:
-  path: Latest.zip
-  name: Latest
-
 deploy:
   - provider: GitHub
     tag: $(APPVEYOR_BUILD_ID)
@@ -18,6 +12,6 @@ deploy:
     description: Latest Compile Date %APPVEYOR_REPO_COMMIT_TIMESTAMP%
     auth_token:
       secure: aefoG8dMwSeQHm/FO6ydUZ591jX/M5fOms12ehz1obL4hnj8P7AIVrWqhztUK0cm
-    artifact: Latest.zip
+    artifact: /.nupkg/
     force_update: true
     draft: false
