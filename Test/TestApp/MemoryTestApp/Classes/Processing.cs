@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,13 +19,43 @@ namespace TestApplication
         /// </summary>
         public void OpenTheProc()
         {
-            if (String.Compare(ProcTypeBox.Text, "Name") == 0) // if combobox set to Name, use string
-                ProcOpen = m.OpenProcess(ProcTextBox.Text);
-            else // if combobox set to ID, use integer
-                ProcOpen = m.OpenProcess(Convert.ToInt32(ProcTextBox.Text));
+            ProcTypeBox.Invoke((MethodInvoker)delegate
+            {
+                if (String.Compare(ProcTypeBox.Text, "Name") == 0) // if combobox set to Name, use string
+                    ProcOpen = m.OpenProcess(ProcTextBox.Text);
+                else // if combobox set to ID, use integer
+                    ProcOpen = m.OpenProcess(Convert.ToInt32(ProcTextBox.Text));
+            });
 
             if (ProcOpen) // if process opens successfully
             {
+                ModuleList.Invoke((MethodInvoker)delegate
+                {
+                    if (ModuleList.Items.Count <= 0)
+                        GetModuleList();
+                });
+            }
+            else // on process open fail, show error message
+            {
+                //MessageBox.Show("ERROR: Process open failed!");
+                ProcStatus.Invoke((MethodInvoker)delegate
+                {
+                    ProcStatus.Text = "Closed";
+                    ProcStatus.ForeColor = Color.Red;
+                });
+                ModuleList.Invoke((MethodInvoker)delegate
+                {
+                    if (ModuleList.Items.Count > 0)
+                        ModuleList.Items.Clear();
+                });
+            }
+        }
+
+        public void GetModuleList()
+        {
+            ModuleList.Invoke((MethodInvoker)delegate
+            {
+                ModuleList.Items.Clear();
                 foreach (KeyValuePair<string, IntPtr> kvp in m.modules) // iterate through process module list
                 {
                     string[] arr = new string[4];
@@ -33,13 +65,13 @@ namespace TestApplication
                     itm = new ListViewItem(arr);
                     ModuleList.Items.Add(itm);
                 }
+            });
+
+            ProcStatus.Invoke((MethodInvoker)delegate
+            {
                 ProcStatus.Text = "Open";
                 ProcStatus.ForeColor = Color.Green;
-            }
-            else // on process open fail, show error message
-            {
-                MessageBox.Show("ERROR: Process open failed!");
-            }
+            });
         }
 
         /// <summary>
@@ -122,5 +154,30 @@ namespace TestApplication
                 });
             }
         }
+
+        /// <summary>
+        /// Creates our named pipe and sends functions through it.
+        /// </summary>
+        /// <param name="func">The name of a function that we injected</param>
+        /// <param name="pipename">The name of the pipe</param>
+        public void NewThreadStartClient(string func, string pipename)
+        {
+            //ManualResetEvent SyncClientServer = (ManualResetEvent)obj;
+            //MessageBox.Show("EQTPipe" + eqgameID);
+            using (NamedPipeClientStream pipeStream = new NamedPipeClientStream(pipename))
+            {
+                if (!pipeStream.IsConnected)
+                    pipeStream.Connect();
+
+                //MessageBox.Show("[Client] Pipe connection established");
+                using (StreamWriter sw = new StreamWriter(pipeStream))
+                {
+                    if (sw.AutoFlush == false)
+                        sw.AutoFlush = true;
+                    sw.WriteLine(func);
+                }
+            }
+        }
+
     }
 }

@@ -7,6 +7,9 @@ before_build:
 
 after_build: '7z a Latest.zip %APPVEYOR_BUILD_FOLDER%\Memory\bin\Debug\*.nupkg'
 
+build:
+  project: Memory.sln
+
 artifacts:
   path: Latest.zip
   name: Latest
