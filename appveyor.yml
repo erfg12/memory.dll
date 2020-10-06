@@ -5,6 +5,8 @@ configuration: Debug
 before_build:
   - nuget restore
 
+after_build: '7z a Latest.zip %APPVEYOR_BUILD_FOLDER%\Memory\bin\Debug\*.nupkg'
+
 deploy:
   - provider: GitHub
     tag: $(APPVEYOR_BUILD_ID)
@@ -12,6 +14,6 @@ deploy:
     description: Latest Compile Date %APPVEYOR_REPO_COMMIT_TIMESTAMP%
     auth_token:
       secure: aefoG8dMwSeQHm/FO6ydUZ591jX/M5fOms12ehz1obL4hnj8P7AIVrWqhztUK0cm
-    artifact: '%APPVEYOR_BUILD_FOLDER%\Memory\bin\Debug\*.nupkg'
+    artifact: Latest.zip
     force_update: true
     draft: false
