@@ -1505,18 +1505,18 @@ namespace Memory
         /// Inject a DLL file.
         /// </summary>
         /// <param name="strDllName">path and name of DLL file.</param>
-        public void InjectDll(String strDllName)
+        public bool InjectDll(String strDllName)
         {
             IntPtr bytesout;
 
             foreach (ProcessModule pm in theProc.Modules)
             {
                 if (pm.ModuleName.StartsWith("inject", StringComparison.InvariantCultureIgnoreCase))
-                    return;
+                    return false;
             }
 
             if (!theProc.Responding)
-                return;
+                return false;
 
             int lenWrite = strDllName.Length + 1;
             UIntPtr allocMem = VirtualAllocEx(pHandle, (UIntPtr)null, (uint)lenWrite, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
@@ -1525,25 +1525,25 @@ namespace Memory
             UIntPtr injector = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
 
             if (injector == null)
-                return;
+                return false;
 
             IntPtr hThread = CreateRemoteThread(pHandle, (IntPtr)null, 0, injector, allocMem, 0, out bytesout);
             if (hThread == null)
-                return;
+                return false;
 
             int Result = WaitForSingleObject(hThread, 10 * 1000);
             if (Result == 0x00000080L || Result == 0x00000102L)
             {
                 if (hThread != null)
                     CloseHandle(hThread);
-                return;
+                return false;
             }
             VirtualFreeEx(pHandle, allocMem, (UIntPtr)0, 0x8000);
 
             if (hThread != null)
                 CloseHandle(hThread);
 
-            return;
+            return true;
         }
 
 #if WINXP

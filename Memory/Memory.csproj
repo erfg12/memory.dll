@@ -21,9 +21,9 @@
     <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="System.Security.Principal.Windows" Version="4.7.0" />
-	</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Security.Principal.Windows" Version="4.7.0" />
+  </ItemGroup>
 
 	<ItemGroup>
 	  <None Update="app.manifest">
