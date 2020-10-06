@@ -758,14 +758,14 @@ namespace Memory
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <returns></returns>
-        public UInt64 ReadUInt(string code, string file = "")
+        public UInt32 ReadUInt(string code, string file = "")
         {
             byte[] memory = new byte[4];
             UIntPtr theCode;
             theCode = GetCode(code, file);
 
             if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
-                return BitConverter.ToUInt64(memory, 0);
+                return BitConverter.ToUInt32(memory, 0);
             else
                 return 0;
         }
