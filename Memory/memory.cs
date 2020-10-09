@@ -12,6 +12,7 @@ using System.Globalization;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using System.Reflection;
 
 namespace Memory
 {
@@ -397,7 +398,11 @@ namespace Memory
             if (!IsAdmin())
             {
                 Debug.WriteLine("WARNING: You are NOT running this program as admin! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
-                //MessageBox.Show("WARNING: You are NOT running this program as admin!");
+            }
+
+            if (IntPtr.Size < 8)
+            {
+                Debug.WriteLine("WARNING: You are NOT running this program in x64 platform mode!");
             }
 
             if (pid <= 0)

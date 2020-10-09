@@ -16,23 +16,5 @@ Create great PC game cheat trainers with ease!
     * _Example: "game.exe+0x12345678,0x12,0x34,0x56"_
 * Freeze values
 
-# IMPORTANT NOTES
-Memory.dll is no longer available on NuGet. You can grab a pre-compiled dll at https://ci.appveyor.com/project/erfg12/memory-dll or download this project, open the sln file in VS, compile it and add the dll to your trainer's project.
-
-`Project` > `Add Project Reference...` > `Browse...` > `Select Memory.dll`
-
 # DOCUMENTATION
 [Wiki Pages](https://github.com/erfg12/memory.dll/wiki)
-
-# SAMPLE CODE
-[C# Game Trainer Git Repo](https://github.com/erfg12/Game-Trainers)
-
-# SUPPORT
-[Join Discord](https://discord.gg/9d7fB5a)
-    
-# VIDEOS
-- New Age Soldier's Video - https://www.youtube.com/watch?v=OKJsbDDh5CE
-- Guided Hacking's Video - https://www.youtube.com/watch?v=STPrGJ8eI8Y
-
-# PATREON
-https://www.patreon.com/newage
