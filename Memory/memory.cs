@@ -400,11 +400,6 @@ namespace Memory
                 Debug.WriteLine("WARNING: You are NOT running this program as admin! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
             }
 
-            if (IntPtr.Size < 8)
-            {
-                Debug.WriteLine("WARNING: You are NOT running this program in x64 platform mode!");
-            }
-
             if (pid <= 0)
             {
 	            Debug.WriteLine("ERROR: OpenProcess given proc ID 0.");
