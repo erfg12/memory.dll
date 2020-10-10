@@ -13,6 +13,7 @@ using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.ComponentModel;
 
 namespace Memory
 {
@@ -135,6 +136,14 @@ namespace Memory
             UIntPtr dwSize,
             uint dwFreeType
             );
+
+        [DllImport("psapi.dll")]
+        static extern uint GetModuleFileNameEx(IntPtr hProcess, IntPtr hModule, [Out] StringBuilder lpBaseName, [In][MarshalAs(UnmanagedType.U4)] int nSize);
+        [DllImport("psapi.dll", SetLastError = true)]
+        public static extern bool EnumProcessModules(IntPtr hProcess,
+        [Out] IntPtr lphModule,
+        uint cb,
+        [MarshalAs(UnmanagedType.U4)] out uint lpcbNeeded);
 
         [DllImport("kernel32.dll")]
         private static extern bool ReadProcessMemory(IntPtr hProcess, UIntPtr lpBaseAddress, [Out] byte[] lpBuffer, UIntPtr nSize, IntPtr lpNumberOfBytesRead);
@@ -395,10 +404,10 @@ namespace Memory
         /// <returns></returns>
         public bool OpenProcess(int pid)
         {
-            if (!IsAdmin())
+            /*if (!IsAdmin())
             {
-                Debug.WriteLine("WARNING: You are NOT running this program as admin! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
-            }
+                Debug.WriteLine("WARNING: This program may not be running with raised privileges! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
+            }*/
 
             if (pid <= 0)
             {
@@ -421,7 +430,12 @@ namespace Memory
                 }
 
                 pHandle = OpenProcess(0x1F0FFF, true, pid);
-                Process.EnterDebugMode();
+
+                try { 
+                    Process.EnterDebugMode(); 
+                } catch (Win32Exception) { 
+                    Debug.WriteLine("WARNING: You are not running with raised privileges! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges"); 
+                }
 
                 if (pHandle == IntPtr.Zero)
                 {
@@ -432,18 +446,19 @@ namespace Memory
                     return false;
                 }
 
+                // Lets set the process to 64bit or not here (cuts down on api calls)
+                Is64Bit = Environment.Is64BitOperatingSystem && (IsWow64Process(pHandle, out bool retVal) && !retVal);
+
                 mainModule = theProc.MainModule;
 
                 GetModules();
 
-                // Lets set the process to 64bit or not here (cuts down on api calls)
-                Is64Bit = Environment.Is64BitOperatingSystem && (IsWow64Process(pHandle, out bool retVal) && !retVal);
-                Debug.WriteLine("Program is operating at Administrative level. Process #" + theProc + " is open and modules are stored.");
+                Debug.WriteLine("Process #" + theProc + " is now open.");
 
                 return true;
             }
-            catch {
-                Debug.WriteLine("ERROR: OpenProcess has crashed. Are you trying to hack a x64 game? https://github.com/erfg12/memory.dll/wiki/64bit-Games");
+            catch (Exception ex) {
+                Debug.WriteLine("ERROR: OpenProcess has crashed. " + ex);
                 return false;
             }
         }
@@ -465,10 +480,18 @@ namespace Memory
         /// <returns></returns>
         public bool IsAdmin()
         {
-            using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+            try
             {
-                WindowsPrincipal principal = new WindowsPrincipal(identity);
-                return principal.IsInRole(WindowsBuiltInRole.Administrator);
+                using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+                {
+                    WindowsPrincipal principal = new WindowsPrincipal(identity);
+                    return principal.IsInRole(WindowsBuiltInRole.Administrator);
+                }
+            } 
+            catch
+            {
+                Debug.WriteLine("ERROR: Could not determin if program is running as admin. Is the NuGet package \"System.Security.Principal.Windows\" missing?");
+                return false;
             }
         }
 
@@ -491,38 +514,24 @@ namespace Memory
             if (theProc == null)
                 return;
 
+            if (_is64Bit && IntPtr.Size != 8)
+            {
+                Debug.WriteLine("WARNING: Game is x64, but your Trainer is x86! You will be missing some modules, change your Trainer's Solution Platform.");
+            }
+            else if (!_is64Bit && IntPtr.Size == 8)
+            {
+                Debug.WriteLine("WARNING: Game is x86, but your Trainer is x64! You will be missing some modules, change your Trainer's Solution Platform.");
+            }
+
             modules.Clear();
+
             foreach (ProcessModule Module in theProc.Modules)
             {
                 //if (!string.IsNullOrEmpty(Module.ModuleName) && !modules.ContainsKey(Module.ModuleName))
-                    modules.Add(Module.ModuleName, Module.BaseAddress);
+                modules.Add(Module.ModuleName, Module.BaseAddress);
             }
 
-            /*IntPtr handleToSnapshot = IntPtr.Zero;
-            try
-            {
-                handleToSnapshot = CreateToolhelp32Snapshot((uint)SnapshotFlags.Module, (uint)theProc.Id);
-                MODULEENTRY32 moduleEntry = new MODULEENTRY32();
-                if (Module32First(handleToSnapshot, ref moduleEntry))
-                {
-                    do
-                    {
-                        modules.Add(moduleEntry.szModule, moduleEntry.modBaseAddr);
-                    } while (Module32Next(handleToSnapshot, ref moduleEntry));
-                }
-                else
-                {
-                    Debug.WriteLine(string.Format("Failed with win32 error code {0}", Marshal.GetLastWin32Error()));
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(string.Format("Can't get the process. {0}", ex));
-            }
-            finally
-            {
-                CloseHandle(handleToSnapshot);
-            }*/
+            Debug.WriteLine("Found " + modules.Count() + " process modules.");
         }
 
         public void SetFocus()

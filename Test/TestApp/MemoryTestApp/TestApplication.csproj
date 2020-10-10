@@ -63,7 +63,7 @@
   <ItemGroup>
     <Reference Include="Memory, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Memory\bin\Debug\netstandard2.0\Memory.dll</HintPath>
+      <HintPath>..\..\..\Memory\bin\x64\Debug\netstandard2.0\Memory.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

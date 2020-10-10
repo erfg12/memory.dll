@@ -1,11 +1,17 @@
 image: Visual Studio 2019
-platform: x64
+platform:
+- x86
+- x64
 configuration: Debug
 
 before_build:
   - nuget restore
 
-after_build: '7z a Latest.zip %APPVEYOR_BUILD_FOLDER%\Memory\bin\Debug\*.nupkg'
+after_build: 
+- cmd: >-
+    'mv %APPVEYOR_BUILD_FOLDER%\Memory\bin\x64\Debug\*.nupkg %APPVEYOR_BUILD_FOLDER%\Memory\bin\x64\Debug\Memory_x64.nupkg'
+    'mv %APPVEYOR_BUILD_FOLDER%\Memory\bin\x86\Debug\*.nupkg %APPVEYOR_BUILD_FOLDER%\Memory\bin\x86\Debug\Memory_x86.nupkg'
+    '7z a Latest.zip %APPVEYOR_BUILD_FOLDER%\Memory\bin\x64\Debug\*.nupkg %APPVEYOR_BUILD_FOLDER%\Memory\bin\x86\Debug\*.nupkg'
 
 build:
   project: Memory.sln

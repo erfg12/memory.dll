@@ -40,6 +40,7 @@
             this.AddrHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.NameHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.UpdateModulesButton = new System.Windows.Forms.Button();
             this.ReadTypeBox = new System.Windows.Forms.ComboBox();
             this.ReadButton = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
@@ -65,17 +66,16 @@
             this.ProcStatus = new System.Windows.Forms.Label();
             this.DLLOpenFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.groupBox5 = new System.Windows.Forms.GroupBox();
+            this.SendPipeButton = new System.Windows.Forms.Button();
+            this.label13 = new System.Windows.Forms.Label();
+            this.PipeMsgTextBox = new System.Windows.Forms.TextBox();
+            this.InjectButton = new System.Windows.Forms.Button();
             this.label11 = new System.Windows.Forms.Label();
             this.PipeNameTextBox = new System.Windows.Forms.TextBox();
             this.DLLTextBox = new System.Windows.Forms.TextBox();
             this.label12 = new System.Windows.Forms.Label();
             this.BrowseDLLButton = new System.Windows.Forms.Button();
-            this.InjectButton = new System.Windows.Forms.Button();
-            this.label13 = new System.Windows.Forms.Label();
-            this.PipeMsgTextBox = new System.Windows.Forms.TextBox();
-            this.SendPipeButton = new System.Windows.Forms.Button();
             this.BackgroundWork = new System.ComponentModel.BackgroundWorker();
-            this.UpdateModulesButton = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -86,7 +86,7 @@
             // ProcTextBox
             // 
             this.ProcTextBox.Location = new System.Drawing.Point(68, 18);
-            this.ProcTextBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.ProcTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.ProcTextBox.Name = "ProcTextBox";
             this.ProcTextBox.Size = new System.Drawing.Size(120, 20);
             this.ProcTextBox.TabIndex = 0;
@@ -105,7 +105,7 @@
             // OpenProcessBtn
             // 
             this.OpenProcessBtn.Location = new System.Drawing.Point(286, 15);
-            this.OpenProcessBtn.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.OpenProcessBtn.Margin = new System.Windows.Forms.Padding(2);
             this.OpenProcessBtn.Name = "OpenProcessBtn";
             this.OpenProcessBtn.Size = new System.Drawing.Size(85, 26);
             this.OpenProcessBtn.TabIndex = 2;
@@ -121,7 +121,7 @@
             "Name",
             "ID"});
             this.ProcTypeBox.Location = new System.Drawing.Point(191, 18);
-            this.ProcTypeBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.ProcTypeBox.Margin = new System.Windows.Forms.Padding(2);
             this.ProcTypeBox.Name = "ProcTypeBox";
             this.ProcTypeBox.Size = new System.Drawing.Size(92, 21);
             this.ProcTypeBox.TabIndex = 3;
@@ -137,7 +137,7 @@
             "string",
             "float"});
             this.WriteTypeBox.Location = new System.Drawing.Point(209, 24);
-            this.WriteTypeBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.WriteTypeBox.Margin = new System.Windows.Forms.Padding(2);
             this.WriteTypeBox.Name = "WriteTypeBox";
             this.WriteTypeBox.Size = new System.Drawing.Size(68, 21);
             this.WriteTypeBox.TabIndex = 7;
@@ -145,7 +145,7 @@
             // WriteButton
             // 
             this.WriteButton.Location = new System.Drawing.Point(280, 24);
-            this.WriteButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.WriteButton.Margin = new System.Windows.Forms.Padding(2);
             this.WriteButton.Name = "WriteButton";
             this.WriteButton.Size = new System.Drawing.Size(44, 20);
             this.WriteButton.TabIndex = 6;
@@ -166,7 +166,7 @@
             // WriteTextBox
             // 
             this.WriteTextBox.Location = new System.Drawing.Point(50, 24);
-            this.WriteTextBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.WriteTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.WriteTextBox.Name = "WriteTextBox";
             this.WriteTextBox.Size = new System.Drawing.Size(156, 20);
             this.WriteTextBox.TabIndex = 4;
@@ -182,9 +182,9 @@
             this.NameHeader});
             this.ModuleList.HideSelection = false;
             this.ModuleList.Location = new System.Drawing.Point(4, 17);
-            this.ModuleList.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.ModuleList.Margin = new System.Windows.Forms.Padding(2);
             this.ModuleList.Name = "ModuleList";
-            this.ModuleList.Size = new System.Drawing.Size(266, 480);
+            this.ModuleList.Size = new System.Drawing.Size(266, 485);
             this.ModuleList.TabIndex = 8;
             this.ModuleList.UseCompatibleStateImageBehavior = false;
             this.ModuleList.View = System.Windows.Forms.View.Details;
@@ -207,13 +207,24 @@
             this.groupBox1.Controls.Add(this.UpdateModulesButton);
             this.groupBox1.Controls.Add(this.ModuleList);
             this.groupBox1.Location = new System.Drawing.Point(14, 48);
-            this.groupBox1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
             this.groupBox1.Size = new System.Drawing.Size(274, 532);
             this.groupBox1.TabIndex = 9;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Process Module List";
+            // 
+            // UpdateModulesButton
+            // 
+            this.UpdateModulesButton.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.UpdateModulesButton.Location = new System.Drawing.Point(2, 507);
+            this.UpdateModulesButton.Name = "UpdateModulesButton";
+            this.UpdateModulesButton.Size = new System.Drawing.Size(270, 23);
+            this.UpdateModulesButton.TabIndex = 9;
+            this.UpdateModulesButton.Text = "Get New Modules List";
+            this.UpdateModulesButton.UseVisualStyleBackColor = true;
+            this.UpdateModulesButton.Click += new System.EventHandler(this.UpdateModulesButton_Click);
             // 
             // ReadTypeBox
             // 
@@ -229,7 +240,7 @@
             "byte",
             "2 byte"});
             this.ReadTypeBox.Location = new System.Drawing.Point(209, 17);
-            this.ReadTypeBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.ReadTypeBox.Margin = new System.Windows.Forms.Padding(2);
             this.ReadTypeBox.Name = "ReadTypeBox";
             this.ReadTypeBox.Size = new System.Drawing.Size(68, 21);
             this.ReadTypeBox.TabIndex = 13;
@@ -237,7 +248,7 @@
             // ReadButton
             // 
             this.ReadButton.Location = new System.Drawing.Point(280, 17);
-            this.ReadButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.ReadButton.Margin = new System.Windows.Forms.Padding(2);
             this.ReadButton.Name = "ReadButton";
             this.ReadButton.Size = new System.Drawing.Size(44, 20);
             this.ReadButton.TabIndex = 12;
@@ -258,7 +269,7 @@
             // ReadTextBox
             // 
             this.ReadTextBox.Location = new System.Drawing.Point(50, 18);
-            this.ReadTextBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.ReadTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.ReadTextBox.Name = "ReadTextBox";
             this.ReadTextBox.Size = new System.Drawing.Size(156, 20);
             this.ReadTextBox.TabIndex = 10;
@@ -267,7 +278,7 @@
             // WriteValueBox
             // 
             this.WriteValueBox.Location = new System.Drawing.Point(50, 48);
-            this.WriteValueBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.WriteValueBox.Margin = new System.Windows.Forms.Padding(2);
             this.WriteValueBox.Name = "WriteValueBox";
             this.WriteValueBox.Size = new System.Drawing.Size(275, 20);
             this.WriteValueBox.TabIndex = 14;
@@ -275,7 +286,7 @@
             // ReadValueBox
             // 
             this.ReadValueBox.Location = new System.Drawing.Point(50, 41);
-            this.ReadValueBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.ReadValueBox.Margin = new System.Windows.Forms.Padding(2);
             this.ReadValueBox.Name = "ReadValueBox";
             this.ReadValueBox.Size = new System.Drawing.Size(275, 20);
             this.ReadValueBox.TabIndex = 15;
@@ -290,9 +301,9 @@
             this.groupBox2.Controls.Add(this.WriteButton);
             this.groupBox2.Controls.Add(this.WriteTypeBox);
             this.groupBox2.Location = new System.Drawing.Point(293, 48);
-            this.groupBox2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox2.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox2.Padding = new System.Windows.Forms.Padding(2);
             this.groupBox2.Size = new System.Drawing.Size(328, 73);
             this.groupBox2.TabIndex = 16;
             this.groupBox2.TabStop = false;
@@ -318,9 +329,9 @@
             this.groupBox3.Controls.Add(this.ReadTypeBox);
             this.groupBox3.Controls.Add(this.ReadButton);
             this.groupBox3.Location = new System.Drawing.Point(293, 125);
-            this.groupBox3.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox3.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox3.Padding = new System.Windows.Forms.Padding(2);
             this.groupBox3.Size = new System.Drawing.Size(328, 67);
             this.groupBox3.TabIndex = 17;
             this.groupBox3.TabStop = false;
@@ -349,9 +360,9 @@
             this.groupBox4.Controls.Add(this.label7);
             this.groupBox4.Controls.Add(this.ScanButton);
             this.groupBox4.Location = new System.Drawing.Point(293, 306);
-            this.groupBox4.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox4.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox4.Padding = new System.Windows.Forms.Padding(2);
             this.groupBox4.Size = new System.Drawing.Size(328, 274);
             this.groupBox4.TabIndex = 17;
             this.groupBox4.TabStop = false;
@@ -360,7 +371,7 @@
             // EndAddrBox
             // 
             this.EndAddrBox.Location = new System.Drawing.Point(209, 46);
-            this.EndAddrBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.EndAddrBox.Margin = new System.Windows.Forms.Padding(2);
             this.EndAddrBox.Name = "EndAddrBox";
             this.EndAddrBox.Size = new System.Drawing.Size(116, 20);
             this.EndAddrBox.TabIndex = 19;
@@ -378,7 +389,7 @@
             // StartAddrBox
             // 
             this.StartAddrBox.Location = new System.Drawing.Point(50, 46);
-            this.StartAddrBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.StartAddrBox.Margin = new System.Windows.Forms.Padding(2);
             this.StartAddrBox.Name = "StartAddrBox";
             this.StartAddrBox.Size = new System.Drawing.Size(123, 20);
             this.StartAddrBox.TabIndex = 17;
@@ -399,7 +410,7 @@
             this.columnHeader1});
             this.AobScanList.HideSelection = false;
             this.AobScanList.Location = new System.Drawing.Point(50, 68);
-            this.AobScanList.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.AobScanList.Margin = new System.Windows.Forms.Padding(2);
             this.AobScanList.Name = "AobScanList";
             this.AobScanList.Size = new System.Drawing.Size(275, 201);
             this.AobScanList.TabIndex = 9;
@@ -424,7 +435,7 @@
             // AobScanTextBox
             // 
             this.AobScanTextBox.Location = new System.Drawing.Point(50, 24);
-            this.AobScanTextBox.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.AobScanTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.AobScanTextBox.Name = "AobScanTextBox";
             this.AobScanTextBox.Size = new System.Drawing.Size(227, 20);
             this.AobScanTextBox.TabIndex = 4;
@@ -443,7 +454,7 @@
             // ScanButton
             // 
             this.ScanButton.Location = new System.Drawing.Point(280, 24);
-            this.ScanButton.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.ScanButton.Margin = new System.Windows.Forms.Padding(2);
             this.ScanButton.Name = "ScanButton";
             this.ScanButton.Size = new System.Drawing.Size(44, 20);
             this.ScanButton.TabIndex = 6;
@@ -499,6 +510,47 @@
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Inject DLL and NamedPipe";
             // 
+            // SendPipeButton
+            // 
+            this.SendPipeButton.Location = new System.Drawing.Point(275, 42);
+            this.SendPipeButton.Margin = new System.Windows.Forms.Padding(2);
+            this.SendPipeButton.Name = "SendPipeButton";
+            this.SendPipeButton.Size = new System.Drawing.Size(48, 20);
+            this.SendPipeButton.TabIndex = 20;
+            this.SendPipeButton.Text = "Send";
+            this.SendPipeButton.UseVisualStyleBackColor = true;
+            this.SendPipeButton.Click += new System.EventHandler(this.SendPipeButton_Click);
+            // 
+            // label13
+            // 
+            this.label13.AutoSize = true;
+            this.label13.Location = new System.Drawing.Point(135, 45);
+            this.label13.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label13.Name = "label13";
+            this.label13.Size = new System.Drawing.Size(30, 13);
+            this.label13.TabIndex = 19;
+            this.label13.Text = "Msg:";
+            // 
+            // PipeMsgTextBox
+            // 
+            this.PipeMsgTextBox.Location = new System.Drawing.Point(166, 42);
+            this.PipeMsgTextBox.Margin = new System.Windows.Forms.Padding(2);
+            this.PipeMsgTextBox.Name = "PipeMsgTextBox";
+            this.PipeMsgTextBox.Size = new System.Drawing.Size(104, 20);
+            this.PipeMsgTextBox.TabIndex = 18;
+            this.PipeMsgTextBox.Text = "gameassembly";
+            // 
+            // InjectButton
+            // 
+            this.InjectButton.Location = new System.Drawing.Point(275, 18);
+            this.InjectButton.Margin = new System.Windows.Forms.Padding(2);
+            this.InjectButton.Name = "InjectButton";
+            this.InjectButton.Size = new System.Drawing.Size(49, 20);
+            this.InjectButton.TabIndex = 17;
+            this.InjectButton.Text = "Inject";
+            this.InjectButton.UseVisualStyleBackColor = true;
+            this.InjectButton.Click += new System.EventHandler(this.InjectButton_Click);
+            // 
             // label11
             // 
             this.label11.AutoSize = true;
@@ -547,60 +599,9 @@
             this.BrowseDLLButton.UseVisualStyleBackColor = true;
             this.BrowseDLLButton.Click += new System.EventHandler(this.BrowseDLLButton_Click);
             // 
-            // InjectButton
-            // 
-            this.InjectButton.Location = new System.Drawing.Point(275, 18);
-            this.InjectButton.Margin = new System.Windows.Forms.Padding(2);
-            this.InjectButton.Name = "InjectButton";
-            this.InjectButton.Size = new System.Drawing.Size(49, 20);
-            this.InjectButton.TabIndex = 17;
-            this.InjectButton.Text = "Inject";
-            this.InjectButton.UseVisualStyleBackColor = true;
-            this.InjectButton.Click += new System.EventHandler(this.InjectButton_Click);
-            // 
-            // label13
-            // 
-            this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(135, 45);
-            this.label13.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(30, 13);
-            this.label13.TabIndex = 19;
-            this.label13.Text = "Msg:";
-            // 
-            // PipeMsgTextBox
-            // 
-            this.PipeMsgTextBox.Location = new System.Drawing.Point(166, 42);
-            this.PipeMsgTextBox.Margin = new System.Windows.Forms.Padding(2);
-            this.PipeMsgTextBox.Name = "PipeMsgTextBox";
-            this.PipeMsgTextBox.Size = new System.Drawing.Size(104, 20);
-            this.PipeMsgTextBox.TabIndex = 18;
-            this.PipeMsgTextBox.Text = "gameassembly";
-            // 
-            // SendPipeButton
-            // 
-            this.SendPipeButton.Location = new System.Drawing.Point(275, 42);
-            this.SendPipeButton.Margin = new System.Windows.Forms.Padding(2);
-            this.SendPipeButton.Name = "SendPipeButton";
-            this.SendPipeButton.Size = new System.Drawing.Size(48, 20);
-            this.SendPipeButton.TabIndex = 20;
-            this.SendPipeButton.Text = "Send";
-            this.SendPipeButton.UseVisualStyleBackColor = true;
-            this.SendPipeButton.Click += new System.EventHandler(this.SendPipeButton_Click);
-            // 
             // BackgroundWork
             // 
             this.BackgroundWork.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BackgroundWork_DoWork);
-            // 
-            // UpdateModulesButton
-            // 
-            this.UpdateModulesButton.Location = new System.Drawing.Point(6, 503);
-            this.UpdateModulesButton.Name = "UpdateModulesButton";
-            this.UpdateModulesButton.Size = new System.Drawing.Size(263, 23);
-            this.UpdateModulesButton.TabIndex = 9;
-            this.UpdateModulesButton.Text = "Get New Modules List";
-            this.UpdateModulesButton.UseVisualStyleBackColor = true;
-            this.UpdateModulesButton.Click += new System.EventHandler(this.UpdateModulesButton_Click);
             // 
             // TrainerForm
             // 
@@ -618,7 +619,7 @@
             this.Controls.Add(this.OpenProcessBtn);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.ProcTextBox);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.MinimumSize = new System.Drawing.Size(586, 535);
             this.Name = "TrainerForm";
             this.Text = "Memory.dll Test Trainer";
