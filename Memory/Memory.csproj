@@ -39,10 +39,7 @@
   </ItemGroup>
 
 	<ItemGroup>
-	  <None Include="app.manifest">
-      <Pack>True</Pack>
-	    <PackagePath></PackagePath>
-	  </None>
+	  <None Include="README.txt" pack="true" PackagePath="." />
 	  <None Include="..\LICENSE">
 	    <Pack>True</Pack>
 	    <PackagePath></PackagePath>
