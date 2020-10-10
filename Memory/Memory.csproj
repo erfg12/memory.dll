@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>7.1</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>Memory</PackageId>
+    <PackageId>Memory.dll</PackageId>
     <PackageProjectUrl>https://erfg12.github.io/memory.dll</PackageProjectUrl>
     <RepositoryUrl>https://github.com/erfg12/memory.dll</RepositoryUrl>
     <Company>New Age Software LLC</Company>
