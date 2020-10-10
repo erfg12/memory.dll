@@ -29,6 +29,12 @@ namespace TestApplication
 
             if (ProcOpen) // if process opens successfully
             {
+                OpenProcessBtn.Invoke((MethodInvoker)delegate
+                {
+                    OpenProcessBtn.Text = "Close Process";
+                    OpenProcessBtn.ForeColor = Color.Red;
+                });
+
                 ModuleList.Invoke((MethodInvoker)delegate
                 {
                     if (ModuleList.Items.Count <= 0)
@@ -48,6 +54,7 @@ namespace TestApplication
                     if (ModuleList.Items.Count > 0)
                         ModuleList.Items.Clear();
                 });
+                StopWorker = true;
             }
         }
 

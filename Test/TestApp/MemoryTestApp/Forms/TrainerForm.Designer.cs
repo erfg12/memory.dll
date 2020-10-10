@@ -601,6 +601,7 @@
             // 
             // BackgroundWork
             // 
+            this.BackgroundWork.WorkerSupportsCancellation = true;
             this.BackgroundWork.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BackgroundWork_DoWork);
             // 
             // TrainerForm

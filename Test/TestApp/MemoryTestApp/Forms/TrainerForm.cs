@@ -29,6 +29,7 @@ namespace TestApplication
         }
 
         Mem m = new Mem(); // Declare m as our Memory.dll function reference variable.
+        bool StopWorker = false;
 
         private void TrainerForm_Shown(object sender, EventArgs e)
         {
@@ -40,7 +41,14 @@ namespace TestApplication
 
         private void OpenProcessBtn_Click(object sender, EventArgs e)
         {
-            BackgroundWork.RunWorkerAsync();
+            if (!BackgroundWork.IsBusy)
+            {
+                BackgroundWork.RunWorkerAsync();
+            } 
+            else
+            {
+                StopWorker = true;
+            }
         }
 
         private void WriteButton_Click(object sender, EventArgs e)
@@ -96,6 +104,16 @@ namespace TestApplication
             {
                 OpenTheProc();
                 System.Threading.Thread.Sleep(1000);
+                if (StopWorker)
+                {
+                    StopWorker = false;
+                    OpenProcessBtn.Invoke((MethodInvoker)delegate
+                    {
+                        OpenProcessBtn.Text = "Close Process";
+                        OpenProcessBtn.ForeColor = Color.Red;
+                    });
+                    break;
+                }
             }
         }
 

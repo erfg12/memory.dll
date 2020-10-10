@@ -404,10 +404,10 @@ namespace Memory
         /// <returns></returns>
         public bool OpenProcess(int pid)
         {
-            /*if (!IsAdmin())
+            if (!IsAdmin())
             {
                 Debug.WriteLine("WARNING: This program may not be running with raised privileges! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
-            }*/
+            }
 
             if (pid <= 0)
             {
@@ -434,7 +434,7 @@ namespace Memory
                 try { 
                     Process.EnterDebugMode(); 
                 } catch (Win32Exception) { 
-                    Debug.WriteLine("WARNING: You are not running with raised privileges! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges"); 
+                    //Debug.WriteLine("WARNING: You are not running with raised privileges! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges"); 
                 }
 
                 if (pHandle == IntPtr.Zero)
