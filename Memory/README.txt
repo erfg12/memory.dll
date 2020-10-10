@@ -12,6 +12,9 @@ BEFORE YOU START
 
 4. Open NuGet manager and Browse for "System.Security.Principal.Windows", install this.
 
+5. Your trainer project platform should match your game's platform.
+    Ex: If game is x86, trainer should be x86. If game is x64, trainer should be x64.
+
 
 GETTING STARTED
 ===============
