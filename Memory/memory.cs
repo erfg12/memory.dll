@@ -761,14 +761,19 @@ namespace Memory
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <param name="length">length of bytes to read (OPTIONAL)</param>
         /// <param name="zeroTerminated">terminate string at null char</param>
+        /// <param name="stringEncoding">System.Text.Encoding.UTF8 (DEFAULT). Other options: ascii, unicode, utf32, utf7</param>
         /// <returns></returns>
-        public string ReadString(string code, string file = "", int length = 32, bool zeroTerminated = true)
+        public string ReadString(string code, string file = "", int length = 32, bool zeroTerminated = true, System.Text.Encoding stringEncoding = null)
         {
+            if (stringEncoding == null)
+                stringEncoding = System.Text.Encoding.UTF8;
+
             byte[] memoryNormal = new byte[length];
             UIntPtr theCode;
             theCode = GetCode(code, file);
+
             if (ReadProcessMemory(pHandle, theCode, memoryNormal, (UIntPtr)length, IntPtr.Zero))
-                return (zeroTerminated) ? Encoding.UTF8.GetString(memoryNormal).Split('\0')[0] : Encoding.UTF8.GetString(memoryNormal);
+                return (zeroTerminated) ? stringEncoding.GetString(memoryNormal).Split('\0')[0] : stringEncoding.GetString(memoryNormal);
             else
                 return "";
         }
