@@ -1,0 +1,28 @@
+image: Visual Studio 2019
+platform: 
+- x86
+- x64
+configuration: Debug
+
+before_build:
+  - nuget restore
+
+after_build: "7z a Build_%PLATFORM%.zip %APPVEYOR_BUILD_FOLDER%\\Memory\\bin\\%PLATFORM%\\Debug\\*.nupkg %APPVEYOR_BUILD_FOLDER%\\Memory\\bin\\%PLATFORM%\\Debug\\*.nupkg"
+
+build:
+  project: Memory.sln
+
+artifacts:
+  path: Build_%PLATFORM%.zip
+  name: Latest
+
+deploy:
+  - provider: GitHub
+    tag: $(APPVEYOR_BUILD_ID)
+    release: Build $(APPVEYOR_REPO_COMMIT_TIMESTAMP)
+    description: Latest Compile Date %APPVEYOR_REPO_COMMIT_TIMESTAMP%
+    auth_token:
+      secure: aefoG8dMwSeQHm/FO6ydUZ591jX/M5fOms12ehz1obL4hnj8P7AIVrWqhztUK0cm
+    artifact: Build_%PLATFORM%.zip
+    force_update: true
+    draft: false
