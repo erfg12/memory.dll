@@ -1045,7 +1045,8 @@ namespace Memory
         ///<param name="write">value to write to address.</param>
         ///<param name="file">path and name of .ini file (OPTIONAL)</param>
         ///<param name="stringEncoding">System.Text.Encoding.UTF8 (DEFAULT). Other options: ascii, unicode, utf32, utf7</param>
-        public bool WriteMemory(string code, string type, string write, string file = "", System.Text.Encoding stringEncoding = null)
+        ///<param name="RemoveWriteProtection">If building a trainer on an emulator (Ex: RPCS3) you'll want to set this to false</param>
+        public bool WriteMemory(string code, string type, string write, string file = "", System.Text.Encoding stringEncoding = null, bool RemoveWriteProtection = true)
         {
             byte[] memory = new byte[4];
             int size = 4;
@@ -1122,12 +1123,13 @@ namespace Memory
             }
 
             //Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:" + theCode + "] " + String.Join(",", memory) + Environment.NewLine);
-            bool WriteProcMem = false;
             MemoryProtection OldMemProt = 0x00;
-
-            ChangeProtection(code, MemoryProtection.ExecuteReadWrite, out OldMemProt); // change protection
+            bool WriteProcMem = false;
+            if (RemoveWirteProtection)
+                ChangeProtection(code, MemoryProtection.ExecuteReadWrite, out OldMemProt); // change protection
             WriteProcMem = WriteProcessMemory(pHandle, theCode, memory, (UIntPtr)size, IntPtr.Zero);
-            ChangeProtection(code, OldMemProt, out _); // restore
+            if (RemoveWirteProtection)
+                ChangeProtection(code, OldMemProt, out _); // restore
             return WriteProcMem;
         }
 
@@ -1272,7 +1274,7 @@ namespace Memory
 
             // remove spaces
             if (theCode.Contains(" "))
-                theCode.Replace(" ", String.Empty);
+                theCode = theCode.Replace(" ", String.Empty);
 
             if (!theCode.Contains("+") && !theCode.Contains(",")) return new UIntPtr(Convert.ToUInt32(theCode, 16));
 
