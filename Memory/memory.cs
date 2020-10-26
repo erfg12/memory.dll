@@ -349,24 +349,27 @@ namespace Memory
         public void FreezeValue(string address, string type, string value, string file = "")
         {
             CancellationTokenSource cts = new CancellationTokenSource();
-            
-            if (FreezeTokenSrcs.ContainsKey(address))
-            {
-                Debug.WriteLine("Changing Freezing Address " + address + " Value " + value);
-                try
-                {
-                    FreezeTokenSrcs[address].Cancel();
-                    FreezeTokenSrcs.Remove(address);
-                }
-                catch
-                {
-                    Debug.WriteLine("ERROR: Avoided a crash. Address " + address + " was not frozen.");
-                }
-            }
-            else 
-                Debug.WriteLine("Adding Freezing Address " + address + " Value " + value);
 
-            FreezeTokenSrcs.Add(address, cts);
+            lock (FreezeTokenSrcs)
+            {
+                if (FreezeTokenSrcs.ContainsKey(address))
+                {
+                    Debug.WriteLine("Changing Freezing Address " + address + " Value " + value);
+                    try
+                    {
+                        FreezeTokenSrcs[address].Cancel();
+                        FreezeTokenSrcs.Remove(address);
+                    }
+                    catch
+                    {
+                        Debug.WriteLine("ERROR: Avoided a crash. Address " + address + " was not frozen.");
+                    }
+                }
+                else
+                    Debug.WriteLine("Adding Freezing Address " + address + " Value " + value);
+
+                FreezeTokenSrcs.Add(address, cts);
+            }
 
             Task.Factory.StartNew(() =>
             {
@@ -388,8 +391,11 @@ namespace Memory
             Debug.WriteLine("Un-Freezing Address " + address);
             try
             {
-                FreezeTokenSrcs[address].Cancel();
-                FreezeTokenSrcs.Remove(address);
+                lock (FreezeTokenSrcs)
+                {
+                    FreezeTokenSrcs[address].Cancel();
+                    FreezeTokenSrcs.Remove(address);
+                }
             }
             catch
             {
