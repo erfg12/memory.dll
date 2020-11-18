@@ -1144,10 +1144,11 @@ namespace Memory
         ///<param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         ///<param name="type">byte, bytes, float, int, string or long.</param>
         /// <param name="write">byte to write</param>
-        /// <param name="moveQty">quantity to move</param>
+        /// <param name="MoveQty">quantity to move</param>
         /// <param name="file">path and name of .ini file (OPTIONAL)</param>
+        /// <param name="SlowDown">milliseconds to sleep between each byte</param>
         /// <returns></returns>
-        public bool WriteMove(string code, string type, string write, int moveQty, string file = "")
+        public bool WriteMove(string code, string type, string write, int MoveQty, string file = "", int SlowDown = 0)
         {
             byte[] memory = new byte[4];
             int size = 4;
@@ -1189,10 +1190,10 @@ namespace Memory
                 size = write.Length;
             }
 
-            UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
+            UIntPtr newCode = UIntPtr.Add(theCode, MoveQty);
 
-            Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:[O]" + theCode + " [N]" + newCode + " MQTY:" + moveQty + "] " + String.Join(",", memory) + Environment.NewLine);
-            Thread.Sleep(1000);
+            //Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:[O]" + theCode + " [N]" + newCode + " MQTY:" + MoveQty + "] " + String.Join(",", memory) + Environment.NewLine);
+            Thread.Sleep(SlowDown);
             return WriteProcessMemory(pHandle, newCode, memory, (UIntPtr)size, IntPtr.Zero);
         }
 
