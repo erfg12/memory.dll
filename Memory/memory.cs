@@ -574,18 +574,23 @@ namespace Memory
 
 
         /// <summary>
-        /// Get code from ini file.
+        /// Get code. If just the ini file name is given with no path, it will assume the file is next to the executable.
         /// </summary>
         /// <param name="name">label for address or code</param>
-        /// <param name="file">path and name of ini file</param>
+        /// <param name="iniFile">path and name of ini file</param>
         /// <returns></returns>
-        public string LoadCode(string name, string file)
+        public string LoadCode(string name, string iniFile)
         {
             StringBuilder returnCode = new StringBuilder(1024);
             uint read_ini_result;
 
-            if (file != "")
-                read_ini_result = GetPrivateProfileString("codes", name, "", returnCode, (uint)returnCode.Capacity, file);
+            if (iniFile != "")
+            {
+                if (File.Exists(iniFile))
+                    read_ini_result = GetPrivateProfileString("codes", name, "", returnCode, (uint)returnCode.Capacity, iniFile);
+                else
+                    Debug.WriteLine("ERROR: ini file \"" + iniFile + "\" not found!");
+            }
             else
                 returnCode.Append(name);
 
