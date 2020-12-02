@@ -533,8 +533,8 @@ namespace Memory
 
             foreach (ProcessModule Module in theProc.Modules)
             {
-                //if (!string.IsNullOrEmpty(Module.ModuleName) && !modules.ContainsKey(Module.ModuleName))
-                modules.Add(Module.ModuleName, Module.BaseAddress);
+                if (!string.IsNullOrEmpty(Module.ModuleName) && !modules.ContainsKey(Module.ModuleName))
+                	modules.Add(Module.ModuleName, Module.BaseAddress);
             }
 
             Debug.WriteLine("Found " + modules.Count() + " process modules.");
