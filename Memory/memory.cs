@@ -1629,7 +1629,6 @@ namespace Memory
             {
                 jmpBytes[i] = 0x90;
             }
-            WriteBytes(address, jmpBytes);
 
             byte[] caveBytes = new byte[5 + newBytes.Length];
             offset = (int)(((long)address + jmpBytes.Length) - ((long)caveAddress + newBytes.Length) - 5);
@@ -1639,6 +1638,7 @@ namespace Memory
             BitConverter.GetBytes(offset).CopyTo(caveBytes, newBytes.Length + 1);
 
             WriteBytes(caveAddress, caveBytes);
+            WriteBytes(address, jmpBytes);
 
             return caveAddress;
         }
@@ -1739,10 +1739,10 @@ namespace Memory
                 previous = current;
                 current = UIntPtr.Add(mbi.BaseAddress, (int)mbi.RegionSize);
 
-                if ((long)current > (long)maxAddress)
+                if ((long)current >= (long)maxAddress)
                     return ret;
 
-                if ((long)previous > (long)current)
+                if ((long)previous >= (long)current)
                     return ret; // Overflow
             }
 
