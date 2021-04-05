@@ -1587,11 +1587,10 @@ namespace Memory
         /// <remarks>Please ensure that you use the proper replaceCount
         /// if you replace halfway in an instruction you may cause bad things</remarks>
         /// <returns>UIntPtr to created code cave for use for later deallocation</returns>
-        public UIntPtr CreateCodeCave(string code, byte[] newBytes, int replaceCount, int size = 0x1000, string file = "")
+        public UIntPtr CreateCodeCave(string code, byte[] newBytes, int replaceCount = 0, int size = 0x1000, string file = "")
         {
-            if (replaceCount < 5)
-                return UIntPtr.Zero; // returning UIntPtr.Zero instead of throwing an exception
-                                     // to better match existing code
+            if (replaceCount == 0 || replaceCount != 0)
+                replaceCount += 5; // Automatically add +5 nops ...
 
             UIntPtr theCode;
             theCode = GetCode(code, file);
