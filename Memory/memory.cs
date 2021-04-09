@@ -1066,6 +1066,7 @@ namespace Memory
 
             if (type.ToLower() == "float")
             {
+                write = Convert.ToString(float.Parse(write, CultureInfo.InvariantCulture));
                 memory = BitConverter.GetBytes(Convert.ToSingle(write));
                 size = 4;
             }
