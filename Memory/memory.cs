@@ -854,7 +854,7 @@ namespace Memory
 
             theCode = GetCode(code, file);
 
-            if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)16, IntPtr.Zero))
+            if (ReadProcessMemory(pHandle, theCode, memory, (UIntPtr)8, IntPtr.Zero))
                 return BitConverter.ToInt64(memory, 0);
             else
                 return 0;
