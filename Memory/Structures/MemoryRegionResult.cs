@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Memory
 {
+    /// <summary>
+    /// AoB scan information.
+    /// </summary>
     struct MemoryRegionResult
     {
         public UIntPtr CurrentBaseAddress { get; set; }

@@ -1,4 +1,4 @@
-Thank you for choosing Memory.dll! Created by NeWaGe and hollow87 at New Age Software.
+Thank you for choosing Memory.dll!
 
 
 BEFORE YOU START

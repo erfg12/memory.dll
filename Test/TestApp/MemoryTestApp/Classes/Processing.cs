@@ -15,70 +15,45 @@ namespace TestApplication
         public bool ProcOpen = false;
 
         /// <summary>
-        /// Process opening code. Generates a list of modules too.
+        /// After process opens, update UI. Generates a list of modules too.
         /// </summary>
-        public void OpenTheProc()
+        public void ProcUIUpdate()
         {
-            ProcTypeBox.Invoke((MethodInvoker)delegate
-            {
-                if (String.Compare(ProcTypeBox.Text, "Name") == 0) // if combobox set to Name, use string
-                    ProcOpen = m.OpenProcess(ProcTextBox.Text);
-                else // if combobox set to ID, use integer
-                    ProcOpen = m.OpenProcess(Convert.ToInt32(ProcTextBox.Text));
-            });
-
             if (ProcOpen) // if process opens successfully
             {
-                OpenProcessBtn.Invoke((MethodInvoker)delegate
-                {
-                    OpenProcessBtn.Text = "Close Process";
-                    OpenProcessBtn.ForeColor = Color.Red;
-                });
+                OpenProcessBtn.Text = "Close Process";
+                OpenProcessBtn.ForeColor = Color.Red;
 
-                ModuleList.Invoke((MethodInvoker)delegate
-                {
-                    if (ModuleList.Items.Count <= 0)
-                        GetModuleList();
-                });
+                if (ModuleList.Items.Count <= 0)
+                    GetModuleList();
             }
             else // on process open fail, show error message
             {
                 //MessageBox.Show("ERROR: Process open failed!");
-                ProcStatus.Invoke((MethodInvoker)delegate
-                {
-                    ProcStatus.Text = "Closed";
-                    ProcStatus.ForeColor = Color.Red;
-                });
-                ModuleList.Invoke((MethodInvoker)delegate
-                {
-                    if (ModuleList.Items.Count > 0)
-                        ModuleList.Items.Clear();
-                });
+                ProcStatus.Text = "Closed";
+                ProcStatus.ForeColor = Color.Red;
+
+                if (ModuleList.Items.Count > 0)
+                    ModuleList.Items.Clear();
                 StopWorker = true;
             }
         }
 
         public void GetModuleList()
         {
-            ModuleList.Invoke((MethodInvoker)delegate
+            ModuleList.Items.Clear();
+            foreach (KeyValuePair<string, IntPtr> kvp in m.mProc.Modules) // iterate through process module list
             {
-                ModuleList.Items.Clear();
-                foreach (KeyValuePair<string, IntPtr> kvp in m.modules) // iterate through process module list
-                {
-                    string[] arr = new string[4];
-                    ListViewItem itm;
-                    arr[0] = "0x" + kvp.Value.ToString("x8");
-                    arr[1] = kvp.Key;
-                    itm = new ListViewItem(arr);
-                    ModuleList.Items.Add(itm);
-                }
-            });
+                string[] arr = new string[4];
+                ListViewItem itm;
+                arr[0] = "0x" + kvp.Value.ToString("x8");
+                arr[1] = kvp.Key;
+                itm = new ListViewItem(arr);
+                ModuleList.Items.Add(itm);
+            }
 
-            ProcStatus.Invoke((MethodInvoker)delegate
-            {
-                ProcStatus.Text = "Open";
-                ProcStatus.ForeColor = Color.Green;
-            });
+            ProcStatus.Text = "Open";
+            ProcStatus.ForeColor = Color.Green;
         }
 
         /// <summary>

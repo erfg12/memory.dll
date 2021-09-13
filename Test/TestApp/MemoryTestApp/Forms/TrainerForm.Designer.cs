@@ -91,6 +91,7 @@
             this.ProcTextBox.Size = new System.Drawing.Size(120, 20);
             this.ProcTextBox.TabIndex = 0;
             this.ProcTextBox.Text = "Xae\'s Quest";
+            this.ProcTextBox.TextChanged += new System.EventHandler(this.ProcTextBox_TextChanged);
             // 
             // label1
             // 
@@ -601,8 +602,11 @@
             // 
             // BackgroundWork
             // 
+            this.BackgroundWork.WorkerReportsProgress = true;
             this.BackgroundWork.WorkerSupportsCancellation = true;
             this.BackgroundWork.DoWork += new System.ComponentModel.DoWorkEventHandler(this.BackgroundWork_DoWork);
+            this.BackgroundWork.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.BackgroundWork_ProgressChanged);
+            this.BackgroundWork.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.BackgroundWork_RunWorkerCompleted);
             // 
             // TrainerForm
             // 

@@ -30,6 +30,7 @@ namespace TestApplication
 
         Mem m = new Mem(); // Declare m as our Memory.dll function reference variable.
         bool StopWorker = false;
+        string ProcNameOrID;
 
         private void TrainerForm_Shown(object sender, EventArgs e)
         {
@@ -41,6 +42,8 @@ namespace TestApplication
 
         private void OpenProcessBtn_Click(object sender, EventArgs e)
         {
+            ProcNameOrID = ProcTextBox.Text;
+            // start BG worker if not already started
             if (!BackgroundWork.IsBusy)
             {
                 BackgroundWork.RunWorkerAsync();
@@ -102,18 +105,13 @@ namespace TestApplication
             // infinite loop that checks if the process is available and open, if not, modify the UI.
             while (true)
             {
-                OpenTheProc();
-                System.Threading.Thread.Sleep(1000);
-                if (StopWorker)
-                {
-                    StopWorker = false;
-                    OpenProcessBtn.Invoke((MethodInvoker)delegate
-                    {
-                        OpenProcessBtn.Text = "Close Process";
-                        OpenProcessBtn.ForeColor = Color.Red;
-                    });
-                    break;
-                }
+                if (String.Compare(ProcTypeBox.Text, "Name") == 0) // if combobox set to Name, use string
+                    ProcOpen = m.OpenProcess(ProcNameOrID);
+                else // if combobox set to ID, use integer
+                    ProcOpen = m.OpenProcess(Convert.ToInt32(ProcNameOrID));
+
+                BackgroundWork.ReportProgress(0); // do UI thread stuff
+                Thread.Sleep(1000);
             }
         }
 
@@ -121,6 +119,26 @@ namespace TestApplication
         {
             if (ProcOpen)
                 GetModuleList();
+        }
+
+        private void BackgroundWork_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (StopWorker)
+            {
+                StopWorker = false;
+                OpenProcessBtn.Text = "Open Process";
+                OpenProcessBtn.ForeColor = Color.Black;
+            }
+        }
+
+        private void BackgroundWork_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            ProcUIUpdate();
+        }
+
+        private void ProcTextBox_TextChanged(object sender, EventArgs e)
+        {
+            StopWorker = true; // stop worker if we're changing process name
         }
     }
 }
