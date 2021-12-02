@@ -18,3 +18,12 @@ Create great PC game cheat trainers with ease!
 
 ## DOCUMENTATION
 [Wiki Pages](https://github.com/erfg12/memory.dll/wiki)
+
+[Sample Trainer Code](https://github.com/erfg12/CSharp-Game-Trainers)
+
+## VIDEOS
+[![](https://img.youtube.com/vi/J-Zp6XtxnX0/0.jpg)](https://www.youtube.com/watch?v=J-Zp6XtxnX0)
+[![](https://img.youtube.com/vi/OKJsbDDh5CE/0.jpg)](https://www.youtube.com/watch?v=OKJsbDDh5CE)
+[![](https://img.youtube.com/vi/STPrGJ8eI8Y/0.jpg)](https://www.youtube.com/watch?v=STPrGJ8eI8Y)
+[![](https://img.youtube.com/vi/w9m0gmcS82Y/0.jpg)](https://www.youtube.com/watch?v=w9m0gmcS82Y)
+[![](https://img.youtube.com/vi/3u8bxtqCtcQ/0.jpg)](https://www.youtube.com/watch?v=3u8bxtqCtcQ)
