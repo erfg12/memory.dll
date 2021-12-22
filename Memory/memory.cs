@@ -610,9 +610,6 @@ namespace Memory
                 NTSTATUS status = NtCreateThreadEx(out hThread, AccessMask.StandardRightsAll, (IntPtr)null, injector, mProc.MainModule.BaseAddress, (IntPtr)null, ThreadCreationFlags.HideFromDebugger, 0, 0, 0, (IntPtr)null);
             }
 
-            if (hThread == (IntPtr)null)
-                return false;
-
             int Result = WaitForSingleObject(hThread, 10 * 1000);
             if (Result == 0x00000080L || Result == 0x00000102L)
             {
