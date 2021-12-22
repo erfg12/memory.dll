@@ -190,7 +190,10 @@ namespace Memory
         public void GetModules()
         {
             if (mProc.Process == null)
+            {
+                Debug.WriteLine("mProc.Process is null so GetModules failed.");
                 return;
+            }
 
             if (mProc.Is64Bit && IntPtr.Size != 8)
             {
@@ -202,6 +205,12 @@ namespace Memory
             }
 
             mProc.Modules.Clear();
+
+            if (mProc.Process.Modules == null)
+            {
+                Debug.WriteLine("mProc.Process.Modules is null so GetModules failed.");
+                return;
+            }
 
             foreach (ProcessModule Module in mProc.Process.Modules)
             {
