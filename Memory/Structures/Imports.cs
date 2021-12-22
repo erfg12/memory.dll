@@ -177,6 +177,25 @@ namespace Memory
         [DllImport("kernel32", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Auto)]
         static extern bool Process32Next([In] IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
 
+        /*
+         typedef NTSTATUS (WINAPI *LPFUN_NtCreateThreadEx)
+            (
+              OUT PHANDLE hThread,
+              IN ACCESS_MASK DesiredAccess,
+              IN LPVOID ObjectAttributes,
+              IN HANDLE ProcessHandle,
+              IN LPTHREAD_START_ROUTINE lpStartAddress,
+              IN LPVOID lpParameter,
+              IN BOOL CreateSuspended,
+              IN ULONG StackZeroBits,
+              IN ULONG SizeOfStackCommit,
+              IN ULONG SizeOfStackReserve,
+              OUT LPVOID lpBytesBuffer
+            );
+         */
+        [DllImport("ntdll.dll", SetLastError = true)]
+        internal static extern NTSTATUS NtCreateThreadEx(out IntPtr hProcess, AccessMask desiredAccess, IntPtr objectAttributes, UIntPtr processHandle, IntPtr startAddress, IntPtr parameter, ThreadCreationFlags inCreateSuspended, Int32 stackZeroBits, Int32 sizeOfStack, Int32 maximumStackSize, IntPtr attributeList);
+
         // privileges
         public const int PROCESS_CREATE_THREAD = 0x0002;
         public const int PROCESS_QUERY_INFORMATION = 0x0400;
@@ -202,6 +221,22 @@ namespace Memory
 
         public const uint MEM_PRIVATE = 0x20000;
         public const uint MEM_IMAGE = 0x1000000;
+
+        internal enum NTSTATUS
+        {
+            Success = 0x00
+        }
+
+        internal enum AccessMask
+        {
+            SpecificRightsAll = 0xFFFF,
+            StandardRightsAll = 0x1F0000
+        }
+        internal enum ThreadCreationFlags
+        {
+            CreateSuspended = 0x01,
+            HideFromDebugger = 0x04
+        }
 
         internal enum MINIDUMP_TYPE
         {

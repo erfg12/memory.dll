@@ -576,8 +576,10 @@ namespace Memory
         /// <summary>
         /// Inject a DLL file.
         /// </summary>
-        /// <param name="strDllName">path and name of DLL file.</param>
-        public bool InjectDll(String strDllName)
+        /// <param name="strDllName">path and name of DLL file. Ex: "C:\MyTrainer\inject.dll" or "inject.dll" if the DLL file is in the same directory as the trainer.</param>
+        /// <param name="Execute">execute dll method on injection. Default: false</param>
+        /// <param name="LoadLibrary">library load method. Options: LoadLibraryA, LoadLibraryExA, LoadLibraryW, LoadLibraryExW. Default: LoadLibraryA</param>
+        public bool InjectDll(String strDllName, bool Execute = false, string LoadLibrary = "LoadLibraryA")
         {
             IntPtr bytesout;
 
@@ -594,13 +596,21 @@ namespace Memory
             UIntPtr allocMem = VirtualAllocEx(mProc.Handle, (UIntPtr)null, (uint)lenWrite, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
             WriteProcessMemory(mProc.Handle, allocMem, strDllName, (UIntPtr)lenWrite, out bytesout);
-            UIntPtr injector = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
+            UIntPtr injector = GetProcAddress(GetModuleHandle("kernel32.dll"), LoadLibrary);
 
             if (injector == null)
                 return false;
 
-            IntPtr hThread = CreateRemoteThread(mProc.Handle, (IntPtr)null, 0, injector, allocMem, 0, out bytesout);
-            if (hThread == null)
+            IntPtr hThread = (IntPtr)null;
+
+            if (!Execute)
+                hThread = CreateRemoteThread(mProc.Handle, (IntPtr)null, 0, injector, allocMem, 0, out bytesout);
+            else
+            {
+                NTSTATUS status = NtCreateThreadEx(out hThread, AccessMask.StandardRightsAll, (IntPtr)null, injector, mProc.MainModule.BaseAddress, (IntPtr)null, ThreadCreationFlags.HideFromDebugger, 0, 0, 0, (IntPtr)null);
+            }
+
+            if (hThread == (IntPtr)null)
                 return false;
 
             int Result = WaitForSingleObject(hThread, 10 * 1000);
