@@ -62,7 +62,8 @@ namespace Memory
         /// </summary>
         /// <param name="pid">Use process name or process ID here.</param>
         /// <returns>Process opened successfully or failed.</returns>
-        public bool OpenProcess(int pid)
+        /// <param name="FailReason">Show reason open process fails</param>
+        public bool OpenProcess(int pid, out string FailReason)
         {
             if (!IsAdmin())
             {
@@ -71,29 +72,34 @@ namespace Memory
 
             if (pid <= 0)
             {
-	            Debug.WriteLine("ERROR: OpenProcess given proc ID 0.");
+                FailReason = "OpenProcess given proc ID 0.";
+                Debug.WriteLine("ERROR: OpenProcess given proc ID 0.");
                 return false;
             }
-	            
+
 
             if (mProc.Process != null && mProc.Process.Id == pid)
-	            return true;
+            {
+                FailReason = "mProc.Process is null";
+                return true;
+            }
 
             try
             {
-                mProc.Process = System.Diagnostics.Process.GetProcessById(pid);
+                mProc.Process = Process.GetProcessById(pid);
 
                 if (mProc.Process != null && !mProc.Process.Responding)
                 {
                     Debug.WriteLine("ERROR: OpenProcess: Process is not responding or null.");
+                    FailReason = "Process is not responding or null.";
                     return false;
                 }
 
                 mProc.Handle = Imps.OpenProcess(0x1F0FFF, true, pid);
 
                 try {
-                    System.Diagnostics.Process.EnterDebugMode(); 
-                } catch (Win32Exception) { 
+                    Process.EnterDebugMode(); 
+                } catch (Win32Exception) {
                     //Debug.WriteLine("WARNING: You are not running with raised privileges! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges"); 
                 }
 
@@ -101,8 +107,9 @@ namespace Memory
                 {
                     var eCode = Marshal.GetLastWin32Error();
                     Debug.WriteLine("ERROR: OpenProcess has failed opening a handle to the target process (GetLastWin32ErrorCode: " + eCode + ")");
-                    System.Diagnostics.Process.LeaveDebugMode();
+                    Process.LeaveDebugMode();
                     mProc = null;
+                    FailReason = "failed opening a handle to the target process(GetLastWin32ErrorCode: " + eCode + ")";
                     return false;
                 }
 
@@ -114,16 +121,28 @@ namespace Memory
                 GetModules();
 
                 Debug.WriteLine("Process #" + mProc.Process + " is now open.");
-
+                FailReason = "";
                 return true;
             }
             catch (Exception ex) {
                 Debug.WriteLine("ERROR: OpenProcess has crashed. " + ex);
+                FailReason = "OpenProcess has crashed. " + ex;
                 return false;
             }
         }
 
-       
+
+        /// <summary>
+        /// Open the PC game process with all security and access rights.
+        /// </summary>
+        /// <param name="proc">Use process name or process ID here.</param>
+        /// <param name="FailReason">Show reason open process fails</param>
+        /// <returns></returns>
+        public bool OpenProcess(string proc, out string FailReason)
+        {
+            return OpenProcess(GetProcIdFromName(proc), out FailReason);
+        }
+
         /// <summary>
         /// Open the PC game process with all security and access rights.
         /// </summary>
@@ -131,7 +150,17 @@ namespace Memory
         /// <returns></returns>
         public bool OpenProcess(string proc)
         {
-            return OpenProcess(GetProcIdFromName(proc));
+            return OpenProcess(GetProcIdFromName(proc), out string FailReason);
+        }
+
+        /// <summary>
+        /// Open the PC game process with all security and access rights.
+        /// </summary>
+        /// <param name="pid">Use process name or process ID here.</param>
+        /// <returns></returns>
+        public bool OpenProcess(int pid)
+        {
+            return OpenProcess(pid, out string FailReason);
         }
 
         /// <summary>
@@ -582,6 +611,12 @@ namespace Memory
         public bool InjectDll(String strDllName, bool Execute = false, string LoadLibrary = "LoadLibraryA")
         {
             IntPtr bytesout;
+
+            if (mProc.Process == null)
+            { // check if process is open first
+                Debug.WriteLine("Inject failed due to mProc.Process being null. Is the process not open?");
+                return false;
+            }
 
             foreach (ProcessModule pm in mProc.Process.Modules)
             {
