@@ -204,16 +204,22 @@ namespace Memory
                 Debug.WriteLine("WARNING: Game is x86, but your Trainer is x64! You will be missing some modules, change your Trainer's Solution Platform.");
             }
 
-            mProc.Modules.Clear();
-
             if (mProc.Process.Modules == null)
             {
                 Debug.WriteLine("mProc.Process.Modules is null so GetModules failed.");
                 return;
             }
 
+            if (mProc.Modules != null)
+                mProc.Modules.Clear();
+            else
+                mProc.Modules = new Dictionary<string, IntPtr>();
+
             foreach (ProcessModule Module in mProc.Process.Modules)
             {
+                if (Module.ModuleName == null || Module.BaseAddress == null)
+                    continue;
+
                 if (!string.IsNullOrEmpty(Module.ModuleName) && !mProc.Modules.ContainsKey(Module.ModuleName))
                     mProc.Modules.Add(Module.ModuleName, Module.BaseAddress);
             }
