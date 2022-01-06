@@ -234,8 +234,10 @@ namespace Memory
         }
         internal enum ThreadCreationFlags
         {
+            Immediately = 0x0,
             CreateSuspended = 0x01,
-            HideFromDebugger = 0x04
+            HideFromDebugger = 0x04,
+            StackSizeParamIsAReservation = 0x10000
         }
 
         internal enum MINIDUMP_TYPE

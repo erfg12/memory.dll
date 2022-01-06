@@ -646,18 +646,19 @@ namespace Memory
             UIntPtr allocMem = VirtualAllocEx(mProc.Handle, (UIntPtr)null, (uint)lenWrite, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
             WriteProcessMemory(mProc.Handle, allocMem, strDllName, (UIntPtr)lenWrite, out bytesout);
-            UIntPtr injector = GetProcAddress(GetModuleHandle("kernel32.dll"), LoadLibrary);
+            UIntPtr GameProc = GetProcAddress(GetModuleHandle("kernel32.dll"), LoadLibrary);
 
-            if (injector == null)
+            if (GameProc == null)
                 return false;
 
             IntPtr hThread = (IntPtr)null;
 
             if (!Execute)
-                hThread = CreateRemoteThread(mProc.Handle, (IntPtr)null, 0, injector, allocMem, 0, out bytesout);
+                hThread = CreateRemoteThread(mProc.Handle, (IntPtr)null, 0, GameProc, allocMem, 0, out bytesout);
             else
             {
-                NTSTATUS status = NtCreateThreadEx(out hThread, AccessMask.StandardRightsAll, (IntPtr)null, injector, mProc.MainModule.BaseAddress, (IntPtr)null, ThreadCreationFlags.HideFromDebugger, 0, 0, 0, (IntPtr)null);
+                object _allocMem = allocMem;
+                NTSTATUS status = NtCreateThreadEx(out hThread, AccessMask.StandardRightsAll, (IntPtr)null, GameProc, mProc.MainModule.BaseAddress, (IntPtr)_allocMem, ThreadCreationFlags.Immediately, 0, 0, 0, (IntPtr)null);
             }
 
             int Result = WaitForSingleObject(hThread, 10 * 1000);
