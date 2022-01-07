@@ -168,10 +168,10 @@ namespace Memory
             MemoryProtection OldMemProt = 0x00;
             bool WriteProcMem = false;
             if (RemoveWriteProtection)
-                ChangeProtection(code, MemoryProtection.ExecuteReadWrite, out OldMemProt); // change protection
+                ChangeProtection(code, MemoryProtection.ExecuteReadWrite, out OldMemProt, file); // change protection
             WriteProcMem = WriteProcessMemory(mProc.Handle, theCode, memory, (UIntPtr)size, IntPtr.Zero);
             if (RemoveWriteProtection)
-                ChangeProtection(code, OldMemProt, out _); // restore
+                ChangeProtection(code, OldMemProt, out _, file); // restore
             return WriteProcMem;
         }
 

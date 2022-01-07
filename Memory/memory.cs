@@ -271,10 +271,13 @@ namespace Memory
             StringBuilder returnCode = new StringBuilder(1024);
             uint read_ini_result;
 
-            if (iniFile != "")
+            if (!String.IsNullOrEmpty(iniFile))
             {
                 if (File.Exists(iniFile))
+                {
                     read_ini_result = GetPrivateProfileString("codes", name, "", returnCode, (uint)returnCode.Capacity, iniFile);
+                    //Debug.WriteLine("read_ini_result=" + read_ini_result); number of characters returned
+                }
                 else
                     Debug.WriteLine("ERROR: ini file \"" + iniFile + "\" not found!");
             }
@@ -356,12 +359,12 @@ namespace Memory
                 return Get64BitCode(name, path, size); //jump over to 64bit code grab
             }
 
-            if (path != "")
+            if (!String.IsNullOrEmpty(path))
                 theCode = LoadCode(name, path);
             else
                 theCode = name;
 
-            if (theCode == "")
+            if (String.IsNullOrEmpty(theCode))
             {
                 //Debug.WriteLine("ERROR: LoadCode returned blank. NAME:" + name + " PATH:" + path);
                 return UIntPtr.Zero;
@@ -492,12 +495,12 @@ namespace Memory
         public UIntPtr Get64BitCode(string name, string path = "", int size = 16)
         {
             string theCode = "";
-            if (path != "")
+            if (!String.IsNullOrEmpty(path))
                 theCode = LoadCode(name, path);
             else
                 theCode = name;
 
-            if (theCode == "")
+            if (String.IsNullOrEmpty(theCode))
                 return UIntPtr.Zero;
 
             // remove spaces
