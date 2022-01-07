@@ -620,9 +620,7 @@ namespace Memory
         /// Inject a DLL file.
         /// </summary>
         /// <param name="strDllName">path and name of DLL file. Ex: "C:\MyTrainer\inject.dll" or "inject.dll" if the DLL file is in the same directory as the trainer.</param>
-        /// <param name="Execute">execute dll method on injection. Default: false</param>
-        /// <param name="LoadLibrary">library load method. Options: LoadLibraryA, LoadLibraryExA, LoadLibraryW, LoadLibraryExW. Default: LoadLibraryA</param>
-        public bool InjectDll(String strDllName, bool Execute = false, string LoadLibrary = "LoadLibraryA")
+        public bool InjectDll(String strDllName)
         {
             IntPtr bytesout;
 
@@ -645,20 +643,12 @@ namespace Memory
             UIntPtr allocMem = VirtualAllocEx(mProc.Handle, (UIntPtr)null, (uint)lenWrite, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
             WriteProcessMemory(mProc.Handle, allocMem, strDllName, (UIntPtr)lenWrite, out bytesout);
-            UIntPtr GameProc = GetProcAddress(GetModuleHandle("kernel32.dll"), LoadLibrary);
+            UIntPtr GameProc = GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
 
             if (GameProc == null)
                 return false;
 
-            IntPtr hThread = (IntPtr)null;
-
-            if (!Execute)
-                hThread = CreateRemoteThread(mProc.Handle, (IntPtr)null, 0, GameProc, allocMem, 0, out bytesout);
-            else
-            {
-                object _allocMem = allocMem;
-                NTSTATUS status = NtCreateThreadEx(out hThread, AccessMask.StandardRightsAll, (IntPtr)null, GameProc, mProc.MainModule.BaseAddress, (IntPtr)_allocMem, ThreadCreationFlags.Immediately, 0, 0, 0, (IntPtr)null);
-            }
+            IntPtr hThread = CreateRemoteThread(mProc.Handle, (IntPtr)null, 0, GameProc, allocMem, 0, out bytesout);
 
             int Result = WaitForSingleObject(hThread, 10 * 1000);
             if (Result == 0x00000080L || Result == 0x00000102L)
