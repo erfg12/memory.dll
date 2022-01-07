@@ -65,10 +65,10 @@ namespace Memory
         /// <param name="FailReason">Show reason open process fails</param>
         public bool OpenProcess(int pid, out string FailReason)
         {
-            if (!IsAdmin())
+            /*if (!IsAdmin())
             {
                 Debug.WriteLine("WARNING: This program may not be running with raised privileges! Visit https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges");
-            }
+            }*/
 
             if (pid <= 0)
             {
@@ -163,11 +163,7 @@ namespace Memory
             return OpenProcess(pid, out string FailReason);
         }
 
-        /// <summary>
-        /// Check if program is running with administrative privileges. Read about it here: https://github.com/erfg12/memory.dll/wiki/Administrative-Privileges
-        /// </summary>
-        /// <returns></returns>
-        public bool IsAdmin()
+        /*public bool IsAdmin()
         {
             try
             {
@@ -182,7 +178,7 @@ namespace Memory
                 Debug.WriteLine("ERROR: Could not determin if program is running as admin. Is the NuGet package \"System.Security.Principal.Windows\" missing?");
                 return false;
             }
-        }
+        }*/
 
         /// <summary>
         /// Builds the process modules dictionary (names with addresses).
@@ -1007,7 +1003,57 @@ namespace Memory
             return true;
         }
 
-        
+        /// <summary>
+        /// get a list of available threads in opened process
+        /// </summary>
+        public void GetThreads()
+        {
+            if (mProc.Process == null)
+            {
+                Debug.WriteLine("mProc.Process is null so GetThreads failed.");
+                return;
+            }
+
+            foreach (ProcessThread thd in mProc.Process.Threads)
+            {
+                Debug.WriteLine("ID:" + thd.Id + " State:" + thd.ThreadState + " Address:" + thd.StartAddress + " Priority:" + thd.PriorityLevel);
+            }
+        }
+
+        /// <summary>
+        /// suspend a thread by ID
+        /// </summary>
+        /// <param name="ThreadID">the thread you wish to suspend by ID</param>
+        /// <returns></returns>
+        public bool SuspendThreadByID(int ThreadID)
+        {
+            foreach (ProcessThread thd in mProc.Process.Threads)
+            {
+                if (thd.Id != ThreadID)
+                    continue;
+                else
+                    Debug.WriteLine("Found thread " + ThreadID);
+
+                IntPtr threadHandle = OpenThread(ThreadAccess.SUSPEND_RESUME, false, (uint)ThreadID);
+
+                if (threadHandle == IntPtr.Zero)
+                    break;
+
+                if (SuspendThread(threadHandle) == -1)
+                {
+                    Debug.WriteLine("Thread failed to suspend");
+                    CloseHandle(threadHandle);
+                    break;
+                }
+                else
+                {
+                    Debug.WriteLine("Thread suspended!");
+                    CloseHandle(threadHandle);
+                    return true;
+                }
+            }
+            return false;
+        }
 
     }
 }
