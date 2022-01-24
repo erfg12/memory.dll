@@ -11,6 +11,8 @@ using System.Security.Principal;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using static Memory.Imps;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace Memory
 {
@@ -118,7 +120,7 @@ namespace Memory
 
                 mProc.MainModule = mProc.Process.MainModule;
 
-                GetModules();
+                //GetModules();
 
                 Debug.WriteLine("Process #" + mProc.Process + " is now open.");
                 FailReason = "";
@@ -181,14 +183,14 @@ namespace Memory
         }*/
 
         /// <summary>
-        /// Builds the process modules dictionary (names with addresses).
+        /// Builds the process modules dictionary (names with addresses). Use mProc.Process.Modules instead.
         /// </summary>
-        public void GetModules()
+        /*public ConcurrentDictionary<string, IntPtr> GetModules()
         {
             if (mProc.Process == null)
             {
                 Debug.WriteLine("mProc.Process is null so GetModules failed.");
-                return;
+                return null;
             }
 
             if (mProc.Is64Bit && IntPtr.Size != 8)
@@ -203,13 +205,13 @@ namespace Memory
             if (mProc.Process.Modules == null)
             {
                 Debug.WriteLine("mProc.Process.Modules is null so GetModules failed.");
-                return;
+                return null;
             }
 
             if (mProc.Modules != null)
                 mProc.Modules.Clear();
             else
-                mProc.Modules = new Dictionary<string, IntPtr>();
+                mProc.Modules = new ConcurrentDictionary<string, IntPtr>();
 
             foreach (ProcessModule Module in mProc.Process.Modules)
             {
@@ -217,11 +219,12 @@ namespace Memory
                     continue;
 
                 if (!string.IsNullOrEmpty(Module.ModuleName) && !mProc.Modules.ContainsKey(Module.ModuleName))
-                    mProc.Modules.Add(Module.ModuleName, Module.BaseAddress);
+                    mProc.Modules.TryAdd(Module.ModuleName, Module.BaseAddress);
             }
 
             Debug.WriteLine("Found " + mProc.Modules.Count() + " process modules.");
-        }
+            return mProc.Modules;
+        }*/
 
         public void SetFocus()
         {
@@ -421,12 +424,12 @@ namespace Memory
                     {
                         try
                         {
-                            altModule = mProc.Modules[moduleName[0]];
+                            altModule = GetModuleAddressByName(moduleName[0]);
                         }
                         catch
                         {
                             Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
-                            Debug.WriteLine("Modules: " + string.Join(",", mProc.Modules));
+                            //Debug.WriteLine("Modules: " + string.Join(",", mProc.Modules));
                         }
                     }
                     ReadProcessMemory(mProc.Handle, (UIntPtr)((int)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
@@ -466,19 +469,29 @@ namespace Memory
                     {
                         try
                         {
-                            altModule = mProc.Modules[moduleName[0]];
+                            altModule = GetModuleAddressByName(moduleName[0]);
                         }
                         catch
                         {
                             Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
-                            Debug.WriteLine("Modules: " + string.Join(",", mProc.Modules));
+                            //Debug.WriteLine("Modules: " + string.Join(",", mProc.Modules));
                         }
                     }
                 }
                 else
-                    altModule = mProc.Modules[theCode.Split('+')[0]];
+                    altModule = GetModuleAddressByName(theCode.Split('+')[0]);
                 return (UIntPtr)((int)altModule + trueCode);
             }
+        }
+
+        /// <summary>
+        /// Retrieve mProc.Process module baseaddress by name
+        /// </summary>
+        /// <param name="name">name of module</param>
+        /// <returns></returns>
+        private IntPtr GetModuleAddressByName (string name)
+        {
+            return mProc.Process.Modules.Cast<ProcessModule>().SingleOrDefault(m => string.Equals(m.ModuleName, name, StringComparison.OrdinalIgnoreCase)).BaseAddress;
         }
 
         /// <summary>
@@ -545,12 +558,12 @@ namespace Memory
                     {
                         try
                         {
-                            altModule = mProc.Modules[moduleName[0]];
+                            altModule = GetModuleAddressByName(moduleName[0]);
                         }
                         catch
                         {
                             Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
-                            Debug.WriteLine("Modules: " + string.Join(",", mProc.Modules));
+                            //Debug.WriteLine("Modules: " + string.Join(",", mProc.Modules));
                         }
                     }
                     ReadProcessMemory(mProc.Handle, (UIntPtr)((Int64)altModule + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
@@ -589,17 +602,17 @@ namespace Memory
                     {
                         try
                         {
-                            altModule = mProc.Modules[moduleName[0]];
+                            altModule = GetModuleAddressByName(moduleName[0]);
                         }
                         catch
                         {
                             Debug.WriteLine("Module " + moduleName[0] + " was not found in module list!");
-                            Debug.WriteLine("Modules: " + string.Join(",", mProc.Modules));
+                            //Debug.WriteLine("Modules: " + string.Join(",", mProc.Modules));
                         }
                     }
                 }
                 else
-                    altModule = mProc.Modules[theCode.Split('+')[0]];
+                    altModule = GetModuleAddressByName(theCode.Split('+')[0]);
                 return (UIntPtr)((Int64)altModule + trueCode);
             }
         }

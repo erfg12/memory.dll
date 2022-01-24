@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -12,7 +13,7 @@ namespace Memory
 {
     public partial class Mem
     {
-        Dictionary<string, CancellationTokenSource> FreezeTokenSrcs = new Dictionary<string, CancellationTokenSource>();
+        ConcurrentDictionary<string, CancellationTokenSource> FreezeTokenSrcs = new ConcurrentDictionary<string, CancellationTokenSource>();
 
         /// <summary>
         /// Freeze a value to an address.
@@ -33,7 +34,7 @@ namespace Memory
                     try
                     {
                         FreezeTokenSrcs[address].Cancel();
-                        FreezeTokenSrcs.Remove(address);
+                        FreezeTokenSrcs.TryRemove(address, out _);
                     }
                     catch
                     {
@@ -43,7 +44,7 @@ namespace Memory
                 else
                     Debug.WriteLine("Adding Freezing Address " + address + " Value " + value);
 
-                FreezeTokenSrcs.Add(address, cts);
+                FreezeTokenSrcs.TryAdd(address, cts);
             }
 
             Task.Factory.StartNew(() =>
@@ -69,7 +70,7 @@ namespace Memory
                 lock (FreezeTokenSrcs)
                 {
                     FreezeTokenSrcs[address].Cancel();
-                    FreezeTokenSrcs.Remove(address);
+                    FreezeTokenSrcs.TryRemove(address, out _);
                 }
             }
             catch

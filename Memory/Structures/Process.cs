@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -13,7 +14,7 @@ namespace Memory
         public Process Process { get; set; }
         public IntPtr Handle { get; set; }
         public bool Is64Bit { get; set; }
-        public Dictionary<string, IntPtr> Modules { get; set; }
+        //public ConcurrentDictionary<string, IntPtr> Modules { get; set; } // Use mProc.Process.Modules instead
         public ProcessModule MainModule { get; set; }
     }
 }
