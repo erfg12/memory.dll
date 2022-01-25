@@ -1024,6 +1024,34 @@ namespace Memory
         }
 
         /// <summary>
+        /// Get thread base address by ID. Provided by github.com/osadrac
+        /// </summary>
+        /// <param name="threadId"></param>
+        /// <returns></returns>
+        /// <exception cref="Win32Exception"></exception>
+        public static IntPtr GetThreadStartAddress(int threadId)
+        {
+            var hThread = OpenThread(ThreadAccess.QUERY_INFORMATION, false, (uint)threadId);
+            if (hThread == IntPtr.Zero)
+                throw new Win32Exception();
+            var buf = Marshal.AllocHGlobal(IntPtr.Size);
+            try
+            {
+                var result = Imps.NtQueryInformationThread(hThread,
+                                 ThreadInfoClass.ThreadQuerySetWin32StartAddress,
+                                 buf, IntPtr.Size, IntPtr.Zero);
+                if (result != 0)
+                    throw new Win32Exception(string.Format("NtQueryInformationThread failed; NTSTATUS = {0:X8}", result));
+                return Marshal.ReadIntPtr(buf);
+            }
+            finally
+            {
+                CloseHandle(hThread);
+                Marshal.FreeHGlobal(buf);
+            }
+        }
+
+        /// <summary>
         /// suspend a thread by ID
         /// </summary>
         /// <param name="ThreadID">the thread you wish to suspend by ID</param>

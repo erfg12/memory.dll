@@ -386,6 +386,18 @@ namespace Memory
             internal string szExePath;
         }
 
-        
+        [DllImport("ntdll.dll", SetLastError = true)]
+        internal static extern int NtQueryInformationThread(
+        IntPtr threadHandle,
+        ThreadInfoClass threadInformationClass,
+        IntPtr threadInformation,
+        int threadInformationLength,
+        IntPtr returnLengthPtr);
+        public enum ThreadInfoClass : int
+        {
+            ThreadQuerySetWin32StartAddress = 9
+        }
+
+
     }
 }
