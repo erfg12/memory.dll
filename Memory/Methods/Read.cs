@@ -419,7 +419,10 @@ namespace Memory
                     break;
             }
 
-            return (T) Convert.ChangeType(ReadOutput, typeof(T));
+            if (ReadOutput != null)
+                return (T)Convert.ChangeType(ReadOutput, typeof(T));
+            else
+                return default(T);
         }
 
         ConcurrentDictionary<string, CancellationTokenSource> ReadTokenSrcs = new ConcurrentDictionary<string, CancellationTokenSource>();
