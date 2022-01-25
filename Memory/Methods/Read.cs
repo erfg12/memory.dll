@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -7,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static Memory.Imps;
+using System.Reflection;
 
 namespace Memory
 {
@@ -364,6 +366,80 @@ namespace Memory
                 return CutString(System.Text.Encoding.ASCII.GetString(memoryNormal));
             else
                 return "";
+        }
+
+        public T ReadMemory<T>(string address, string file = "")
+        {
+            object ReadOutput = null;
+
+            switch (Type.GetTypeCode(typeof(T)))
+            {
+                case TypeCode.String:
+                    ReadOutput = ReadString(address, file);
+                    break;
+                case TypeCode.Int32:
+                    ReadOutput = ReadInt(address, file);
+                    break;
+                case TypeCode.Int64:
+                    ReadOutput = ReadLong(address, file);
+                    break;
+                case TypeCode.Byte:
+                    ReadOutput = ReadByte(address, file);
+                    break;
+                case TypeCode.Double:
+                    ReadOutput = ReadDouble(address, file);
+                    break;
+                case TypeCode.Decimal:
+                    ReadOutput = ReadFloat(address, file);
+                    break;
+                case TypeCode.UInt32:
+                    ReadOutput = ReadUInt(address, file);
+                    break;
+                default:
+                    break;
+            }
+
+            return (T) Convert.ChangeType(ReadOutput, typeof(T));
+        }
+
+        ConcurrentDictionary<string, CancellationTokenSource> ReadTokenSrcs = new ConcurrentDictionary<string, CancellationTokenSource>();
+        /// <summary>
+        /// Reads a memory address, keeps value in UI object. Ex: BindToUI("0x12345678,0x02,0x05", v => this.Invoke((MethodInvoker) delegate { this.name_label.Text = v; }));
+        /// </summary>
+        /// <param name="address"></param>
+        /// <param name="UIObject"></param>
+        /// <param name="file"></param>
+        public void BindToUI(string address, Action<string> UIObject, string file = "")
+        {
+            CancellationTokenSource cts = new CancellationTokenSource();
+            if (ReadTokenSrcs.ContainsKey(address))
+            {
+                try
+                {
+                    ReadTokenSrcs[address].Cancel();
+                    ReadTokenSrcs.TryRemove(address, out _);
+                }
+                catch
+                {
+                    Debug.WriteLine("ERROR: Avoided a crash. Address " + address + " was not bound.");
+                }
+            }
+            else
+            {
+                Debug.WriteLine("Adding Bound Address " + address);
+            }
+
+            ReadTokenSrcs.TryAdd(address, cts);
+
+            Task.Factory.StartNew(() =>
+            {
+                while (!cts.Token.IsCancellationRequested)
+                {
+                    UIObject(ReadMemory<string>(address, file));
+                    Thread.Sleep(100);
+                }
+            },
+            cts.Token);
         }
     }
 }

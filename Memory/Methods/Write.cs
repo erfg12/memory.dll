@@ -22,30 +22,29 @@ namespace Memory
         /// <param name="type">byte, 2bytes, bytes, float, int, string, double or long.</param>
         /// <param name="value">Value to freeze</param>
         /// <param name="file">ini file to read address from (OPTIONAL)</param>
-        public void FreezeValue(string address, string type, string value, string file = "")
+        public bool FreezeValue(string address, string type, string value, string file = "")
         {
             CancellationTokenSource cts = new CancellationTokenSource();
 
-            lock (FreezeTokenSrcs)
+            if (FreezeTokenSrcs.ContainsKey(address))
             {
-                if (FreezeTokenSrcs.ContainsKey(address))
+                Debug.WriteLine("Changing Freezing Address " + address + " Value " + value);
+                try
                 {
-                    Debug.WriteLine("Changing Freezing Address " + address + " Value " + value);
-                    try
-                    {
-                        FreezeTokenSrcs[address].Cancel();
-                        FreezeTokenSrcs.TryRemove(address, out _);
-                    }
-                    catch
-                    {
-                        Debug.WriteLine("ERROR: Avoided a crash. Address " + address + " was not frozen.");
-                    }
+                    FreezeTokenSrcs[address].Cancel();
+                    FreezeTokenSrcs.TryRemove(address, out _);
                 }
-                else
-                    Debug.WriteLine("Adding Freezing Address " + address + " Value " + value);
-
-                FreezeTokenSrcs.TryAdd(address, cts);
+                catch
+                {
+                    Debug.WriteLine("ERROR: Avoided a crash. Address " + address + " was not frozen.");
+                    return false;
+                }
             }
+            else {
+                Debug.WriteLine("Adding Freezing Address " + address + " Value " + value);
+            }
+
+            FreezeTokenSrcs.TryAdd(address, cts);
 
             Task.Factory.StartNew(() =>
             {
@@ -56,6 +55,8 @@ namespace Memory
                 }
             },
             cts.Token);
+
+            return true;
         }
 
         /// <summary>
