@@ -43,6 +43,8 @@ namespace Memory
         {
             byte[] memory = new byte[length];
             UIntPtr theCode = GetCode(code, file);
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return null;
 
             if (!ReadProcessMemory(mProc.Handle, theCode, memory, (UIntPtr)length, IntPtr.Zero))
                 return null;
@@ -61,8 +63,10 @@ namespace Memory
         {
             byte[] memory = new byte[4];
 
-            UIntPtr theCode;
-            theCode = GetCode(code, file);
+            UIntPtr theCode = GetCode(code, file);
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return 0;
+
             try
             {
                 if (ReadProcessMemory(mProc.Handle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
@@ -97,8 +101,9 @@ namespace Memory
                 stringEncoding = System.Text.Encoding.UTF8;
 
             byte[] memoryNormal = new byte[length];
-            UIntPtr theCode;
-            theCode = GetCode(code, file);
+            UIntPtr theCode = GetCode(code, file);
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return "";
 
             if (ReadProcessMemory(mProc.Handle, theCode, memoryNormal, (UIntPtr)length, IntPtr.Zero))
                 return (zeroTerminated) ? stringEncoding.GetString(memoryNormal).Split('\0')[0] : stringEncoding.GetString(memoryNormal);
@@ -117,8 +122,10 @@ namespace Memory
         {
             byte[] memory = new byte[8];
 
-            UIntPtr theCode;
-            theCode = GetCode(code, file);
+            UIntPtr theCode = GetCode(code, file);
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return 0;
+
             try
             {
                 if (ReadProcessMemory(mProc.Handle, theCode, memory, (UIntPtr)8, IntPtr.Zero))
@@ -156,8 +163,10 @@ namespace Memory
         public int ReadInt(string code, string file = "")
         {
             byte[] memory = new byte[4];
-            UIntPtr theCode;
-            theCode = GetCode(code, file);
+            UIntPtr theCode = GetCode(code, file);
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return 0;
+
             if (ReadProcessMemory(mProc.Handle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
                 return BitConverter.ToInt32(memory, 0);
             else
@@ -173,9 +182,10 @@ namespace Memory
         public long ReadLong(string code, string file = "")
         {
             byte[] memory = new byte[16];
-            UIntPtr theCode;
+            UIntPtr theCode = GetCode(code, file);
 
-            theCode = GetCode(code, file);
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return 0;
 
             if (ReadProcessMemory(mProc.Handle, theCode, memory, (UIntPtr)8, IntPtr.Zero))
                 return BitConverter.ToInt64(memory, 0);
@@ -192,8 +202,9 @@ namespace Memory
         public UInt32 ReadUInt(string code, string file = "")
         {
             byte[] memory = new byte[4];
-            UIntPtr theCode;
-            theCode = GetCode(code, file);
+            UIntPtr theCode = GetCode(code, file);
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return 0;
 
             if (ReadProcessMemory(mProc.Handle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
                 return BitConverter.ToUInt32(memory, 0);
@@ -211,8 +222,9 @@ namespace Memory
         public int Read2ByteMove(string code, int moveQty, string file = "")
         {
             byte[] memory = new byte[4];
-            UIntPtr theCode;
-            theCode = GetCode(code, file);
+            UIntPtr theCode = GetCode(code, file);
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return 0;
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
 
@@ -232,8 +244,9 @@ namespace Memory
         public int ReadIntMove(string code, int moveQty, string file = "")
         {
             byte[] memory = new byte[4];
-            UIntPtr theCode;
-            theCode = GetCode(code, file);
+            UIntPtr theCode = GetCode(code, file);
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return 0;
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
 
@@ -253,8 +266,9 @@ namespace Memory
         public ulong ReadUIntMove(string code, int moveQty, string file = "")
         {
             byte[] memory = new byte[8];
-            UIntPtr theCode;
-            theCode = GetCode(code, file, 8);
+            UIntPtr theCode = GetCode(code, file, 8);
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return 0;
 
             UIntPtr newCode = UIntPtr.Add(theCode, moveQty);
 
@@ -274,8 +288,9 @@ namespace Memory
         {
             byte[] memoryTiny = new byte[4];
 
-            UIntPtr theCode;
-            theCode = GetCode(code, file);
+            UIntPtr theCode = GetCode(code, file);
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return 0;
 
             if (ReadProcessMemory(mProc.Handle, theCode, memoryTiny, (UIntPtr)2, IntPtr.Zero))
                 return BitConverter.ToInt32(memoryTiny, 0);
@@ -294,6 +309,8 @@ namespace Memory
             byte[] memoryTiny = new byte[1];
 
             UIntPtr theCode = GetCode(code, file);
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return 0;
 
             if (ReadProcessMemory(mProc.Handle, theCode, memoryTiny, (UIntPtr)1, IntPtr.Zero))
                 return memoryTiny[0];
@@ -314,6 +331,9 @@ namespace Memory
             UIntPtr theCode = GetCode(code, file);
 
             bool[] ret = new bool[8];
+
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return ret;
 
             if (!ReadProcessMemory(mProc.Handle, theCode, buf, (UIntPtr)1, IntPtr.Zero))
                 return ret;

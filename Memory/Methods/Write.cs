@@ -97,6 +97,9 @@ namespace Memory
             UIntPtr theCode;
             theCode = GetCode(code, file);
 
+            if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return false;
+
             if (type.ToLower() == "float")
             {
                 write = Convert.ToString(float.Parse(write, CultureInfo.InvariantCulture));
