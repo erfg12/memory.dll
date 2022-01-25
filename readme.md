@@ -14,7 +14,8 @@ Create great PC game cheat trainers with ease!
 * Optional external .ini file for code storage.
 * Address structures are flexible. Can use modules, offsets and/or pointers. 
     * _Example: "game.exe+0x12345678,0x12,0x34,0x56"_
-* Freeze values
+* Freeze values (infinte loop writing in threads)
+* Bind memory addresses to UI elements
 
 ## DOCUMENTATION
 [Wiki Pages](https://github.com/erfg12/memory.dll/wiki)
