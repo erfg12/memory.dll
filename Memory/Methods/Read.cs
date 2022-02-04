@@ -427,11 +427,11 @@ namespace Memory
 
         ConcurrentDictionary<string, CancellationTokenSource> ReadTokenSrcs = new ConcurrentDictionary<string, CancellationTokenSource>();
         /// <summary>
-        /// Reads a memory address, keeps value in UI object. Ex: BindToUI("0x12345678,0x02,0x05", v => this.Invoke((MethodInvoker) delegate { this.name_label.Text = v; }));
+        /// Reads a memory address, keeps value in UI object. Ex: BindToUI("0x12345678,0x02,0x05", v => ObjName.Invoke((MethodInvoker)delegate { if (String.Compare(v, ObjName.Text) != 0) { ObjName.Text = v; } }));
         /// </summary>
-        /// <param name="address"></param>
-        /// <param name="UIObject"></param>
-        /// <param name="file"></param>
+        /// <param name="address">Your code or INI file variable name</param>
+        /// <param name="UIObject">Returning variable to bind to UI object. See example in summary.</param>
+        /// <param name="file">OPTIONAL: INI file path and file name with extension</param>
         public void BindToUI(string address, Action<string> UIObject, string file = "")
         {
             CancellationTokenSource cts = new CancellationTokenSource();
