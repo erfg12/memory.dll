@@ -779,7 +779,7 @@ namespace Memory
 
             while (VirtualQueryEx(mProc.Handle, current, out mbi).ToUInt64() != 0)
             {
-                if ((long)mbi.BaseAddress > (long)maxAddress)
+               if ((long)mbi.BaseAddress > (long)maxAddress)
                     return UIntPtr.Zero;  // No memory found, let windows handle
 
                 if (mbi.State == MEM_FREE && mbi.RegionSize > size)
@@ -840,7 +840,7 @@ namespace Memory
                     mbi.RegionSize += si.allocationGranularity - (mbi.RegionSize % si.allocationGranularity);
 
                 previous = current;
-                current = UIntPtr.Add(mbi.BaseAddress, (int)mbi.RegionSize);
+                current = new UIntPtr( ((ulong)mbi.BaseAddress) + (ulong)mbi.RegionSize);
 
                 if ((long)current >= (long)maxAddress)
                     return ret;
