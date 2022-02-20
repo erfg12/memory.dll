@@ -42,7 +42,7 @@ namespace TestApplication
         public void GetModuleList()
         {
             ModuleList.Items.Clear();
-            foreach (KeyValuePair<string, IntPtr> kvp in m.mProc.Modules) // iterate through process module list
+            foreach (KeyValuePair<string, IntPtr> kvp in m.mProc.Process.Modules) // iterate through process module list
             {
                 string[] arr = new string[4];
                 ListViewItem itm;

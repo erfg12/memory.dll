@@ -30,7 +30,7 @@ namespace TestApplication
 
         Mem m = new Mem(); // Declare m as our Memory.dll function reference variable.
         bool StopWorker = false;
-        string ProcNameOrID;
+        string ProcNameOrID = "";
 
         private void TrainerForm_Shown(object sender, EventArgs e)
         {
@@ -105,13 +105,8 @@ namespace TestApplication
             // infinite loop that checks if the process is available and open, if not, modify the UI.
             while (true)
             {
-                if (String.Compare(ProcTypeBox.Text, "Name") == 0) // if combobox set to Name, use string
-                    ProcOpen = m.OpenProcess(ProcNameOrID);
-                else // if combobox set to ID, use integer
-                    ProcOpen = m.OpenProcess(Convert.ToInt32(ProcNameOrID));
-
                 BackgroundWork.ReportProgress(0); // do UI thread stuff
-                Thread.Sleep(1000);
+                Thread.Sleep(1000); // prevent memory leak
             }
         }
 
@@ -133,12 +128,27 @@ namespace TestApplication
 
         private void BackgroundWork_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
+            if (String.Compare(ProcTypeBox.Text, "Name") == 0) // if combobox set to Name, use string
+                ProcOpen = m.OpenProcess(ProcNameOrID);
+            else // if combobox set to ID, use integer
+                ProcOpen = m.OpenProcess(Convert.ToInt32(ProcNameOrID));
+
             ProcUIUpdate();
         }
 
         private void ProcTextBox_TextChanged(object sender, EventArgs e)
         {
             StopWorker = true; // stop worker if we're changing process name
+        }
+
+        private void ProcTypeBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void ProcTypeBox_SelectionChangeCommitted(object sender, EventArgs e)
+        {
+
         }
     }
 }
