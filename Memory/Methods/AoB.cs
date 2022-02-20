@@ -298,7 +298,7 @@ namespace Memory
                 if (((body[index] & masks[0]) == (pattern[0] & masks[0])))
                 {
                     var match = true;
-                    for (int index2 = 1; index2 <= pattern.Length - 1; index2++)
+                    for (int index2 = pattern.Length - 1; index2 >= 1; index2--)
                     {
                         if ((body[index + index2] & masks[index2]) == (pattern[index2] & masks[index2])) continue;
                         match = false;
