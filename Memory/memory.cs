@@ -351,6 +351,9 @@ namespace Memory
         public UIntPtr GetCode(string name, string path = "", int size = 8)
         {
             string theCode = "";
+            if (mProc == null)
+                return UIntPtr.Zero;
+
             if (mProc.Is64Bit)
             {
                 //Debug.WriteLine("Changing to 64bit code...");
@@ -377,7 +380,17 @@ namespace Memory
             if (theCode.Contains(" "))
                 theCode = theCode.Replace(" ", String.Empty);
 
-            if (!theCode.Contains("+") && !theCode.Contains(",")) return new UIntPtr(Convert.ToUInt32(theCode, 16));
+            if (!theCode.Contains("+") && !theCode.Contains(","))
+            {
+                try
+                {
+                    return new UIntPtr(Convert.ToUInt32(theCode, 16));
+                } catch
+                {
+                    Console.WriteLine("Error in GetCode(). Failed to read address " + theCode);
+                    return UIntPtr.Zero;
+                }
+            }
 
             string newOffsets = theCode;
 
@@ -522,7 +535,17 @@ namespace Memory
 
             byte[] memoryAddress = new byte[size];
 
-            if (!theCode.Contains("+") && !theCode.Contains(",")) return new UIntPtr(Convert.ToUInt64(theCode, 16));
+            if (!theCode.Contains("+") && !theCode.Contains(","))
+            {
+                try {
+                    return new UIntPtr(Convert.ToUInt64(theCode, 16));
+                }
+                catch
+                {
+                    Console.WriteLine("Error in GetCode(). Failed to read address " + theCode);
+                    return UIntPtr.Zero;
+                }
+            }
 
             if (newOffsets.Contains(','))
             {
