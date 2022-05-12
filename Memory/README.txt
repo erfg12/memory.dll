@@ -10,9 +10,7 @@ BEFORE YOU START
 
 3. Edit line 19 where it says "level=" change "asInvoker" to "requireAdministrator". Save and close.
 
-4. Open NuGet manager and Browse for "System.Security.Principal.Windows", install this.
-
-5. Your trainer should match your game's platform. If compiling with Any CPU, uncheck the prefer 32bit checkbox in Build Project Properties if you need x64.
+4. Your trainer should match your game's platform. If compiling with Any CPU, uncheck the prefer 32bit checkbox in Build Project Properties if you need x64.
     Ex: If game is x86, trainer should be x86. If game is x64, trainer should be x64.
 
 
