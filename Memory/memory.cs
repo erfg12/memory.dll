@@ -502,7 +502,7 @@ namespace Memory
         /// </summary>
         /// <param name="name">name of module</param>
         /// <returns></returns>
-        private IntPtr GetModuleAddressByName (string name)
+        public IntPtr GetModuleAddressByName (string name)
         {
             return mProc.Process.Modules.Cast<ProcessModule>().SingleOrDefault(m => string.Equals(m.ModuleName, name, StringComparison.OrdinalIgnoreCase)).BaseAddress;
         }
