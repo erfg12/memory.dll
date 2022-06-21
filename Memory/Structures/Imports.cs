@@ -221,6 +221,7 @@ namespace Memory
 
         public const uint MEM_PRIVATE = 0x20000;
         public const uint MEM_IMAGE = 0x1000000;
+        public const uint MEM_MAPPED = 0x40000;
 
         internal enum NTSTATUS
         {

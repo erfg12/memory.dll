@@ -22,7 +22,7 @@ namespace Memory
         /// <returns>IEnumerable of all addresses found.</returns>
         public Task<IEnumerable<long>> AoBScan(string search, bool writable = false, bool executable = true, string file = "")
         {
-            return AoBScan(0, long.MaxValue, search, writable, executable, file);
+            return AoBScan(0, long.MaxValue, search, writable, executable, false, file);
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Memory
         /// <returns>IEnumerable of all addresses found.</returns>
         public Task<IEnumerable<long>> AoBScan(string search, bool readable, bool writable, bool executable, string file = "")
         {
-            return AoBScan(0, long.MaxValue, search, readable, writable, executable, file);
+            return AoBScan(0, long.MaxValue, search, readable, writable, executable, false, file);
         }
 
 
@@ -49,11 +49,12 @@ namespace Memory
         /// <param name="file">ini file (OPTIONAL)</param>
         /// <param name="writable">Include writable addresses in scan</param>
         /// <param name="executable">Include executable addresses in scan</param>
+        /// <param name="mapped">Include mapped addresses in scan</param>
         /// <returns>IEnumerable of all addresses found.</returns>
-        public Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool writable = false, bool executable = true, string file = "")
+        public Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool writable = false, bool executable = true, bool mapped = false, string file = "")
         {
             // Not including read only memory was scan behavior prior.
-            return AoBScan(start, end, search, false, writable, executable, file);
+            return AoBScan(start, end, search, false, writable, executable, mapped, file);
         }
 
         /// <summary>
@@ -66,8 +67,9 @@ namespace Memory
         /// <param name="readable">Include readable addresses in scan</param>
         /// <param name="writable">Include writable addresses in scan</param>
         /// <param name="executable">Include executable addresses in scan</param>
+        /// <param name="mapped">Include mapped addresses in scan</param>
         /// <returns>IEnumerable of all addresses found.</returns>
-        public Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool readable, bool writable, bool executable, string file = "")
+        public Task<IEnumerable<long>> AoBScan(long start, long end, string search, bool readable, bool writable, bool executable, bool mapped, string file = "")
         {
             return Task.Run(() =>
             {
@@ -136,6 +138,8 @@ namespace Memory
                     isValid &= ((memInfo.Protect & PAGE_GUARD) == 0);
                     isValid &= ((memInfo.Protect & PAGE_NOACCESS) == 0);
                     isValid &= (memInfo.Type == MEM_PRIVATE) || (memInfo.Type == MEM_IMAGE);
+                    if (mapped)
+                        isValid &= (memInfo.Type == MEM_MAPPED);
 
                     if (isValid)
                     {
@@ -224,7 +228,7 @@ namespace Memory
         {
             long start = (long)GetCode(code, file).ToUInt64();
 
-            return (await AoBScan(start, end, search, true, true, true, file)).FirstOrDefault();
+            return (await AoBScan(start, end, search, true, true, true, false, file)).FirstOrDefault();
         }
 
         private long[] CompareScan(MemoryRegionResult item, byte[] aobPattern, byte[] mask)
