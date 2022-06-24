@@ -1,8 +1,11 @@
 ## DESCRIPTION
-Create great PC game cheat trainers with ease!
+Create great PC game cheat trainers in C# with this easy to use library! This library is available on NuGet, includes XML IntelliSense docs and this code repo provides new build releases every commit. For support please check the [wiki tab](https://github.com/erfg12/memory.dll/wiki) in this repo and the [CSharp-Game-Trainers repo](https://github.com/erfg12/CSharp-Game-Trainers) for coding samples.
+
+- For legacy Windows operating systems, check out [memory_legacy.dll](https://github.com/erfg12/memory_legacy.dll)
+
+- For MacOS operating systems, check out [memory.dylib](https://github.com/erfg12/memory.dylib)
 
 ## FEATURES
-* Built with C# for .NET projects.
 * Check if process is running (ID or name) and open, all in 1 function.
 * 32bit and 64bit games supported.
 * AoB scanning with full & partial masking.
