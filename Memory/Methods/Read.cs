@@ -334,7 +334,7 @@ namespace Memory
 
         }
 
-        public int ReadPByte(UIntPtr address, string code, string file = "")
+        public int ReadByte(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[4];
             return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)1, IntPtr.Zero)
@@ -342,7 +342,7 @@ namespace Memory
                 : 0;
         }
 
-        public float ReadPFloat(UIntPtr address, string code, string file = "")
+        public float ReadFloat(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[4];
             if (!ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)4,
@@ -352,7 +352,7 @@ namespace Memory
 
         }
 
-        public int ReadPInt(UIntPtr address, string code, string file = "")
+        public int ReadInt(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[4];
             return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)4, IntPtr.Zero)
@@ -360,7 +360,7 @@ namespace Memory
                 : 0;
         }
 
-        public string ReadPString(UIntPtr address, string code, string file = "")
+        public string ReadString(UIntPtr address, string code, string file = "")
         {
             byte[] memoryNormal = new byte[32];
             return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memoryNormal, (UIntPtr)32,
@@ -369,7 +369,7 @@ namespace Memory
                 : "";
         }
         
-        public long ReadPLong(UIntPtr address, string code, string file = "")
+        public long ReadLong(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[8];
             return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)8, IntPtr.Zero)
@@ -377,7 +377,7 @@ namespace Memory
                 : 0;
         }
         
-        public double ReadPDouble(UIntPtr address, string code, string file = "")
+        public double ReadDouble(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[8];
             return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)8, IntPtr.Zero)
@@ -385,7 +385,7 @@ namespace Memory
                 : 0;
         }
         
-        public uint ReadPuInt(UIntPtr address, string code, string file = "")
+        public uint ReaduInt(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[4];
             return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)8, IntPtr.Zero)
@@ -411,17 +411,17 @@ namespace Memory
                 return (T)Convert.ChangeType(readOutput, typeof(T));
             return default;
         }
-        public T ReadPMemory<T>(UIntPtr address, string code, string file = "")
+        public T ReadMemory<T>(UIntPtr address, string code, string file = "")
         {
             object readOutput = Type.GetTypeCode(typeof(T)) switch
             {
-                TypeCode.String => ReadPString(address, code, file),
-                TypeCode.Int32 => ReadPInt(address, code, file),
-                TypeCode.Int64 => ReadPLong(address, code, file),
-                TypeCode.Byte => ReadPByte(address, code, file),
-                TypeCode.Double => ReadPDouble(address, code, file),
-                TypeCode.Decimal => ReadPFloat(address, code, file),
-                TypeCode.UInt32 => ReadPuInt(address, code, file),
+                TypeCode.String => ReadString(address, code, file),
+                TypeCode.Int32 => ReadInt(address, code, file),
+                TypeCode.Int64 => ReadLong(address, code, file),
+                TypeCode.Byte => ReadByte(address, code, file),
+                TypeCode.Double => ReadDouble(address, code, file),
+                TypeCode.Decimal => ReadFloat(address, code, file),
+                TypeCode.UInt32 => ReaduInt(address, code, file),
                 _ => null
             };
 

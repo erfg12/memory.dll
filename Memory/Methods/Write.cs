@@ -160,7 +160,7 @@ namespace Memory
             return writeProcMem;
         }
         
-        public bool WritePMemory<T>(UIntPtr address, string code, T write, string file = "", Encoding stringEncoding = null,
+        public bool WriteMemory<T>(UIntPtr address, string code, T write, string file = "", Encoding stringEncoding = null,
             bool removeWriteProtection = true)
         {
             byte[] memory = new byte[4];

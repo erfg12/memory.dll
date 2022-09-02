@@ -710,7 +710,7 @@ namespace Memory
             UIntPtr caveAddress = UIntPtr.Zero;
             UIntPtr preferred = theCode;
 
-            for(var i = 0; i < 10 && caveAddress == UIntPtr.Zero; i++)
+            for(int i = 0; i < 10 && caveAddress == UIntPtr.Zero; i++)
             {
                 caveAddress = VirtualAllocEx(MProc.Handle, FindFreeBlockForRegion(preferred, (uint)size), (uint)size, MemCommit | MemReserve, ExecuteReadwrite);
 
@@ -738,7 +738,7 @@ namespace Memory
             }
 
             byte[] caveBytes = new byte[5 + newBytes.Length];
-            offset = (int)(((long)theCode + jmpBytes.Length) - ((long)caveAddress + newBytes.Length) - 5);
+            offset = (int)((long)theCode + jmpBytes.Length - ((long)caveAddress + newBytes.Length) - 5);
 
             newBytes.CopyTo(caveBytes, 0);
             caveBytes[newBytes.Length] = 0xE9;
@@ -746,6 +746,237 @@ namespace Memory
 
             WriteBytes(caveAddress, caveBytes);
             WriteBytes(theCode, jmpBytes);
+
+            return caveAddress;
+        }
+        
+        public UIntPtr CreateFarCodeCave(string code, byte[] newBytes, int replaceCount, int size = 0x1000, string file = "")
+        {
+            if (replaceCount < 14)
+                return UIntPtr.Zero; // returning UIntPtr.Zero instead of throwing an exception
+                                     // to better match existing code
+
+            UIntPtr theCode = GetCode(code, file);
+            UIntPtr address = theCode;
+
+            // We're using a 14-byte 0xFF jmp instruction now, meaning no matter what we won't run into a limit.
+            
+            UIntPtr caveAddress = UIntPtr.Zero;
+
+            // Failed to allocate memory around the address we wanted let windows handle it and hope for the best?
+            if (caveAddress == UIntPtr.Zero)
+                caveAddress = VirtualAllocEx(MProc.Handle, UIntPtr.Zero, (uint)size, MemCommit | MemReserve,
+                                             ExecuteReadwrite);
+
+            int nopsNeeded = replaceCount > 14 ? replaceCount - 14 : 0;
+
+            byte[] jmpBytes = new byte[14 + nopsNeeded];
+            jmpBytes[0] = 0xFF;
+            jmpBytes[1] = 0x25;
+            BitConverter.GetBytes((long)caveAddress).CopyTo(jmpBytes, 6);
+
+            for (int i = 14; i < jmpBytes.Length; i++)
+            {
+                jmpBytes[i] = 0x90;
+            }
+
+            byte[] caveBytes = new byte[newBytes.Length + 14];
+
+            newBytes.CopyTo(caveBytes, 0);
+            caveBytes[newBytes.Length] = 0xFF;
+            caveBytes[newBytes.Length + 1] = 0x25;
+            BitConverter.GetBytes((long)address + jmpBytes.Length).CopyTo(caveBytes, newBytes.Length + 6);
+
+            WriteBytes(caveAddress, caveBytes);
+            WriteBytes(address, jmpBytes);
+
+            return caveAddress;
+        }
+        
+        public UIntPtr CreateCallCodeCave(string code, byte[] newBytes, int replaceCount, byte[] varBytes = null!, int varOffset = 0, int size = 0x1000)
+        {
+            if (replaceCount < 16)
+                return UIntPtr.Zero; // returning UIntPtr.Zero instead of throwing an exception
+            // to better match existing code
+
+            UIntPtr theCode = GetCode(code);
+            UIntPtr address = theCode;
+
+            // This uses a 16-byte call instruction. Makes it easier to translate aob scripts that return at different places.
+
+            UIntPtr caveAddress = UIntPtr.Zero;
+
+            if (caveAddress == UIntPtr.Zero)
+                caveAddress = VirtualAllocEx(MProc.Handle, UIntPtr.Zero, (uint)size, 0x1000 | 0x2000, 0x40);
+
+            int nopsNeeded = replaceCount > 16 ? replaceCount - 16 : 0;
+
+            byte[] jmpBytes = new byte[16 + nopsNeeded];
+            jmpBytes[0] = 0xFF;
+            jmpBytes[1] = 0x15;
+            jmpBytes[2] = 0x02;
+            //00 00 00
+            jmpBytes[6] = 0xEB;
+            jmpBytes[7] = 0x08;
+            BitConverter.GetBytes((long)caveAddress).CopyTo(jmpBytes, 8);
+
+            for (int i = 16; i < jmpBytes.Length; i++)
+            {
+                jmpBytes[i] = 0x90;
+            }
+
+            byte[] caveBytes = new byte[newBytes.Length + 1];
+
+            newBytes.CopyTo(caveBytes, 0);
+            caveBytes[newBytes.Length] = 0xC3;
+
+            WriteBytes(caveAddress, caveBytes);
+            WriteBytes(address, jmpBytes);
+
+            if (varBytes != null!)
+                WriteBytes(caveAddress + caveBytes.Length + varOffset, varBytes);
+
+            return caveAddress;
+        }
+        
+        public UIntPtr CreateCodeCave(UIntPtr address, string code, byte[] newBytes, int replaceCount, int size = 0x1000, string file = "")
+        {
+            if (replaceCount < 5)
+                return UIntPtr.Zero; // returning UIntPtr.Zero instead of throwing an exception
+                                     // to better match existing code
+
+                                     UIntPtr theCode = address + LoadIntCode(code, file);
+
+                                     // if x64 we need to try to allocate near the address so we dont run into the +-2GB limit of the 0xE9 jmp
+
+            UIntPtr caveAddress = UIntPtr.Zero;
+            UIntPtr preferred = theCode;
+
+            for(int i = 0; i < 10 && caveAddress == UIntPtr.Zero; i++)
+            {
+                caveAddress = VirtualAllocEx(MProc.Handle, FindFreeBlockForRegion(preferred, (uint)size), (uint)size, MemCommit | MemReserve, ExecuteReadwrite);
+
+                if (caveAddress == UIntPtr.Zero)
+                    preferred = UIntPtr.Add(preferred, 0x10000);
+            }
+
+            // Failed to allocate memory around the address we wanted let windows handle it and hope for the best?
+            if (caveAddress == UIntPtr.Zero)
+                caveAddress = VirtualAllocEx(MProc.Handle, UIntPtr.Zero, (uint)size, MemCommit | MemReserve,
+                                             ExecuteReadwrite);
+
+            int nopsNeeded = replaceCount > 5 ? replaceCount - 5 : 0;
+
+            // (to - from - 5)
+            int offset = (int)((long)caveAddress - (long)theCode - 5);
+
+            byte[] jmpBytes = new byte[5 + nopsNeeded];
+            jmpBytes[0] = 0xE9;
+            BitConverter.GetBytes(offset).CopyTo(jmpBytes, 1);
+
+            for(int i = 5; i < jmpBytes.Length; i++)
+            {
+                jmpBytes[i] = 0x90;
+            }
+
+            byte[] caveBytes = new byte[5 + newBytes.Length];
+            offset = (int)((long)theCode + jmpBytes.Length - ((long)caveAddress + newBytes.Length) - 5);
+
+            newBytes.CopyTo(caveBytes, 0);
+            caveBytes[newBytes.Length] = 0xE9;
+            BitConverter.GetBytes(offset).CopyTo(caveBytes, newBytes.Length + 1);
+
+            WriteBytes(caveAddress, caveBytes);
+            WriteBytes(theCode, jmpBytes);
+
+            return caveAddress;
+        }
+        
+        public UIntPtr CreateFarCodeCave(UIntPtr address, string code, byte[] newBytes, int replaceCount, int size = 0x1000, string file = "")
+        {
+            if (replaceCount < 14)
+                return UIntPtr.Zero; // returning UIntPtr.Zero instead of throwing an exception
+                                     // to better match existing code
+
+            UIntPtr theCode = address + LoadIntCode(code, file);
+            UIntPtr theAddress = theCode;
+
+            // We're using a 14-byte 0xFF jmp instruction now, meaning no matter what we won't run into a limit.
+            
+            UIntPtr caveAddress = UIntPtr.Zero;
+
+            // Failed to allocate memory around the address we wanted let windows handle it and hope for the best?
+            if (caveAddress == UIntPtr.Zero)
+                caveAddress = VirtualAllocEx(MProc.Handle, UIntPtr.Zero, (uint)size, MemCommit | MemReserve,
+                                             ExecuteReadwrite);
+
+            int nopsNeeded = replaceCount > 14 ? replaceCount - 14 : 0;
+
+            byte[] jmpBytes = new byte[14 + nopsNeeded];
+            jmpBytes[0] = 0xFF;
+            jmpBytes[1] = 0x25;
+            BitConverter.GetBytes((long)caveAddress).CopyTo(jmpBytes, 6);
+
+            for (int i = 14; i < jmpBytes.Length; i++)
+            {
+                jmpBytes[i] = 0x90;
+            }
+
+            byte[] caveBytes = new byte[newBytes.Length + 14];
+
+            newBytes.CopyTo(caveBytes, 0);
+            caveBytes[newBytes.Length] = 0xFF;
+            caveBytes[newBytes.Length + 1] = 0x25;
+            BitConverter.GetBytes((long)theAddress + jmpBytes.Length).CopyTo(caveBytes, newBytes.Length + 6);
+
+            WriteBytes(caveAddress, caveBytes);
+            WriteBytes(theAddress, jmpBytes);
+
+            return caveAddress;
+        }
+        
+        public UIntPtr CreateCallCodeCave(UIntPtr address, string code, byte[] newBytes, int replaceCount, byte[] varBytes = null!, int varOffset = 0, int size = 0x1000, string file = "")
+        {
+            if (replaceCount < 16)
+                return UIntPtr.Zero; // returning UIntPtr.Zero instead of throwing an exception
+            // to better match existing code
+
+            UIntPtr theCode = address + LoadIntCode(code, file);
+            UIntPtr theAddress = theCode;
+
+            // This uses a 16-byte call instruction. Makes it easier to translate aob scripts that return at different places.
+
+            UIntPtr caveAddress = UIntPtr.Zero;
+
+            if (caveAddress == UIntPtr.Zero)
+                caveAddress = VirtualAllocEx(MProc.Handle, UIntPtr.Zero, (uint)size, 0x1000 | 0x2000, 0x40);
+
+            int nopsNeeded = replaceCount > 16 ? replaceCount - 16 : 0;
+
+            byte[] jmpBytes = new byte[16 + nopsNeeded];
+            jmpBytes[0] = 0xFF;
+            jmpBytes[1] = 0x15;
+            jmpBytes[2] = 0x02;
+            //00 00 00
+            jmpBytes[6] = 0xEB;
+            jmpBytes[7] = 0x08;
+            BitConverter.GetBytes((long)caveAddress).CopyTo(jmpBytes, 8);
+
+            for (int i = 16; i < jmpBytes.Length; i++)
+            {
+                jmpBytes[i] = 0x90;
+            }
+
+            byte[] caveBytes = new byte[newBytes.Length + 1];
+
+            newBytes.CopyTo(caveBytes, 0);
+            caveBytes[newBytes.Length] = 0xC3;
+
+            WriteBytes(caveAddress, caveBytes);
+            WriteBytes(theAddress, jmpBytes);
+
+            if (varBytes != null!)
+                WriteBytes(caveAddress + caveBytes.Length + varOffset, varBytes);
 
             return caveAddress;
         }
@@ -793,7 +1024,7 @@ namespace Memory
                                            ((long)tmpAddress % si.AllocationGranularity));
 
                         // Check if there is enough left
-                        if ((mbi.RegionSize - offset) >= size)
+                        if (mbi.RegionSize - offset >= size)
                         {
                             // yup there is enough
                             tmpAddress = UIntPtr.Add(tmpAddress, offset);
@@ -805,7 +1036,7 @@ namespace Memory
                                 if ((long)tmpAddress > (long)baseAddress)
                                     tmpAddress = baseAddress;
 
-                                // decrease tmpAddress until its alligned properly
+                                // decrease tmpAddress until its aligned properly
                                 tmpAddress = UIntPtr.Subtract(tmpAddress,
                                     (int)((long)tmpAddress % si.AllocationGranularity));
                             }
