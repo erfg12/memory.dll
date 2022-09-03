@@ -52,7 +52,7 @@ namespace Memory
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <param name="round">Round the value to 2 decimal places</param>
         /// <returns></returns>
-        public float ReadFloat(string code, string file = "", bool round = true)
+        public float ReadFloat(string code, string file = "", bool round = false)
         {
             byte[] memory = new byte[4];
 
@@ -62,16 +62,15 @@ namespace Memory
 
             try
             {
-                if (ReadProcessMemory(MProc.Handle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
-                {
-                    float address = BitConverter.ToSingle(memory, 0);
-                    float returnValue = address;
-                    if (round)
-                        returnValue = (float)Math.Round(address, 2);
-                    return returnValue;
-                }
-                else
+                if (!ReadProcessMemory(MProc.Handle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
                     return 0;
+                
+                float address = BitConverter.ToSingle(memory, 0);
+                float returnValue = address;
+                if (round)
+                    returnValue = (float)Math.Round(address, 2);
+                return returnValue;
+
             }
             catch
             {
@@ -111,7 +110,7 @@ namespace Memory
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <param name="round">Round the value to 2 decimal places</param>
         /// <returns></returns>
-        public double ReadDouble(string code, string file = "", bool round = true)
+        public double ReadDouble(string code, string file = "", bool round = false)
         {
             byte[] memory = new byte[8];
 
@@ -190,17 +189,52 @@ namespace Memory
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and name of ini file. (OPTIONAL)</param>
         /// <returns></returns>
-        public UInt32 ReadUInt(string code, string file = "")
+        public uint ReadUInt(string code, string file = "")
         {
             byte[] memory = new byte[4];
             UIntPtr theCode = GetCode(code, file);
             if (theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
                 return 0;
 
-            if (ReadProcessMemory(MProc.Handle, theCode, memory, (UIntPtr)4, IntPtr.Zero))
-                return BitConverter.ToUInt32(memory, 0);
-            else
+            return ReadProcessMemory(MProc.Handle, theCode, memory, (UIntPtr)4, IntPtr.Zero)
+                ? BitConverter.ToUInt32(memory, 0)
+                : 0;
+        }
+        
+        /// <summary>
+        /// Read a UShort value from address.
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        /// <returns></returns>
+        public ushort ReadUShort(string code, string file = "")
+        {
+            byte[] memory = new byte[2];
+            UIntPtr theCode = GetCode(code, file);
+            if (theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
                 return 0;
+
+            return ReadProcessMemory(MProc.Handle, theCode, memory, (UIntPtr)2, IntPtr.Zero)
+                ? BitConverter.ToUInt16(memory, 0)
+                : (ushort)0;
+        }
+
+        /// <summary>
+        /// Read a ULong value from address.
+        /// </summary>
+        /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
+        /// <param name="file">path and name of ini file. (OPTIONAL)</param>
+        /// <returns></returns>
+        public ulong ReadULong(string code, string file = "")
+        {
+            byte[] memory = new byte[8];
+            UIntPtr theCode = GetCode(code, file);
+            if (theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return 0;
+
+            return ReadProcessMemory(MProc.Handle, theCode, memory, (UIntPtr)8, IntPtr.Zero)
+                ? BitConverter.ToUInt64(memory, 0)
+                : 0;
         }
 
         /// <summary>
@@ -210,7 +244,7 @@ namespace Memory
         /// <param name="moveQty">Quantity to move.</param>
         /// <param name="file">path and name of ini file (OPTIONAL)</param>
         /// <returns></returns>
-        public int Read2ByteMove(string code, int moveQty, string file = "")
+        public int ReadShortMove(string code, int moveQty, string file = "")
         {
             byte[] memory = new byte[4];
             UIntPtr theCode = GetCode(code, file);
@@ -273,7 +307,7 @@ namespace Memory
         /// <param name="code">address, module + pointer + offset, module + offset OR label in .ini file.</param>
         /// <param name="file">path and file name to ini file. (OPTIONAL)</param>
         /// <returns></returns>
-        public int Read2Byte(string code, string file = "")
+        public int ReadShort(string code, string file = "")
         {
             byte[] memoryTiny = new byte[4];
 
@@ -342,13 +376,13 @@ namespace Memory
                 : 0;
         }
 
-        public float ReadFloat(UIntPtr address, string code, string file = "")
+        public float ReadFloat(UIntPtr address, string code, string file = "", bool round = false)
         {
             byte[] memory = new byte[4];
             if (!ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)4,
                     IntPtr.Zero)) return 0;
             float spawn = BitConverter.ToSingle(memory, 0);
-            return (float)Math.Round(spawn, 2);
+            return round ? (float)Math.Round(spawn, 2) : spawn;
 
         }
 
@@ -377,33 +411,63 @@ namespace Memory
                 : 0;
         }
         
-        public double ReadDouble(UIntPtr address, string code, string file = "")
+        public short ReadShort(UIntPtr address, string code, string file = "")
+        {
+            byte[] memoryTiny = new byte[4];
+            return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memoryTiny, (UIntPtr)2,
+                IntPtr.Zero)
+                ? BitConverter.ToInt16(memoryTiny, 0)
+                : (short)0;
+        }
+
+        public double ReadDouble(UIntPtr address, string code, string file = "", bool round = false)
         {
             byte[] memory = new byte[8];
-            return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)8, IntPtr.Zero)
-                ? BitConverter.ToDouble(memory, 0)
-                : 0;
+            if (!ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)8,
+                    IntPtr.Zero)) return 0;
+            double spawn = BitConverter.ToDouble(memory, 0);
+            return round ? Math.Round(spawn, 2) : spawn;
         }
         
-        public uint ReaduInt(UIntPtr address, string code, string file = "")
+        public uint ReadUInt(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[4];
             return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)8, IntPtr.Zero)
                 ? BitConverter.ToUInt32(memory, 0)
                 : 0;
         }
+        
+        public ulong ReadULong(UIntPtr address, string code, string file = "")
+        {
+            byte[] memory = new byte[8];
+            return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)8, IntPtr.Zero)
+                ? BitConverter.ToUInt64(memory, 0)
+                : 0;
+        }
+        
+        public ushort ReadUShort(UIntPtr address, string code, string file = "")
+        {
+            byte[] memoryTiny = new byte[4];
+            return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memoryTiny, (UIntPtr)2,
+                IntPtr.Zero)
+                ? BitConverter.ToUInt16(memoryTiny, 0)
+                : (ushort)0;
+        }
 
         public T ReadMemory<T>(string address, string file = "")
         {
             object readOutput = Type.GetTypeCode(typeof(T)) switch
             {
-                TypeCode.String => ReadString(address, file),
+                TypeCode.Byte => ReadByte(address, file),
+                TypeCode.Int16 => ReadShort(address, file),
                 TypeCode.Int32 => ReadInt(address, file),
                 TypeCode.Int64 => ReadLong(address, file),
-                TypeCode.Byte => ReadByte(address, file),
-                TypeCode.Double => ReadDouble(address, file),
-                TypeCode.Decimal => ReadFloat(address, file),
+                TypeCode.UInt16 => ReadUShort(address, file),
                 TypeCode.UInt32 => ReadUInt(address, file),
+                TypeCode.UInt64 => ReadULong(address, file),
+                TypeCode.Single => ReadFloat(address, file),
+                TypeCode.Double => ReadDouble(address, file),
+                TypeCode.String => ReadString(address, file),
                 _ => null
             };
 
@@ -415,13 +479,16 @@ namespace Memory
         {
             object readOutput = Type.GetTypeCode(typeof(T)) switch
             {
-                TypeCode.String => ReadString(address, code, file),
+                TypeCode.Byte => ReadByte(address, code, file),
+                TypeCode.Int16 => ReadShort(address, code, file),
                 TypeCode.Int32 => ReadInt(address, code, file),
                 TypeCode.Int64 => ReadLong(address, code, file),
-                TypeCode.Byte => ReadByte(address, code, file),
+                TypeCode.UInt16 => ReadUShort(address, code, file),
+                TypeCode.UInt32 => ReadUInt(address, code, file),
+                TypeCode.UInt64 => ReadULong(address, code, file),
+                TypeCode.Single => ReadFloat(address, code, file),
                 TypeCode.Double => ReadDouble(address, code, file),
-                TypeCode.Decimal => ReadFloat(address, code, file),
-                TypeCode.UInt32 => ReaduInt(address, code, file),
+                TypeCode.String => ReadString(address, code, file),
                 _ => null
             };
 
@@ -430,7 +497,7 @@ namespace Memory
             return default;
         }
 
-        ConcurrentDictionary<string, CancellationTokenSource> _readTokenSrcs = new ConcurrentDictionary<string, CancellationTokenSource>();
+        ConcurrentDictionary<string, CancellationTokenSource> _readTokenSrcs = new();
         /// <summary>
         /// Reads a memory address, keeps value in UI object. Ex: BindToUI("0x12345678,0x02,0x05", v => ObjName.Invoke((MethodInvoker)delegate { if (String.Compare(v, ObjName.Text) != 0) { ObjName.Text = v; } }));
         /// </summary>

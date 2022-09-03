@@ -171,14 +171,6 @@ namespace Memory
     
             switch (Type.GetTypeCode(typeof(T)))
             {
-                case TypeCode.Single:
-                    memory = BitConverter.GetBytes(Convert.ToSingle(write));
-                    size = 4;
-                    break;
-                case TypeCode.Int32:
-                    memory = BitConverter.GetBytes(Convert.ToInt32(write));
-                    size = 4;
-                    break;
                 case TypeCode.Byte:
                     memory = new byte[1];
                     memory[0] = Convert.ToByte(write);
@@ -190,9 +182,17 @@ namespace Memory
                     memory[1] = (byte)(Convert.ToInt32(write) / 256);
                     size = 2;
                     break;
+                case TypeCode.Int32:
+                    memory = BitConverter.GetBytes(Convert.ToInt32(write));
+                    size = 4;
+                    break;
                 case TypeCode.Int64:
                     memory = BitConverter.GetBytes(Convert.ToInt64(write));
                     size = 8;
+                    break;
+                case TypeCode.Single:
+                    memory = BitConverter.GetBytes(Convert.ToSingle(write));
+                    size = 4;
                     break;
                 case TypeCode.Double:
                     memory = BitConverter.GetBytes(Convert.ToDouble(write));
