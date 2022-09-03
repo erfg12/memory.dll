@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Numerics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -99,43 +100,71 @@ namespace Memory
 
             if (theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
                 return false;
-    
-            switch (Type.GetTypeCode(typeof(T)))
+            Type type = typeof(T);
+            switch (true)
             {
-                case TypeCode.Single:
-                    memory = BitConverter.GetBytes(Convert.ToSingle(write));
-                    size = 4;
-                    break;
-                case TypeCode.Int32:
-                    memory = BitConverter.GetBytes(Convert.ToInt32(write));
-                    size = 4;
-                    break;
-                case TypeCode.Byte:
+                case true when type == typeof(byte):
                     memory = new byte[1];
                     memory[0] = Convert.ToByte(write);
                     size = 1;
                     break;
-                case TypeCode.Int16:
-                    memory = new byte[2];
-                    memory[0] = (byte)(Convert.ToInt32(write) % 256);
-                    memory[1] = (byte)(Convert.ToInt32(write) / 256);
+                case true when type == typeof(short):
+                    memory = BitConverter.GetBytes(Convert.ToInt16(write));
                     size = 2;
                     break;
-                case TypeCode.Int64:
+                case true when type == typeof(int):
+                    memory = BitConverter.GetBytes(Convert.ToInt32(write));
+                    size = 4;
+                    break;
+                case true when type == typeof(long):
                     memory = BitConverter.GetBytes(Convert.ToInt64(write));
                     size = 8;
                     break;
-                case TypeCode.Double:
+                case true when type == typeof(float):
+                    memory = BitConverter.GetBytes(Convert.ToSingle(write));
+                    size = 4;
+                    break;
+                case true when type == typeof(double):
                     memory = BitConverter.GetBytes(Convert.ToDouble(write));
                     size = 8;
                     break;
-                case TypeCode.String:
+                case true when type == typeof(Vector2):
+                    memory = new byte[8];
+                    byte[] sex = BitConverter.GetBytes(((Vector2)Convert.ChangeType(write, type)).X);
+                    byte[] gay = BitConverter.GetBytes(((Vector2)Convert.ChangeType(write, type)).Y);
+                    Array.Copy(sex, 0, memory, 0, 4);
+                    Array.Copy(gay, 0, memory, 4, 4);
+                    size = 8;
+                    break;
+                case true when type == typeof(Vector3):
+                    memory = new byte[12];
+                    byte[] x = BitConverter.GetBytes(((Vector3)Convert.ChangeType(write, typeof(T))).X);
+                    byte[] y = BitConverter.GetBytes(((Vector3)Convert.ChangeType(write, typeof(T))).Y);
+                    byte[] z = BitConverter.GetBytes(((Vector3)Convert.ChangeType(write, typeof(T))).Z);
+                    Array.Copy(x, 0, memory, 0, 4);
+                    Array.Copy(y, 0, memory, 4, 4);
+                    Array.Copy(z, 0, memory, 8, 4);
+                    size = 12;
+                    break;
+                case true when type == typeof(Vector4):
+                    memory = new byte[16];
+                    byte[] ecks = BitConverter.GetBytes(((Vector4)Convert.ChangeType(write, typeof(T))).X);
+                    byte[] why = BitConverter.GetBytes(((Vector4)Convert.ChangeType(write, typeof(T))).Y);
+                    byte[] zee = BitConverter.GetBytes(((Vector4)Convert.ChangeType(write, typeof(T))).Z);
+                    byte[] w = BitConverter.GetBytes(((Vector4)Convert.ChangeType(write, typeof(T))).W);
+                    Array.Copy(ecks, 0, memory, 0, 4);
+                    Array.Copy(why, 0, memory, 4, 4);
+                    Array.Copy(zee, 0, memory, 8, 4);
+                    Array.Copy(w, 0, memory, 12, 4);
+                    size = 12;
+                    break;
+                case true when type == typeof(string):
                     memory = stringEncoding == null
                         ? Encoding.UTF8.GetBytes(Convert.ToString(write)!)
                         : stringEncoding.GetBytes(Convert.ToString(write)!);
                     size = memory.Length;
                     break;
-                case TypeCode.Object: //assume it's a byte array because it probably is
+                case true when type == typeof(byte[]): //assume it's a byte array because it probably is
                     byte[] bytes = (byte[])Convert.ChangeType(write, typeof(T));
                     int c = bytes.Length;
                     memory = new byte[c];
@@ -168,43 +197,71 @@ namespace Memory
 
             if (address + LoadIntCode(code, file) == UIntPtr.Zero || (address + LoadIntCode(code, file)).ToUInt64() < 0x10000)
                 return false;
-    
-            switch (Type.GetTypeCode(typeof(T)))
+            Type type = typeof(T);
+            switch (true)
             {
-                case TypeCode.Byte:
+                case true when type == typeof(byte):
                     memory = new byte[1];
                     memory[0] = Convert.ToByte(write);
                     size = 1;
                     break;
-                case TypeCode.Int16:
-                    memory = new byte[2];
-                    memory[0] = (byte)(Convert.ToInt32(write) % 256);
-                    memory[1] = (byte)(Convert.ToInt32(write) / 256);
+                case true when type == typeof(short):
+                    memory = BitConverter.GetBytes(Convert.ToInt16(write));
                     size = 2;
                     break;
-                case TypeCode.Int32:
+                case true when type == typeof(int):
                     memory = BitConverter.GetBytes(Convert.ToInt32(write));
                     size = 4;
                     break;
-                case TypeCode.Int64:
+                case true when type == typeof(long):
                     memory = BitConverter.GetBytes(Convert.ToInt64(write));
                     size = 8;
                     break;
-                case TypeCode.Single:
+                case true when type == typeof(float):
                     memory = BitConverter.GetBytes(Convert.ToSingle(write));
                     size = 4;
                     break;
-                case TypeCode.Double:
+                case true when type == typeof(double):
                     memory = BitConverter.GetBytes(Convert.ToDouble(write));
                     size = 8;
                     break;
-                case TypeCode.String:
+                case true when type == typeof(Vector2):
+                    memory = new byte[8];
+                    byte[] sex = BitConverter.GetBytes(((Vector2)Convert.ChangeType(write, type)).X);
+                    byte[] gay = BitConverter.GetBytes(((Vector2)Convert.ChangeType(write, type)).Y);
+                    Array.Copy(sex, 0, memory, 0, 4);
+                    Array.Copy(gay, 0, memory, 4, 4);
+                    size = 8;
+                    break;
+                case true when type == typeof(Vector3):
+                    memory = new byte[12];
+                    byte[] x = BitConverter.GetBytes(((Vector3)Convert.ChangeType(write, typeof(T))).X);
+                    byte[] y = BitConverter.GetBytes(((Vector3)Convert.ChangeType(write, typeof(T))).Y);
+                    byte[] z = BitConverter.GetBytes(((Vector3)Convert.ChangeType(write, typeof(T))).Z);
+                    Array.Copy(x, 0, memory, 0, 4);
+                    Array.Copy(y, 0, memory, 4, 4);
+                    Array.Copy(z, 0, memory, 8, 4);
+                    size = 12;
+                    break;
+                case true when type == typeof(Vector4):
+                    memory = new byte[16];
+                    byte[] ecks = BitConverter.GetBytes(((Vector4)Convert.ChangeType(write, typeof(T))).X);
+                    byte[] why = BitConverter.GetBytes(((Vector4)Convert.ChangeType(write, typeof(T))).Y);
+                    byte[] zee = BitConverter.GetBytes(((Vector4)Convert.ChangeType(write, typeof(T))).Z);
+                    byte[] w = BitConverter.GetBytes(((Vector4)Convert.ChangeType(write, typeof(T))).W);
+                    Array.Copy(ecks, 0, memory, 0, 4);
+                    Array.Copy(why, 0, memory, 4, 4);
+                    Array.Copy(zee, 0, memory, 8, 4);
+                    Array.Copy(w, 0, memory, 12, 4);
+                    size = 12;
+                    break;
+                case true when type == typeof(string):
                     memory = stringEncoding == null
                         ? Encoding.UTF8.GetBytes(Convert.ToString(write)!)
                         : stringEncoding.GetBytes(Convert.ToString(write)!);
                     size = memory.Length;
                     break;
-                case TypeCode.Object: //assume it's a byte array because it probably is
+                case true when type == typeof(byte[]): //assume it's a byte array because it probably is
                     byte[] bytes = (byte[])Convert.ChangeType(write, typeof(T));
                     int c = bytes.Length;
                     memory = new byte[c];

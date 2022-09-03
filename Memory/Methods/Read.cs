@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Numerics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -367,6 +368,48 @@ namespace Memory
             return ret;
 
         }
+        
+        public Vector2 ReadVector2(string code, string file = "")
+        {
+            byte[] memory = new byte[8];
+
+            UIntPtr theCode = GetCode(code, file);
+            if (theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return new Vector2();
+
+            if (!ReadProcessMemory(MProc.Handle, theCode, memory, (UIntPtr)8, IntPtr.Zero))
+                return new Vector2();
+
+            return new Vector2(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4));
+        }
+        
+        public Vector3 ReadVector3(string code, string file = "")
+        {
+            byte[] memory = new byte[12];
+
+            UIntPtr theCode = GetCode(code, file);
+            if (theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return new Vector3();
+
+            if (!ReadProcessMemory(MProc.Handle, theCode, memory, (UIntPtr)12, IntPtr.Zero))
+                return new Vector3();
+
+            return new Vector3(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4), BitConverter.ToSingle(memory, 8));
+        }
+        
+        public Vector4 ReadVector4(string code, string file = "")
+        {
+            byte[] memory = new byte[16];
+
+            UIntPtr theCode = GetCode(code, file);
+            if (theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
+                return new Vector4();
+
+            if (!ReadProcessMemory(MProc.Handle, theCode, memory, (UIntPtr)16, IntPtr.Zero))
+                return new Vector4();
+
+            return new Vector4(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4), BitConverter.ToSingle(memory, 8), BitConverter.ToSingle(memory, 12));
+        }
 
         public int ReadByte(UIntPtr address, string code, string file = "")
         {
@@ -374,6 +417,33 @@ namespace Memory
             return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)1, IntPtr.Zero)
                 ? BitConverter.ToInt32(memory, 0)
                 : 0;
+        }
+        
+        public Vector2 ReadVector2(UIntPtr address, string code, string file = "")
+        {
+            byte[] memory = new byte[8];
+            if (!ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)8, IntPtr.Zero))
+                return new Vector2();
+
+            return new Vector2(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4));
+        }
+        
+        public Vector3 ReadVector3(UIntPtr address, string code, string file = "")
+        {
+            byte[] memory = new byte[12];
+            if (!ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)12, IntPtr.Zero))
+                return new Vector3();
+
+            return new Vector3(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4), BitConverter.ToSingle(memory, 8));
+        }
+        
+        public Vector4 ReadVector4(UIntPtr address, string code, string file = "")
+        {
+            byte[] memory = new byte[16];
+            if (!ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)16, IntPtr.Zero))
+                return new Vector4();
+
+            return new Vector4(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4), BitConverter.ToSingle(memory, 8), BitConverter.ToSingle(memory, 12));
         }
 
         public float ReadFloat(UIntPtr address, string code, string file = "", bool round = false)
@@ -383,7 +453,14 @@ namespace Memory
                     IntPtr.Zero)) return 0;
             float spawn = BitConverter.ToSingle(memory, 0);
             return round ? (float)Math.Round(spawn, 2) : spawn;
-
+        }
+        
+        public byte[] ReadBytes(UIntPtr address, string code, int length = 4, string file = "")
+        {
+            byte[] memory = new byte[length];
+            if (!ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)length,
+                    IntPtr.Zero)) return new byte[0];
+            return memory;
         }
 
         public int ReadInt(UIntPtr address, string code, string file = "")
@@ -456,18 +533,22 @@ namespace Memory
 
         public T ReadMemory<T>(string address, string file = "")
         {
-            object readOutput = Type.GetTypeCode(typeof(T)) switch
+            Type type = typeof(T);
+            object readOutput = true switch
             {
-                TypeCode.Byte => ReadByte(address, file),
-                TypeCode.Int16 => ReadShort(address, file),
-                TypeCode.Int32 => ReadInt(address, file),
-                TypeCode.Int64 => ReadLong(address, file),
-                TypeCode.UInt16 => ReadUShort(address, file),
-                TypeCode.UInt32 => ReadUInt(address, file),
-                TypeCode.UInt64 => ReadULong(address, file),
-                TypeCode.Single => ReadFloat(address, file),
-                TypeCode.Double => ReadDouble(address, file),
-                TypeCode.String => ReadString(address, file),
+                true when type == typeof(byte) => ReadByte(address, file),
+                true when type == typeof(short) => ReadShort(address, file),
+                true when type == typeof(int) => ReadInt(address, file),
+                true when type == typeof(long) => ReadLong(address, file),
+                true when type == typeof(ushort) => ReadUShort(address, file),
+                true when type == typeof(uint) => ReadUInt(address, file),
+                true when type == typeof(ulong) => ReadULong(address, file),
+                true when type == typeof(float) => ReadFloat(address, file),
+                true when type == typeof(double) => ReadDouble(address, file),
+                true when type == typeof(Vector2) => ReadVector2(address, file),
+                true when type == typeof(Vector3) => ReadVector3(address, file),
+                true when type == typeof(Vector4) => ReadVector4(address, file),
+                true when type == typeof(string) => ReadString(address, file),
                 _ => null
             };
 
@@ -477,18 +558,22 @@ namespace Memory
         }
         public T ReadMemory<T>(UIntPtr address, string code, string file = "")
         {
-            object readOutput = Type.GetTypeCode(typeof(T)) switch
+            Type type = typeof(T);
+            object readOutput = true switch
             {
-                TypeCode.Byte => ReadByte(address, code, file),
-                TypeCode.Int16 => ReadShort(address, code, file),
-                TypeCode.Int32 => ReadInt(address, code, file),
-                TypeCode.Int64 => ReadLong(address, code, file),
-                TypeCode.UInt16 => ReadUShort(address, code, file),
-                TypeCode.UInt32 => ReadUInt(address, code, file),
-                TypeCode.UInt64 => ReadULong(address, code, file),
-                TypeCode.Single => ReadFloat(address, code, file),
-                TypeCode.Double => ReadDouble(address, code, file),
-                TypeCode.String => ReadString(address, code, file),
+                true when type == typeof(byte) => ReadByte(address, code, file),
+                true when type == typeof(short) => ReadShort(address, code, file),
+                true when type == typeof(int) => ReadInt(address, code, file),
+                true when type == typeof(long) => ReadLong(address, code, file),
+                true when type == typeof(ushort) => ReadUShort(address, code, file),
+                true when type == typeof(uint) => ReadUInt(address, code, file),
+                true when type == typeof(ulong) => ReadULong(address, code, file),
+                true when type == typeof(float) => ReadFloat(address, code, file),
+                true when type == typeof(double) => ReadDouble(address, code, file),
+                true when type == typeof(Vector2) => ReadVector2(address, code, file),
+                true when type == typeof(Vector3) => ReadVector3(address, code, file),
+                true when type == typeof(Vector4) => ReadVector4(address, code, file),
+                true when type == typeof(string) => ReadString(address, code, file),
                 _ => null
             };
 
