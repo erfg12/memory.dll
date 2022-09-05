@@ -328,11 +328,14 @@ namespace Memory
 
             return VirtualProtectEx(MProc.Handle, theCode, (IntPtr)(MProc.Is64Bit ? 8 : 4), newProtection, out oldProtection);
         }
-        public bool ChangePProtection(UIntPtr address, string code, MemoryProtection newProtection, out MemoryProtection oldProtection, string file = "")
+        public bool ChangeProtection(UIntPtr address, string code, MemoryProtection newProtection, out MemoryProtection oldProtection, string file = "")
         {
-            if (address + LoadIntCode(code, file) != UIntPtr.Zero
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            if (addy != UIntPtr.Zero
                 && MProc.Handle != IntPtr.Zero)
-                return VirtualProtectEx(MProc.Handle, address + LoadIntCode(code, file),
+                return VirtualProtectEx(MProc.Handle, addy,
                     (IntPtr)(MProc.Is64Bit ? 8 : 4), newProtection, out oldProtection);
             oldProtection = default;
             return false;

@@ -103,6 +103,11 @@ namespace Memory
             Type type = typeof(T);
             switch (true)
             {
+                case true when type == typeof(bool):
+                    memory = new byte[1];
+                    memory[0] = Convert.ToByte(write);
+                    size = 1;
+                    break;
                 case true when type == typeof(byte):
                     memory = new byte[1];
                     memory[0] = Convert.ToByte(write);
@@ -200,6 +205,11 @@ namespace Memory
             Type type = typeof(T);
             switch (true)
             {
+                case true when type == typeof(bool):
+                    memory = new byte[1];
+                    memory[0] = Convert.ToByte(write);
+                    size = 1;
+                    break;
                 case true when type == typeof(byte):
                     memory = new byte[1];
                     memory[0] = Convert.ToByte(write);
@@ -277,11 +287,17 @@ namespace Memory
 //address + LoadIntCode(code, file)
             //Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:" + theCode + "] " + String.Join(",", memory) + Environment.NewLine);
             MemoryProtection oldMemProt = 0x00;
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            
             if (removeWriteProtection)
-                ChangePProtection(address, code, MemoryProtection.ExecuteReadWrite, out oldMemProt, file); // change protection
-            bool writeProcMem = WriteProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)size, IntPtr.Zero);
+                ChangeProtection(address, code, MemoryProtection.ExecuteReadWrite, out oldMemProt, file); // change protection
+            
+            bool writeProcMem = WriteProcessMemory(MProc.Handle, addy, memory, (UIntPtr)size, IntPtr.Zero);
+            
             if (removeWriteProtection)
-                ChangePProtection(address, code, oldMemProt, out _, file); // restore
+                ChangeProtection(address, code, oldMemProt, out _, file); // restore
             
             return writeProcMem;
         }
