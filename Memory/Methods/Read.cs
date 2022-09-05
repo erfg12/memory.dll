@@ -411,22 +411,22 @@ namespace Memory
             return new(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4), BitConverter.ToSingle(memory, 8), BitConverter.ToSingle(memory, 12));
         }
 
-        public byte ReadByte(UIntPtr address, string code, string file = "")
+        public byte ReadByte(UIntPtr address, string offsets, string file = "")
         {
             byte[] memory = new byte[1];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)1, IntPtr.Zero)
                 ? memory[0]
                 : (byte)0;
         }
         
-        public Vector2 ReadVector2(UIntPtr address, string code, string file = "")
+        public Vector2 ReadVector2(UIntPtr address, string offsets, string file = "")
         {
             byte[] memory = new byte[8];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             if (!ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8, IntPtr.Zero))
                 return new();
@@ -434,11 +434,11 @@ namespace Memory
             return new(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4));
         }
         
-        public Vector3 ReadVector3(UIntPtr address, string code, string file = "")
+        public Vector3 ReadVector3(UIntPtr address, string offsets, string file = "")
         {
             byte[] memory = new byte[12];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)12, IntPtr.Zero)
                 ? new(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4),
@@ -446,11 +446,11 @@ namespace Memory
                 : new();
         }
         
-        public Vector4 ReadVector4(UIntPtr address, string code, string file = "")
+        public Vector4 ReadVector4(UIntPtr address, string offsets, string file = "")
         {
             byte[] memory = new byte[16];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)16, IntPtr.Zero)
                 ? new Vector4()
@@ -458,11 +458,11 @@ namespace Memory
                     BitConverter.ToSingle(memory, 8), BitConverter.ToSingle(memory, 12));
         }
 
-        public float ReadFloat(UIntPtr address, string code, string file = "", bool round = false)
+        public float ReadFloat(UIntPtr address, string offsets, string file = "", bool round = false)
         {
             byte[] memory = new byte[4];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             if (!ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)4,
                     IntPtr.Zero)) return 0;
@@ -470,11 +470,11 @@ namespace Memory
             return round ? (float)Math.Round(spawn, 2) : spawn;
         }
         
-        public byte[] ReadBytes(UIntPtr address, string code, int length = 4, string file = "")
+        public byte[] ReadBytes(UIntPtr address, string offsets, int length = 4, string file = "")
         {
             byte[] memory = new byte[length];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)length,
                 IntPtr.Zero)
@@ -482,22 +482,22 @@ namespace Memory
                 : Array.Empty<byte>();
         }
 
-        public int ReadInt(UIntPtr address, string code, string file = "")
+        public int ReadInt(UIntPtr address, string offsets, string file = "")
         {
             byte[] memory = new byte[4];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)4, IntPtr.Zero)
                 ? BitConverter.ToInt32(memory, 0)
                 : 0;
         }
 
-        public string ReadString(UIntPtr address, string code, string file = "")
+        public string ReadString(UIntPtr address, string offsets, string file = "")
         {
             byte[] memoryNormal = new byte[32];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memoryNormal, (UIntPtr)32,
                 IntPtr.Zero)
@@ -505,22 +505,22 @@ namespace Memory
                 : "";
         }
         
-        public long ReadLong(UIntPtr address, string code, string file = "")
+        public long ReadLong(UIntPtr address, string offsets, string file = "")
         {
             byte[] memory = new byte[8];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8, IntPtr.Zero)
                 ? BitConverter.ToInt64(memory, 0)
                 : 0;
         }
         
-        public short ReadShort(UIntPtr address, string code, string file = "")
+        public short ReadShort(UIntPtr address, string offsets, string file = "")
         {
             byte[] memoryTiny = new byte[4];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memoryTiny, (UIntPtr)2,
                 IntPtr.Zero)
@@ -528,11 +528,11 @@ namespace Memory
                 : (short)0;
         }
 
-        public double ReadDouble(UIntPtr address, string code, string file = "", bool round = false)
+        public double ReadDouble(UIntPtr address, string offsets, string file = "", bool round = false)
         {
             byte[] memory = new byte[8];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             if (!ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8,
                     IntPtr.Zero)) return 0;
@@ -540,33 +540,33 @@ namespace Memory
             return round ? Math.Round(spawn, 2) : spawn;
         }
         
-        public uint ReadUInt(UIntPtr address, string code, string file = "")
+        public uint ReadUInt(UIntPtr address, string offsets, string file = "")
         {
             byte[] memory = new byte[4];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8, IntPtr.Zero)
                 ? BitConverter.ToUInt32(memory, 0)
                 : 0;
         }
         
-        public ulong ReadULong(UIntPtr address, string code, string file = "")
+        public ulong ReadULong(UIntPtr address, string offsets, string file = "")
         {
             byte[] memory = new byte[8];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8, IntPtr.Zero)
                 ? BitConverter.ToUInt64(memory, 0)
                 : 0;
         }
         
-        public ushort ReadUShort(UIntPtr address, string code, string file = "")
+        public ushort ReadUShort(UIntPtr address, string offsets, string file = "")
         {
             byte[] memoryTiny = new byte[4];
-            UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + code, file)
+            UIntPtr addy = offsets != ""
+                ? GetCode(address.ToString("X") + offsets, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memoryTiny, (UIntPtr)2,
                 IntPtr.Zero)
@@ -630,7 +630,7 @@ namespace Memory
         /// <summary>
         /// Reads a memory address, keeps value in UI object. Ex: BindToUI("0x12345678,0x02,0x05", v => ObjName.Invoke((MethodInvoker)delegate { if (String.Compare(v, ObjName.Text) != 0) { ObjName.Text = v; } }));
         /// </summary>
-        /// <param name="address">Your code or INI file variable name</param>
+        /// <param name="address">Your offsets or INI file variable name</param>
         /// <param name="uiObject">Returning variable to bind to UI object. See example in summary.</param>
         /// <param name="file">OPTIONAL: INI file path and file name with extension</param>
         public void BindToUi(string address, Action<string> uiObject, string file = "")
