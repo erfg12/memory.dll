@@ -415,7 +415,7 @@ namespace Memory
         {
             byte[] memory = new byte[1];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)1, IntPtr.Zero)
                 ? memory[0]
@@ -426,7 +426,7 @@ namespace Memory
         {
             byte[] memory = new byte[8];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             if (!ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8, IntPtr.Zero))
                 return new();
@@ -438,7 +438,7 @@ namespace Memory
         {
             byte[] memory = new byte[12];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)12, IntPtr.Zero)
                 ? new(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4),
@@ -450,7 +450,7 @@ namespace Memory
         {
             byte[] memory = new byte[16];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)16, IntPtr.Zero)
                 ? new Vector4()
@@ -462,7 +462,7 @@ namespace Memory
         {
             byte[] memory = new byte[4];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             if (!ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)4,
                     IntPtr.Zero)) return 0;
@@ -474,7 +474,7 @@ namespace Memory
         {
             byte[] memory = new byte[length];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)length,
                 IntPtr.Zero)
@@ -486,7 +486,7 @@ namespace Memory
         {
             byte[] memory = new byte[4];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)4, IntPtr.Zero)
                 ? BitConverter.ToInt32(memory, 0)
@@ -497,7 +497,7 @@ namespace Memory
         {
             byte[] memoryNormal = new byte[32];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memoryNormal, (UIntPtr)32,
                 IntPtr.Zero)
@@ -509,7 +509,7 @@ namespace Memory
         {
             byte[] memory = new byte[8];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8, IntPtr.Zero)
                 ? BitConverter.ToInt64(memory, 0)
@@ -520,7 +520,7 @@ namespace Memory
         {
             byte[] memoryTiny = new byte[4];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memoryTiny, (UIntPtr)2,
                 IntPtr.Zero)
@@ -532,7 +532,7 @@ namespace Memory
         {
             byte[] memory = new byte[8];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             if (!ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8,
                     IntPtr.Zero)) return 0;
@@ -544,7 +544,7 @@ namespace Memory
         {
             byte[] memory = new byte[4];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8, IntPtr.Zero)
                 ? BitConverter.ToUInt32(memory, 0)
@@ -555,7 +555,7 @@ namespace Memory
         {
             byte[] memory = new byte[8];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8, IntPtr.Zero)
                 ? BitConverter.ToUInt64(memory, 0)
@@ -566,7 +566,7 @@ namespace Memory
         {
             byte[] memoryTiny = new byte[4];
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             return ReadProcessMemory(MProc.Handle, addy, memoryTiny, (UIntPtr)2,
                 IntPtr.Zero)

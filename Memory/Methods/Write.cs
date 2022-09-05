@@ -288,7 +288,7 @@ namespace Memory
             //Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:" + theCode + "] " + String.Join(",", memory) + Environment.NewLine);
             MemoryProtection oldMemProt = 0x00;
             UIntPtr addy = code != ""
-                ? GetCode(address.ToString("X") + "," + code, file)
+                ? GetCode(address.ToString("X") + code, file)
                 : address;
             
             if (removeWriteProtection)
