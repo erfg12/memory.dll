@@ -360,7 +360,7 @@ namespace Memory
 
 
             if (!BitConverter.IsLittleEndian)
-                throw new Exception("Should be little endian");
+                throw new("Should be little endian");
 
             for (int i = 0; i < 8; i++)
                 ret[i] = Convert.ToBoolean(buf[0] & (1 << i));
@@ -375,12 +375,12 @@ namespace Memory
 
             UIntPtr theCode = GetCode(code, file);
             if (theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
-                return new Vector2();
+                return new();
 
             if (!ReadProcessMemory(MProc.Handle, theCode, memory, (UIntPtr)8, IntPtr.Zero))
-                return new Vector2();
+                return new();
 
-            return new Vector2(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4));
+            return new(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4));
         }
         
         public Vector3 ReadVector3(string code, string file = "")
@@ -389,12 +389,12 @@ namespace Memory
 
             UIntPtr theCode = GetCode(code, file);
             if (theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
-                return new Vector3();
+                return new();
 
             if (!ReadProcessMemory(MProc.Handle, theCode, memory, (UIntPtr)12, IntPtr.Zero))
-                return new Vector3();
+                return new();
 
-            return new Vector3(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4), BitConverter.ToSingle(memory, 8));
+            return new(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4), BitConverter.ToSingle(memory, 8));
         }
         
         public Vector4 ReadVector4(string code, string file = "")
@@ -403,53 +403,68 @@ namespace Memory
 
             UIntPtr theCode = GetCode(code, file);
             if (theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
-                return new Vector4();
+                return new();
 
             if (!ReadProcessMemory(MProc.Handle, theCode, memory, (UIntPtr)16, IntPtr.Zero))
-                return new Vector4();
+                return new();
 
-            return new Vector4(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4), BitConverter.ToSingle(memory, 8), BitConverter.ToSingle(memory, 12));
+            return new(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4), BitConverter.ToSingle(memory, 8), BitConverter.ToSingle(memory, 12));
         }
 
-        public int ReadByte(UIntPtr address, string code, string file = "")
+        public byte ReadByte(UIntPtr address, string code, string file = "")
         {
-            byte[] memory = new byte[4];
-            return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)1, IntPtr.Zero)
-                ? BitConverter.ToInt32(memory, 0)
-                : 0;
+            byte[] memory = new byte[1];
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)1, IntPtr.Zero)
+                ? memory[0]
+                : (byte)0;
         }
         
         public Vector2 ReadVector2(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[8];
-            if (!ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)8, IntPtr.Zero))
-                return new Vector2();
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            if (!ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8, IntPtr.Zero))
+                return new();
 
-            return new Vector2(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4));
+            return new(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4));
         }
         
         public Vector3 ReadVector3(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[12];
-            if (!ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)12, IntPtr.Zero))
-                return new Vector3();
-
-            return new Vector3(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4), BitConverter.ToSingle(memory, 8));
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)12, IntPtr.Zero)
+                ? new(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4),
+                    BitConverter.ToSingle(memory, 8))
+                : new();
         }
         
         public Vector4 ReadVector4(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[16];
-            if (!ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)16, IntPtr.Zero))
-                return new Vector4();
-
-            return new Vector4(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4), BitConverter.ToSingle(memory, 8), BitConverter.ToSingle(memory, 12));
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)16, IntPtr.Zero)
+                ? new Vector4()
+                : new Vector4(BitConverter.ToSingle(memory, 0), BitConverter.ToSingle(memory, 4),
+                    BitConverter.ToSingle(memory, 8), BitConverter.ToSingle(memory, 12));
         }
 
         public float ReadFloat(UIntPtr address, string code, string file = "", bool round = false)
         {
             byte[] memory = new byte[4];
-            if (!ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)4,
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            if (!ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)4,
                     IntPtr.Zero)) return 0;
             float spawn = BitConverter.ToSingle(memory, 0);
             return round ? (float)Math.Round(spawn, 2) : spawn;
@@ -458,15 +473,22 @@ namespace Memory
         public byte[] ReadBytes(UIntPtr address, string code, int length = 4, string file = "")
         {
             byte[] memory = new byte[length];
-            if (!ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)length,
-                    IntPtr.Zero)) return new byte[0];
-            return memory;
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)length,
+                IntPtr.Zero)
+                ? memory
+                : Array.Empty<byte>();
         }
 
         public int ReadInt(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[4];
-            return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)4, IntPtr.Zero)
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)4, IntPtr.Zero)
                 ? BitConverter.ToInt32(memory, 0)
                 : 0;
         }
@@ -474,7 +496,10 @@ namespace Memory
         public string ReadString(UIntPtr address, string code, string file = "")
         {
             byte[] memoryNormal = new byte[32];
-            return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memoryNormal, (UIntPtr)32,
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            return ReadProcessMemory(MProc.Handle, addy, memoryNormal, (UIntPtr)32,
                 IntPtr.Zero)
                 ? CutString(Encoding.ASCII.GetString(memoryNormal))
                 : "";
@@ -483,7 +508,10 @@ namespace Memory
         public long ReadLong(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[8];
-            return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)8, IntPtr.Zero)
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8, IntPtr.Zero)
                 ? BitConverter.ToInt64(memory, 0)
                 : 0;
         }
@@ -491,7 +519,10 @@ namespace Memory
         public short ReadShort(UIntPtr address, string code, string file = "")
         {
             byte[] memoryTiny = new byte[4];
-            return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memoryTiny, (UIntPtr)2,
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            return ReadProcessMemory(MProc.Handle, addy, memoryTiny, (UIntPtr)2,
                 IntPtr.Zero)
                 ? BitConverter.ToInt16(memoryTiny, 0)
                 : (short)0;
@@ -500,7 +531,10 @@ namespace Memory
         public double ReadDouble(UIntPtr address, string code, string file = "", bool round = false)
         {
             byte[] memory = new byte[8];
-            if (!ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)8,
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            if (!ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8,
                     IntPtr.Zero)) return 0;
             double spawn = BitConverter.ToDouble(memory, 0);
             return round ? Math.Round(spawn, 2) : spawn;
@@ -509,7 +543,10 @@ namespace Memory
         public uint ReadUInt(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[4];
-            return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)8, IntPtr.Zero)
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8, IntPtr.Zero)
                 ? BitConverter.ToUInt32(memory, 0)
                 : 0;
         }
@@ -517,7 +554,10 @@ namespace Memory
         public ulong ReadULong(UIntPtr address, string code, string file = "")
         {
             byte[] memory = new byte[8];
-            return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memory, (UIntPtr)8, IntPtr.Zero)
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            return ReadProcessMemory(MProc.Handle, addy, memory, (UIntPtr)8, IntPtr.Zero)
                 ? BitConverter.ToUInt64(memory, 0)
                 : 0;
         }
@@ -525,7 +565,10 @@ namespace Memory
         public ushort ReadUShort(UIntPtr address, string code, string file = "")
         {
             byte[] memoryTiny = new byte[4];
-            return ReadProcessMemory(MProc.Handle, address + LoadIntCode(code, file), memoryTiny, (UIntPtr)2,
+            UIntPtr addy = code != ""
+                ? GetCode(address.ToString("X") + "," + code, file)
+                : address;
+            return ReadProcessMemory(MProc.Handle, addy, memoryTiny, (UIntPtr)2,
                 IntPtr.Zero)
                 ? BitConverter.ToUInt16(memoryTiny, 0)
                 : (ushort)0;
@@ -561,6 +604,7 @@ namespace Memory
             Type type = typeof(T);
             object readOutput = true switch
             {
+                true when type == typeof(bool) => ReadByte(address, code, file) != 0,
                 true when type == typeof(byte) => ReadByte(address, code, file),
                 true when type == typeof(short) => ReadShort(address, code, file),
                 true when type == typeof(int) => ReadInt(address, code, file),
