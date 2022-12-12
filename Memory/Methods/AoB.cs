@@ -12,47 +12,7 @@ namespace Memory
 {
     public partial class Mem
     {
-        /// <summary>
-        /// Change value Array of byte to found address.
-        /// </summary>
-        /// <param name="search">array of bytes to search for, OR your ini code label.</param>
-        /// <param name="changevalue">change array of bytes to found address.</param>
-        /// <param name="isWriteSingleResult">Write value to first found address.</param>
-        /// <param name="file">ini file (OPTIONAL)</param>
-        /// <param name="readable">Include readable addresses in scan</param>
-        /// <param name="writeable">Include writeable addresses in scan</param>
-        /// <param name="executable">Include executable addresses in scan</param>
-        /// <returns>IEnumerable of all addresses found.</returns>
-        public async void AoBChange(string search, string changevalue, bool isWriteSingleResult = false, bool readable = false, bool writeable = true, bool executable = false, string file = "")
-        {
-            // AoB scan and store it in AoBScanResults. We specify our start and end address regions to decrease scan time.
-            IEnumerable<long> AoBScanResults = await AoBScan(search, readable, writeable, executable, file);
-
-            // get the first found address, store it in the variable SingleAoBScanResult
-            long SingleAoBScanResult = AoBScanResults.FirstOrDefault();
-
-            if (AoBScanResults.LongCount() > 0)
-            {
-                if (isWriteSingleResult)
-                {
-                    // write to our first found address - https://github.com/erfg12/memory.dll/wiki/writeMemory
-                    WriteMemory(SingleAoBScanResult.ToString("X"), "bytes", changevalue);
-                }
-                // iterate through each found address.
-                foreach (long result in AoBScanResults)
-                {
-                    // This prints each address in the debug console in Visual Studio.
-                    LogOutput.DebugWriteLine("I found the address {0} in the AoB scan.", result);
-
-                    if (!isWriteSingleResult)
-                    {
-                        // write to all our found address
-                        WriteMemory(result.ToString("X"), "bytes", changevalue);
-                    }
-                }
-            }
-        }
-
+        
         /// <summary>
         /// Change value Array of byte to found address.
         /// </summary>
@@ -94,7 +54,7 @@ namespace Memory
                 foreach (long result in AoBScanResults)
                 {
                     // This prints each address in the debug console in Visual Studio.
-                    LogOutput.DebugWriteLine("I found the address {0} in the AoB scan.", result);
+                    Debug.WriteLine("found the address {0} in the AoB scan.", result);
 
                     if (!isWriteSingleResult)
                     {
@@ -107,50 +67,6 @@ namespace Memory
                         {
                             WriteMemory(result.ToString("X"), type, changevalue);
                         }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Change value Array of byte to found address.
-        /// </summary>
-        /// <param name="start">Your starting address.</param>
-        /// <param name="end">ending address.</param>
-        /// <param name="search">array of bytes to search for, OR your ini code label.</param>
-        /// <param name="changevalue">change array of bytes to found address.</param>
-        /// <param name="isWriteSingleResult">Write value to first found address.</param>
-        /// <param name="file">ini file (OPTIONAL)</param>
-        /// <param name="readable">Include readable addresses in scan</param>
-        /// <param name="writeable">Include writeable addresses in scan</param>
-        /// <param name="executable">Include executable addresses in scan</param>
-        /// <param name="mapped">Include mapped addresses in scan</param>
-        /// <returns>IEnumerable of all addresses found.</returns>
-        public async void AoBChange(long start, long end, string search, string changevalue, bool isWriteSingleResult = false, bool readable = false, bool writeable = true, bool executable = false, bool mapped = false, string file = "")
-        {
-            // AoB scan and store it in AoBScanResults. We specify our start and end address regions to decrease scan time.
-            IEnumerable<long> AoBScanResults = await AoBScan(start, end, search, readable, writeable, executable, mapped, file);
-
-            // get the first found address, store it in the variable SingleAoBScanResult
-            long SingleAoBScanResult = AoBScanResults.FirstOrDefault();
-
-            if (AoBScanResults.LongCount() > 0)
-            {
-                if (isWriteSingleResult)
-                {
-                    // write to our first found address - https://github.com/erfg12/memory.dll/wiki/writeMemory
-                    WriteMemory(SingleAoBScanResult.ToString("X"), "bytes", changevalue);
-                }
-                // iterate through each found address.
-                foreach (long result in AoBScanResults)
-                {
-                    // This prints each address in the debug console in Visual Studio.
-                    LogOutput.DebugWriteLine("I found the address {0} in the AoB scan.", result);
-
-                    if (!isWriteSingleResult)
-                    {
-                        // write to all our found address
-                        WriteMemory(result.ToString("X"), "bytes", changevalue);
                     }
                 }
             }
@@ -199,7 +115,7 @@ namespace Memory
                 foreach (long result in AoBScanResults)
                 {
                     // This prints each address in the debug console in Visual Studio.
-                    LogOutput.DebugWriteLine("I found the address {0} in the AoB scan.", result);
+                    Debug.WriteLine("found the address {0} in the AoB scan.", result);
 
                     if (!isWriteSingleResult)
                     {
@@ -216,7 +132,6 @@ namespace Memory
                 }
             }
         }
-
 
         
         /// <summary>
