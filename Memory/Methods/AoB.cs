@@ -13,6 +13,190 @@ namespace Memory
     public partial class Mem
     {
         /// <summary>
+        /// Change value Array of byte to found address.
+        /// </summary>
+        /// <param name="search">array of bytes to search for, OR your ini code label.</param>
+        /// <param name="changevalue">change array of bytes to found address.</param>
+        /// <param name="isWriteSingleResult">Write value to first found address.</param>
+        public async void AoBChange(string search, string changevalue, bool isWriteSingleResult = false)
+        {
+            // AoB scan and store it in AoBScanResults. We specify our start and end address regions to decrease scan time.
+            IEnumerable<long> AoBScanResults = await AoBScan(search, false, true);
+
+            // get the first found address, store it in the variable SingleAoBScanResult
+            long SingleAoBScanResult = AoBScanResults.FirstOrDefault();
+
+            if (AoBScanResults.LongCount() > 0)
+            {
+                if (isWriteSingleResult)
+                {
+                    // write to our first found address - https://github.com/erfg12/memory.dll/wiki/writeMemory
+                    WriteMemory(SingleAoBScanResult.ToString("X"), "bytes", changevalue);
+                }
+                // iterate through each found address.
+                foreach (long result in AoBScanResults)
+                {
+                    // This prints each address in the debug console in Visual Studio.
+                    Debug.WriteLine("found the address {0} in the AoB scan.", result);
+
+                    if (!isWriteSingleResult)
+                    {
+                        // write to all our found address
+                        WriteMemory(result.ToString("X"), "bytes", changevalue);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Change value Array of byte to found address.
+        /// </summary>
+        /// <param name="search">array of bytes to search for, OR your ini code label.</param>
+        /// <param name="type">byte, 2bytes, bytes, float, int, string, double or long.</param>
+        /// <param name="changevalue">change value (following type value) to found address.</param>
+        /// <param name="isWriteSingleResult">Write value to first found address.</param>
+        /// <param name="isFreezeValue">Value to freeze.</param>
+        public async void AoBChange(string search, string type, string changevalue, bool isWriteSingleResult = false, bool isFreezeValue = false)
+        {
+            // AoB scan and store it in AoBScanResults. We specify our start and end address regions to decrease scan time.
+            IEnumerable<long> AoBScanResults = await AoBScan(search, false, true);
+
+            // get the first found address, store it in the variable SingleAoBScanResult
+            long SingleAoBScanResult = AoBScanResults.FirstOrDefault();
+
+            if (AoBScanResults.LongCount() > 0)
+            {
+                if (isWriteSingleResult)
+                {
+                    // write to our first found address - https://github.com/erfg12/memory.dll/wiki/writeMemory
+                    if (isFreezeValue)
+                    {
+                        FreezeValue(SingleAoBScanResult.ToString("X"), type, changevalue);
+                    }
+                    else
+                    {
+                        WriteMemory(SingleAoBScanResult.ToString("X"), type, changevalue);
+                    }
+
+                }
+
+                // iterate through each found address.
+                foreach (long result in AoBScanResults)
+                {
+                    // This prints each address in the debug console in Visual Studio.
+                    Debug.WriteLine("found the address {0} in the AoB scan.", result);
+
+                    if (!isWriteSingleResult)
+                    {
+                        // write to all our found address
+                        if (isFreezeValue)
+                        {
+                            FreezeValue(result.ToString("X"), type, changevalue);
+                        }
+                        else
+                        {
+                            WriteMemory(result.ToString("X"), type, changevalue);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Change value Array of byte to found address.
+        /// </summary>
+        /// <param name="start">Your starting address.</param>
+        /// <param name="end">ending address.</param>
+        /// <param name="search">array of bytes to search for, OR your ini code label.</param>
+        /// <param name="changevalue">change array of bytes to found address.</param>
+        /// <param name="isWriteSingleResult">Write value to first found address.</param>
+        public async void AoBChange(long start, long end, string search, string changevalue, bool isWriteSingleResult = false)
+        {
+            // AoB scan and store it in AoBScanResults. We specify our start and end address regions to decrease scan time.
+            IEnumerable<long> AoBScanResults = await AoBScan(start, end, search, true);
+
+            // get the first found address, store it in the variable SingleAoBScanResult
+            long SingleAoBScanResult = AoBScanResults.FirstOrDefault();
+
+            if (AoBScanResults.LongCount() > 0)
+            {
+                if (isWriteSingleResult)
+                {
+                    // write to our first found address - https://github.com/erfg12/memory.dll/wiki/writeMemory
+                    WriteMemory(SingleAoBScanResult.ToString("X"), "bytes", changevalue);
+                }
+                // iterate through each found address.
+                foreach (long result in AoBScanResults)
+                {
+                    // This prints each address in the debug console in Visual Studio.
+                    Debug.WriteLine("found the address {0} in the AoB scan.", result);
+
+                    if (!isWriteSingleResult)
+                    {
+                        // write to all our found address
+                        WriteMemory(result.ToString("X"), "bytes", changevalue);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Change value Array of byte to found address.
+        /// </summary>
+        /// <param name="start">Your starting address.</param>
+        /// <param name="end">ending address.</param>
+        /// <param name="search">array of bytes to search for, OR your ini code label.</param>
+        /// <param name="type">byte, 2bytes, bytes, float, int, string, double or long.</param>
+        /// <param name="changevalue">change value (following type value) to found address.</param>
+        /// <param name="isWriteSingleResult">Write value to first found address.</param>
+        /// <param name="isFreezeValue">Value to freeze.</param>
+        public async void AoBChange(long start, long end, string search, string type, string changevalue, bool isWriteSingleResult = false, bool isFreezeValue = false)
+        {
+            // AoB scan and store it in AoBScanResults. We specify our start and end address regions to decrease scan time.
+            IEnumerable<long> AoBScanResults = await AoBScan(start, end, search, true);
+
+            // get the first found address, store it in the variable SingleAoBScanResult
+            long SingleAoBScanResult = AoBScanResults.FirstOrDefault();
+
+            if (AoBScanResults.LongCount() > 0)
+            {
+                if (isWriteSingleResult)
+                {
+                    // write to our first found address - https://github.com/erfg12/memory.dll/wiki/writeMemory
+                    if (isFreezeValue)
+                    {
+                        FreezeValue(SingleAoBScanResult.ToString("X"), type, changevalue);
+                    }
+                    else
+                    {
+                        WriteMemory(SingleAoBScanResult.ToString("X"), type, changevalue);
+                    }
+
+                }
+                // iterate through each found address.
+                foreach (long result in AoBScanResults)
+                {
+                    // This prints each address in the debug console in Visual Studio.
+                    Debug.WriteLine("found the address {0} in the AoB scan.", result);
+
+                    if (!isWriteSingleResult)
+                    {
+                        // write to all our found address
+                        if (isFreezeValue)
+                        {
+                            FreezeValue(result.ToString("X"), type, changevalue);
+                        }
+                        else
+                        {
+                            WriteMemory(result.ToString("X"), type, changevalue);
+                        }
+                    }
+                }
+            }
+        }
+
+        
+        /// <summary>
         /// Array of byte scan.
         /// </summary>
         /// <param name="search">array of bytes to search for, OR your ini code label.</param>
