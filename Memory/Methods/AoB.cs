@@ -18,10 +18,15 @@ namespace Memory
         /// <param name="search">array of bytes to search for, OR your ini code label.</param>
         /// <param name="changevalue">change array of bytes to found address.</param>
         /// <param name="isWriteSingleResult">Write value to first found address.</param>
-        public async void AoBChange(string search, string changevalue, bool isWriteSingleResult = false)
+        /// <param name="file">ini file (OPTIONAL)</param>
+        /// <param name="readable">Include readable addresses in scan</param>
+        /// <param name="writeable">Include writeable addresses in scan</param>
+        /// <param name="executable">Include executable addresses in scan</param>
+        /// <returns>IEnumerable of all addresses found.</returns>
+        public async void AoBChange(string search, string changevalue, bool isWriteSingleResult = false, bool readable = false, bool writeable = true, bool executable = false, string file = "")
         {
             // AoB scan and store it in AoBScanResults. We specify our start and end address regions to decrease scan time.
-            IEnumerable<long> AoBScanResults = await AoBScan(search, false, true);
+            IEnumerable<long> AoBScanResults = await AoBScan(search, readable, writeable, executable, file);
 
             // get the first found address, store it in the variable SingleAoBScanResult
             long SingleAoBScanResult = AoBScanResults.FirstOrDefault();
@@ -37,7 +42,7 @@ namespace Memory
                 foreach (long result in AoBScanResults)
                 {
                     // This prints each address in the debug console in Visual Studio.
-                    Debug.WriteLine("found the address {0} in the AoB scan.", result);
+                    LogOutput.DebugWriteLine("I found the address {0} in the AoB scan.", result);
 
                     if (!isWriteSingleResult)
                     {
@@ -56,10 +61,15 @@ namespace Memory
         /// <param name="changevalue">change value (following type value) to found address.</param>
         /// <param name="isWriteSingleResult">Write value to first found address.</param>
         /// <param name="isFreezeValue">Value to freeze.</param>
-        public async void AoBChange(string search, string type, string changevalue, bool isWriteSingleResult = false, bool isFreezeValue = false)
+        /// <param name="file">ini file (OPTIONAL)</param>
+        /// <param name="readable">Include readable addresses in scan</param>
+        /// <param name="writeable">Include writeable addresses in scan</param>
+        /// <param name="executable">Include executable addresses in scan</param>
+        /// <returns>IEnumerable of all addresses found.</returns>
+        public async void AoBChange(string search, string type, string changevalue, bool isWriteSingleResult = false, bool isFreezeValue = false, bool readable = false, bool writeable = true, bool executable = false, string file = "")
         {
             // AoB scan and store it in AoBScanResults. We specify our start and end address regions to decrease scan time.
-            IEnumerable<long> AoBScanResults = await AoBScan(search, false, true);
+            IEnumerable<long> AoBScanResults = await AoBScan(search, readable, writeable, executable, file);
 
             // get the first found address, store it in the variable SingleAoBScanResult
             long SingleAoBScanResult = AoBScanResults.FirstOrDefault();
@@ -84,7 +94,7 @@ namespace Memory
                 foreach (long result in AoBScanResults)
                 {
                     // This prints each address in the debug console in Visual Studio.
-                    Debug.WriteLine("found the address {0} in the AoB scan.", result);
+                    LogOutput.DebugWriteLine("I found the address {0} in the AoB scan.", result);
 
                     if (!isWriteSingleResult)
                     {
@@ -110,10 +120,16 @@ namespace Memory
         /// <param name="search">array of bytes to search for, OR your ini code label.</param>
         /// <param name="changevalue">change array of bytes to found address.</param>
         /// <param name="isWriteSingleResult">Write value to first found address.</param>
-        public async void AoBChange(long start, long end, string search, string changevalue, bool isWriteSingleResult = false)
+        /// <param name="file">ini file (OPTIONAL)</param>
+        /// <param name="readable">Include readable addresses in scan</param>
+        /// <param name="writeable">Include writeable addresses in scan</param>
+        /// <param name="executable">Include executable addresses in scan</param>
+        /// <param name="mapped">Include mapped addresses in scan</param>
+        /// <returns>IEnumerable of all addresses found.</returns>
+        public async void AoBChange(long start, long end, string search, string changevalue, bool isWriteSingleResult = false, bool readable = false, bool writeable = true, bool executable = false, bool mapped = false, string file = "")
         {
             // AoB scan and store it in AoBScanResults. We specify our start and end address regions to decrease scan time.
-            IEnumerable<long> AoBScanResults = await AoBScan(start, end, search, true);
+            IEnumerable<long> AoBScanResults = await AoBScan(start, end, search, readable, writeable, executable, mapped, file);
 
             // get the first found address, store it in the variable SingleAoBScanResult
             long SingleAoBScanResult = AoBScanResults.FirstOrDefault();
@@ -129,7 +145,7 @@ namespace Memory
                 foreach (long result in AoBScanResults)
                 {
                     // This prints each address in the debug console in Visual Studio.
-                    Debug.WriteLine("found the address {0} in the AoB scan.", result);
+                    LogOutput.DebugWriteLine("I found the address {0} in the AoB scan.", result);
 
                     if (!isWriteSingleResult)
                     {
@@ -150,10 +166,16 @@ namespace Memory
         /// <param name="changevalue">change value (following type value) to found address.</param>
         /// <param name="isWriteSingleResult">Write value to first found address.</param>
         /// <param name="isFreezeValue">Value to freeze.</param>
-        public async void AoBChange(long start, long end, string search, string type, string changevalue, bool isWriteSingleResult = false, bool isFreezeValue = false)
+        /// <param name="file">ini file (OPTIONAL)</param>
+        /// <param name="readable">Include readable addresses in scan</param>
+        /// <param name="writeable">Include writeable addresses in scan</param>
+        /// <param name="executable">Include executable addresses in scan</param>
+        /// <param name="mapped">Include mapped addresses in scan</param>
+        /// <returns>IEnumerable of all addresses found.</returns>
+        public async void AoBChange(long start, long end, string search, string type, string changevalue, bool isWriteSingleResult = false, bool isFreezeValue = false, bool readable = false, bool writeable = true, bool executable = false, bool mapped = false, string file = "")
         {
             // AoB scan and store it in AoBScanResults. We specify our start and end address regions to decrease scan time.
-            IEnumerable<long> AoBScanResults = await AoBScan(start, end, search, true);
+            IEnumerable<long> AoBScanResults = await AoBScan(start, end, search, readable, writeable, executable, mapped, file);
 
             // get the first found address, store it in the variable SingleAoBScanResult
             long SingleAoBScanResult = AoBScanResults.FirstOrDefault();
@@ -177,7 +199,7 @@ namespace Memory
                 foreach (long result in AoBScanResults)
                 {
                     // This prints each address in the debug console in Visual Studio.
-                    Debug.WriteLine("found the address {0} in the AoB scan.", result);
+                    LogOutput.DebugWriteLine("I found the address {0} in the AoB scan.", result);
 
                     if (!isWriteSingleResult)
                     {
@@ -194,6 +216,7 @@ namespace Memory
                 }
             }
         }
+
 
         
         /// <summary>
