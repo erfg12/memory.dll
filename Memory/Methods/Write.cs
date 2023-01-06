@@ -22,7 +22,7 @@ namespace Memory
         /// <param name="type">byte, 2bytes, bytes, float, int, string, double or long.</param>
         /// <param name="value">Value to freeze</param>
         /// <param name="file">ini file to read address from (OPTIONAL)</param>
-        public bool FreezeValue(string address, string type, string value, string file = "")
+        public bool FreezeValue(string address, MemoryType type, string value, string file = "")
         {
             CancellationTokenSource cts = new CancellationTokenSource();
 
@@ -89,7 +89,7 @@ namespace Memory
         ///<param name="file">path and name of .ini file (OPTIONAL)</param>
         ///<param name="stringEncoding">System.Text.Encoding.UTF8 (DEFAULT). Other options: ascii, unicode, utf32, utf7</param>
         ///<param name="RemoveWriteProtection">If building a trainer on an emulator (Ex: RPCS3) you'll want to set this to false</param>
-        public bool WriteMemory(string code, string type, string write, string file = "", System.Text.Encoding stringEncoding = null, bool RemoveWriteProtection = true)
+        public bool WriteMemory(string code, MemoryType type, string write, string file = "", System.Text.Encoding stringEncoding = null, bool RemoveWriteProtection = true)
         {
             byte[] memory = new byte[4];
             int size = 4;
@@ -100,73 +100,75 @@ namespace Memory
             if (theCode == null || theCode == UIntPtr.Zero || theCode.ToUInt64() < 0x10000)
                 return false;
 
-            if (type.ToLower() == "float")
+            switch (type)
             {
-                write = Convert.ToString(float.Parse(write, CultureInfo.InvariantCulture));
-                memory = BitConverter.GetBytes(Convert.ToSingle(write));
-                size = 4;
-            }
-            else if (type.ToLower() == "int")
-            {
-                memory = BitConverter.GetBytes(Convert.ToInt32(write));
-                size = 4;
-            }
-            else if (type.ToLower() == "byte")
-            {
-                memory = new byte[1];
-                memory[0] = Convert.ToByte(write, 16);
-                size = 1;
-            }
-            else if (type.ToLower() == "2bytes")
-            {
-                memory = new byte[2];
-                memory[0] = (byte)(Convert.ToInt32(write) % 256);
-                memory[1] = (byte)(Convert.ToInt32(write) / 256);
-                size = 2;
-            }
-            else if (type.ToLower() == "bytes")
-            {
-                if (write.Contains(",") || write.Contains(" ")) //check if it's a proper array
-                {
-                    string[] stringBytes;
-                    if (write.Contains(","))
-                        stringBytes = write.Split(',');
-                    else
-                        stringBytes = write.Split(' ');
-                    //Debug.WriteLine("write:" + write + " stringBytes:" + stringBytes);
+                case MemoryType.FLOAT:
+                    write = Convert.ToString(float.Parse(write, CultureInfo.InvariantCulture));
+                    memory = BitConverter.GetBytes(Convert.ToSingle(write));
+                    size = 4;
+                    break;
 
-                    int c = stringBytes.Count();
-                    memory = new byte[c];
-                    for (int i = 0; i < c; i++)
-                    {
-                        memory[i] = Convert.ToByte(stringBytes[i], 16);
-                    }
-                    size = stringBytes.Count();
-                }
-                else //wasnt array, only 1 byte
-                {
+                case MemoryType.INT:
+                    memory = BitConverter.GetBytes(Convert.ToInt32(write));
+                    size = 4;
+                    break;
+
+                case MemoryType.BYTE:
                     memory = new byte[1];
                     memory[0] = Convert.ToByte(write, 16);
                     size = 1;
-                }
-            }
-            else if (type.ToLower() == "double")
-            {
-                memory = BitConverter.GetBytes(Convert.ToDouble(write));
-                size = 8;
-            }
-            else if (type.ToLower() == "long")
-            {
-                memory = BitConverter.GetBytes(Convert.ToInt64(write));
-                size = 8;
-            }
-            else if (type.ToLower() == "string")
-            {
-                if (stringEncoding == null)
-                    memory = System.Text.Encoding.UTF8.GetBytes(write);
-                else
-                    memory = stringEncoding.GetBytes(write);
-                size = memory.Length;
+                    break;
+
+                case MemoryType.TWOBYTES:
+                    memory = new byte[2];
+                    memory[0] = (byte)(Convert.ToInt32(write) % 256);
+                    memory[1] = (byte)(Convert.ToInt32(write) / 256);
+                    size = 2;
+                    break;
+
+                case MemoryType.BYTES:
+                    if (write.Contains(",") || write.Contains(" ")) //check if it's a proper array
+                    {
+                        string[] stringBytes;
+                        if (write.Contains(","))
+                            stringBytes = write.Split(',');
+                        else
+                            stringBytes = write.Split(' ');
+                        //Debug.WriteLine("write:" + write + " stringBytes:" + stringBytes);
+
+                        int c = stringBytes.Count();
+                        memory = new byte[c];
+                        for (int i = 0; i < c; i++)
+                        {
+                            memory[i] = Convert.ToByte(stringBytes[i], 16);
+                        }
+                        size = stringBytes.Count();
+                    }
+                    else //wasnt array, only 1 byte
+                    {
+                        memory = new byte[1];
+                        memory[0] = Convert.ToByte(write, 16);
+                        size = 1;
+                    }
+                    break;
+
+                case MemoryType.DOUBLE:
+                    memory = BitConverter.GetBytes(Convert.ToDouble(write));
+                    size = 8;
+                    break;
+
+                case MemoryType.LONG:
+                    memory = BitConverter.GetBytes(Convert.ToInt64(write));
+                    size = 8;
+                    break;
+
+                case MemoryType.STRING:
+                    if (stringEncoding == null)
+                        memory = System.Text.Encoding.UTF8.GetBytes(write);
+                    else
+                        memory = stringEncoding.GetBytes(write);
+                    size = memory.Length;
+                    break;
             }
 
             //Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:" + theCode + "] " + String.Join(",", memory) + Environment.NewLine);
@@ -190,7 +192,7 @@ namespace Memory
         /// <param name="file">path and name of .ini file (OPTIONAL)</param>
         /// <param name="SlowDown">milliseconds to sleep between each byte</param>
         /// <returns></returns>
-        public bool WriteMove(string code, string type, string write, int MoveQty, string file = "", int SlowDown = 0)
+        public bool WriteMove(string code, MemoryType type, string write, int MoveQty, string file = "", int SlowDown = 0)
         {
             byte[] memory = new byte[4];
             int size = 4;
@@ -198,38 +200,40 @@ namespace Memory
             UIntPtr theCode;
             theCode = GetCode(code, file);
 
-            if (type == "float")
+            switch (type)
             {
-                memory = new byte[write.Length];
-                memory = BitConverter.GetBytes(Convert.ToSingle(write));
-                size = write.Length;
-            }
-            else if (type == "int")
-            {
-                memory = BitConverter.GetBytes(Convert.ToInt32(write));
-                size = 4;
-            }
-            else if (type == "double")
-            {
-                memory = BitConverter.GetBytes(Convert.ToDouble(write));
-                size = 8;
-            }
-            else if (type == "long")
-            {
-                memory = BitConverter.GetBytes(Convert.ToInt64(write));
-                size = 8;
-            }
-            else if (type == "byte")
-            {
-                memory = new byte[1];
-                memory[0] = Convert.ToByte(write, 16);
-                size = 1;
-            }
-            else if (type == "string")
-            {
-                memory = new byte[write.Length];
-                memory = System.Text.Encoding.UTF8.GetBytes(write);
-                size = write.Length;
+                case MemoryType.FLOAT:
+                    memory = new byte[write.Length];
+                    memory = BitConverter.GetBytes(Convert.ToSingle(write));
+                    size = write.Length;
+                    break;
+
+                case MemoryType.INT:
+                    memory = BitConverter.GetBytes(Convert.ToInt32(write));
+                    size = 4;
+                    break;
+
+                case MemoryType.BYTE:
+                    memory = new byte[1];
+                    memory[0] = Convert.ToByte(write, 16);
+                    size = 1;
+                    break;
+
+                case MemoryType.DOUBLE:
+                    memory = BitConverter.GetBytes(Convert.ToDouble(write));
+                    size = 8;
+                    break;
+
+                case MemoryType.LONG:
+                    memory = BitConverter.GetBytes(Convert.ToInt64(write));
+                    size = 8;
+                    break;
+
+                case MemoryType.STRING:
+                    memory = new byte[write.Length];
+                    memory = System.Text.Encoding.UTF8.GetBytes(write);
+                    size = write.Length;
+                    break;
             }
 
             UIntPtr newCode = UIntPtr.Add(theCode, MoveQty);
