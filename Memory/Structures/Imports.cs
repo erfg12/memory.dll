@@ -50,12 +50,6 @@ namespace Memory
             IntPtr UserStreamParam,
             IntPtr CallackParam);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
-        public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr w, IntPtr l);
-
         [DllImport("kernel32.dll")]
         public static extern bool WriteProcessMemory(
             IntPtr hProcess,
