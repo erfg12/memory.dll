@@ -432,7 +432,7 @@ namespace Memory
         /// <param name="address">Your code or INI file variable name</param>
         /// <param name="UIObject">Returning variable to bind to UI object. See example in summary.</param>
         /// <param name="file">OPTIONAL: INI file path and file name with extension</param>
-        public void BindToUI(string address, Action<string> UIObject, string file = "")
+        public void BindToUI<T>(string address, Action<string> UIObject, string file = "")
         {
             CancellationTokenSource cts = new CancellationTokenSource();
             if (ReadTokenSrcs.ContainsKey(address))
@@ -458,7 +458,7 @@ namespace Memory
             {
                 while (!cts.Token.IsCancellationRequested)
                 {
-                    UIObject(ReadMemory<string>(address, file));
+                    UIObject(ReadMemory<T>(address, file).ToString());
                     Thread.Sleep(100);
                 }
             },
