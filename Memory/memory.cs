@@ -7,12 +7,9 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Globalization;
-using System.Security.Principal;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using static Memory.Imps;
-using System.Collections.Concurrent;
-using System.Threading;
 
 namespace Memory
 {
