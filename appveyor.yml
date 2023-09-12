@@ -1,4 +1,4 @@
-image: Visual Studio 2019
+image: Visual Studio 2022
 skip_tags: true
 platform: 
 - x86
@@ -8,7 +8,7 @@ configuration: Debug
 before_build:
   - nuget restore
 
-after_build: "7z a Build_%PLATFORM%.zip %APPVEYOR_BUILD_FOLDER%\\Memory\\bin\\%PLATFORM%\\Debug\\*.nupkg %APPVEYOR_BUILD_FOLDER%\\Memory\\bin\\%PLATFORM%\\Debug\\netstandard2.0\\*.dll %APPVEYOR_BUILD_FOLDER%\\Memory\\bin\\%PLATFORM%\\Debug\\netstandard2.0\\*.xml %APPVEYOR_BUILD_FOLDER%\\Memory\\bin\\%PLATFORM%\\Debug\\netstandard2.0\\*.json %APPVEYOR_BUILD_FOLDER%\\Memory\\bin\\%PLATFORM%\\Debug\\netstandard2.0\\*.pdb"
+after_build: "7z a Build_%PLATFORM%.zip %APPVEYOR_BUILD_FOLDER%\\Memory\\bin\\%PLATFORM%\\Debug\\*.nupkg %APPVEYOR_BUILD_FOLDER%\\Memory\\bin\\%PLATFORM%\\Debug\\netstandard2.1\\*.dll %APPVEYOR_BUILD_FOLDER%\\Memory\\bin\\%PLATFORM%\\Debug\\netstandard2.1\\*.xml %APPVEYOR_BUILD_FOLDER%\\Memory\\bin\\%PLATFORM%\\Debug\\netstandard2.1\\*.json %APPVEYOR_BUILD_FOLDER%\\Memory\\bin\\%PLATFORM%\\Debug\\netstandard2.1\\*.pdb"
 
 build:
   project: Memory.sln
