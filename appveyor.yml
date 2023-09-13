@@ -27,7 +27,7 @@ deploy:
     release: Build $(APPVEYOR_REPO_COMMIT_TIMESTAMP)
     description: Latest Compile Date %APPVEYOR_REPO_COMMIT_TIMESTAMP%
     auth_token:
-      secure: y+vnpDslJlfpQVrm2NaPq4dZR9T5yD/e+Z4fKna+fq9m25G3THlrUVp35pCTRc2lS+BmGxxQVhDLNN5EgmQQeERYgVSdPNsbD7GgGFlHrO2Yxl/EX1WXAGBzCRYlnT5Y
+      secure: AaByiUaGTkxqZlEEhK8suZObYgDXw4YY1OIhE3w/QEQOOweImO1zh+J23Rm634Az
     artifact: Build_%PLATFORM%.zip
     force_update: true
     draft: false
