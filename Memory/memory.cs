@@ -322,21 +322,22 @@ namespace Memory
             }
         }        
 
-        #region protection
+        // WARNING: Works, but flags as virus
+        //#region protection
 
-        public bool ChangeProtection(string code, MemoryProtection newProtection, out MemoryProtection oldProtection, string file = "")
-        {
-	        UIntPtr theCode = GetCode(code, file);
-	        if (theCode == UIntPtr.Zero 
-	            || mProc.Handle == IntPtr.Zero)
-	        {
-		        oldProtection = default;
-		        return false;
-	        }
+        //public bool ChangeProtection(string code, MemoryProtection newProtection, out MemoryProtection oldProtection, string file = "")
+        //{
+	       // UIntPtr theCode = GetCode(code, file);
+	       // if (theCode == UIntPtr.Zero 
+	       //     || mProc.Handle == IntPtr.Zero)
+	       // {
+		      //  oldProtection = default;
+		      //  return false;
+	       // }
 
-	        return VirtualProtectEx(mProc.Handle, theCode, (IntPtr)(mProc.Is64Bit ? 8 : 4), newProtection, out oldProtection);
-        }
-        #endregion
+	       // return VirtualProtectEx(mProc.Handle, theCode, (IntPtr)(mProc.Is64Bit ? 8 : 4), newProtection, out oldProtection);
+        //}
+        //#endregion
 
         /// <summary>
         /// Convert code from string to real address. If path is not blank, will pull from ini file.

@@ -170,11 +170,11 @@ namespace Memory
             //Debug.Write("DEBUG: Writing bytes [TYPE:" + type + " ADDR:" + theCode + "] " + String.Join(",", memory) + Environment.NewLine);
             MemoryProtection OldMemProt = 0x00;
             bool WriteProcMem = false;
-            if (RemoveWriteProtection)
-                ChangeProtection(code, MemoryProtection.ExecuteReadWrite, out OldMemProt, file); // change protection
+            //if (RemoveWriteProtection)
+            //    ChangeProtection(code, MemoryProtection.ExecuteReadWrite, out OldMemProt, file); // change protection
             WriteProcMem = WriteProcessMemory(mProc.Handle, theCode, memory, (UIntPtr)size, IntPtr.Zero);
-            if (RemoveWriteProtection)
-                ChangeProtection(code, OldMemProt, out _, file); // restore
+            //if (RemoveWriteProtection)
+            //    ChangeProtection(code, OldMemProt, out _, file); // restore
             return WriteProcMem;
         }
 

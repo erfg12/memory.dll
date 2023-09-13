@@ -104,9 +104,9 @@ namespace Memory
             uint flProtect
         );
 
-        [DllImport("kernel32.dll")]
-        public static extern bool VirtualProtectEx(IntPtr hProcess, UIntPtr lpAddress,
-            IntPtr dwSize, MemoryProtection flNewProtect, out MemoryProtection lpflOldProtect);
+        //[DllImport("kernel32.dll")]
+        //public static extern bool VirtualProtectEx(IntPtr hProcess, UIntPtr lpAddress,
+        //    IntPtr dwSize, MemoryProtection flNewProtect, out MemoryProtection lpflOldProtect);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Ansi, ExactSpelling = true)]
         public static extern UIntPtr GetProcAddress(
