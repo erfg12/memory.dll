@@ -13,7 +13,7 @@
     <Description>Read and Write to process memory. Make PC cheat trainers easily!</Description>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>1.2.26</Version>
+    <Version>1.2.27</Version>
     <Platforms>x64;x86</Platforms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <PlatformTarget>x86</PlatformTarget>
