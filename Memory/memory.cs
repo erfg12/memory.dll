@@ -419,9 +419,9 @@ namespace Memory
                 }
                 int[] offsets = offsetsList.ToArray();
 
-                if (theCode.Contains("base") || theCode.Contains("main"))
+                if (theCode.ToLower().Equals("base") || theCode.ToLower().Equals("main"))
                     ReadProcessMemory(mProc.Handle, (UIntPtr)((int)mProc.MainModule.BaseAddress + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
+                else if (!theCode.ToLower().Equals("base") && !theCode.ToLower().Equals("main") && theCode.Contains("+"))
                 {
                     string[] moduleName = theCode.Split('+');
                     IntPtr altModule = IntPtr.Zero;
@@ -465,9 +465,9 @@ namespace Memory
                 int trueCode = Convert.ToInt32(newOffsets, 16);
                 IntPtr altModule = IntPtr.Zero;
                 //Debug.WriteLine("newOffsets=" + newOffsets);
-                if (theCode.ToLower().Contains("base") || theCode.ToLower().Contains("main"))
+                if (theCode.ToLower().Equals("base") || theCode.ToLower().Equals("main"))
                     altModule = mProc.MainModule.BaseAddress;
-                else if (!theCode.ToLower().Contains("base") && !theCode.ToLower().Contains("main") && theCode.Contains("+"))
+                else if (!theCode.ToLower().Equals("base") && !theCode.ToLower().Equals("main") && theCode.Contains("+"))
                 {
                     string[] moduleName = theCode.Split('+');
                     if (!moduleName[0].ToLower().Contains(".dll") && !moduleName[0].ToLower().Contains(".exe") && !moduleName[0].ToLower().Contains(".bin"))
@@ -567,9 +567,9 @@ namespace Memory
                 }
                 Int64[] offsets = offsetsList.ToArray();
 
-                if (theCode.Contains("base") || theCode.Contains("main"))
+                if (theCode.ToLower().Equals("base") || theCode.ToLower().Equals("main"))
                     ReadProcessMemory(mProc.Handle, (UIntPtr)((Int64)mProc.MainModule.BaseAddress + offsets[0]), memoryAddress, (UIntPtr)size, IntPtr.Zero);
-                else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
+                else if (!theCode.ToLower().Equals("base") && !theCode.ToLower().Equals("main") && theCode.Contains("+"))
                 {
                     string[] moduleName = theCode.Split('+');
                     IntPtr altModule = IntPtr.Zero;
@@ -608,9 +608,9 @@ namespace Memory
             {
                 Int64 trueCode = Convert.ToInt64(newOffsets, 16);
                 IntPtr altModule = IntPtr.Zero;
-                if (theCode.Contains("base") || theCode.Contains("main"))
+                if (theCode.ToLower().Equals("base") || theCode.ToLower().Equals("main"))
                     altModule = mProc.MainModule.BaseAddress;
-                else if (!theCode.Contains("base") && !theCode.Contains("main") && theCode.Contains("+"))
+                else if (!theCode.ToLower().Equals("base") && !theCode.ToLower().Equals("main") && theCode.Contains("+"))
                 {
                     string[] moduleName = theCode.Split('+');
                     if (!moduleName[0].ToLower().Contains(".dll") && !moduleName[0].ToLower().Contains(".exe") && !moduleName[0].ToLower().Contains(".bin"))
