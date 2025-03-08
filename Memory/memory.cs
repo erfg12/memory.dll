@@ -162,75 +162,6 @@ namespace Memory
             return OpenProcess(pid, out string FailReason);
         }
 
-        /*public bool IsAdmin()
-        {
-            try
-            {
-                using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
-                {
-                    WindowsPrincipal principal = new WindowsPrincipal(identity);
-                    return principal.IsInRole(WindowsBuiltInRole.Administrator);
-                }
-            } 
-            catch
-            {
-                Debug.WriteLine("ERROR: Could not determin if program is running as admin. Is the NuGet package \"System.Security.Principal.Windows\" missing?");
-                return false;
-            }
-        }*/
-
-        /// <summary>
-        /// Builds the process modules dictionary (names with addresses). Use mProc.Process.Modules instead.
-        /// </summary>
-        /*public ConcurrentDictionary<string, IntPtr> GetModules()
-        {
-            if (mProc.Process == null)
-            {
-                Debug.WriteLine("mProc.Process is null so GetModules failed.");
-                return null;
-            }
-
-            if (mProc.Is64Bit && IntPtr.Size != 8)
-            {
-                Debug.WriteLine("WARNING: Game is x64, but your Trainer is x86! You will be missing some modules, change your Trainer's Solution Platform.");
-            }
-            else if (!mProc.Is64Bit && IntPtr.Size == 8)
-            {
-                Debug.WriteLine("WARNING: Game is x86, but your Trainer is x64! You will be missing some modules, change your Trainer's Solution Platform.");
-            }
-
-            if (mProc.Process.Modules == null)
-            {
-                Debug.WriteLine("mProc.Process.Modules is null so GetModules failed.");
-                return null;
-            }
-
-            if (mProc.Modules != null)
-                mProc.Modules.Clear();
-            else
-                mProc.Modules = new ConcurrentDictionary<string, IntPtr>();
-
-            foreach (ProcessModule Module in mProc.Process.Modules)
-            {
-                if (Module.ModuleName == null || Module.BaseAddress == null)
-                    continue;
-
-                if (!string.IsNullOrEmpty(Module.ModuleName) && !mProc.Modules.ContainsKey(Module.ModuleName))
-                    mProc.Modules.TryAdd(Module.ModuleName, Module.BaseAddress);
-            }
-
-            Debug.WriteLine("Found " + mProc.Modules.Count() + " process modules.");
-            return mProc.Modules;
-        }*/
-
-        public void SetFocus()
-        {
-            //int style = GetWindowLong(procs.MainWindowHandle, -16);
-            //if ((style & 0x20000000) == 0x20000000) //minimized
-            //    SendMessage(procs.Handle, 0x0112, (IntPtr)0xF120, IntPtr.Zero);
-            SetForegroundWindow(mProc.Process.MainWindowHandle);
-        }
-
         /// <summary>
         /// Get the process ID number by process name.
         /// </summary>
@@ -261,7 +192,7 @@ namespace Memory
         /// </summary>
         /// <param name="name">label for address or code</param>
         /// <param name="iniFile">path and name of ini file</param>
-        /// <returns></returns>
+        /// <returns>code from ini file</returns>
         public string LoadCode(string name, string iniFile)
         {
             StringBuilder returnCode = new StringBuilder(1024);
@@ -287,16 +218,13 @@ namespace Memory
         {
             try
             {
-                int intValue = Convert.ToInt32(LoadCode(name, path), 16);
-                if (intValue >= 0)
-                    return intValue;
-                else
-                    return 0;
-            } catch
-            {
-                Debug.WriteLine("ERROR: LoadIntCode function crashed!");
-                return 0;
+                return Convert.ToInt32(LoadCode(name, path), 16);
             }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ERROR: LoadIntCode function crashed! {ex}");
+            }
+            return 0;
         }
 
         /// <summary>
@@ -321,23 +249,6 @@ namespace Memory
                 }
             }
         }        
-
-        // WARNING: Works, but flags as virus
-        //#region protection
-
-        //public bool ChangeProtection(string code, MemoryProtection newProtection, out MemoryProtection oldProtection, string file = "")
-        //{
-	       // UIntPtr theCode = GetCode(code, file);
-	       // if (theCode == UIntPtr.Zero 
-	       //     || mProc.Handle == IntPtr.Zero)
-	       // {
-		      //  oldProtection = default;
-		      //  return false;
-	       // }
-
-	       // return VirtualProtectEx(mProc.Handle, theCode, (IntPtr)(mProc.Is64Bit ? 8 : 4), newProtection, out oldProtection);
-        //}
-        //#endregion
 
         /// <summary>
         /// Convert code from string to real address. If path is not blank, will pull from ini file.
