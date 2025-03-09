@@ -13,11 +13,14 @@
     <Description>Read and Write to process memory. Make PC cheat trainers easily!</Description>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>1.2.27</Version>
+    <Version>1.2.28</Version>
     <Platforms>x64;x86</Platforms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <PlatformTarget>x86</PlatformTarget>
 	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<PackageReadmeFile>readme.md</PackageReadmeFile>
+	<AssemblyVersion>1.2.28.0</AssemblyVersion>
+	<FileVersion>1.2.28.0</FileVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -37,6 +40,10 @@
   </PropertyGroup>
 
 	<ItemGroup>
+	  <None Include="..\readme.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	  <None Include="README.txt" pack="true" PackagePath="." />
 	  <None Include="..\LICENSE">
 	    <Pack>True</Pack>
@@ -47,6 +54,13 @@
 	    <PackagePath></PackagePath>
 	  </None>
     <None Include="build\**" Pack="True" PackagePath="build\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="README.md">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 
 </Project>
