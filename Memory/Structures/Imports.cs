@@ -380,6 +380,16 @@ namespace Memory
             ThreadQuerySetWin32StartAddress = 9
         }
 
-
+        public enum MemoryType
+        {
+            FLOAT,
+            INT,
+            BYTE,
+            TWOBYTES,
+            BYTES,
+            DOUBLE,
+            LONG,
+            STRING
+        }
     }
 }
