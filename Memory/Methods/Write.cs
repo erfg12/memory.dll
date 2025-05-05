@@ -100,9 +100,14 @@ namespace Memory
 
             if (type.ToLower() == "float")
             {
-                write = Convert.ToString(float.Parse(write, CultureInfo.InvariantCulture));
-                memory = BitConverter.GetBytes(Convert.ToSingle(write));
-                size = 4;
+                if (float.TryParse(write, out float floatValue))
+                {
+                    write = Convert.ToString(floatValue);
+                    memory = BitConverter.GetBytes(Convert.ToSingle(write));
+                    size = 4;
+                }
+                else
+                    Debug.WriteLine($"ERROR: Failed to convert {floatValue} to float!");
             }
             else if (type.ToLower() == "int")
             {
