@@ -6,9 +6,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        arch: [x86, x64]
 
     steps:
       - name: Checkout code
@@ -22,13 +19,8 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore memory/Memory.csproj
 
-      - name: Build for ${{ matrix.arch }}
-        shell: pwsh
-        env:
-          MATRIX_ARCH: ${{ matrix.arch }}
-        run: |
-          if ($env:MATRIX_ARCH -eq "x86") {
-              dotnet build memory/Memory.csproj -c Release -r win-x86 --self-contained false
-          } else {
-              dotnet build memory/Memory.csproj -c Release -r win-x64 --self-contained false
-          }
+      - name: Build for x86
+        run: dotnet build memory/Memory.csproj -c Release -r win-86 --self-contained false
+
+      - name: Build for x64
+        run: dotnet build memory/Memory.csproj -c Release -r win-64 --self-contained false
