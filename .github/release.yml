@@ -1,0 +1,73 @@
+name: Build and Publish x86/x64
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-publish:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x86, x64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore ./Memory.csproj
+
+      - name: Build for ${{ matrix.arch }}
+        run: |
+          dotnet build ./Memory.csproj -c Release -r win-${{ matrix.arch }} --self-contained false --output ./build/${{ matrix.arch }}
+
+      - name: Pack NuGet for ${{ matrix.arch }}
+        run: |
+          dotnet pack ./Memory.csproj -c Release \
+            -p:PackageId=Memory-${{ matrix.arch }} \
+            -p:Version=${GITHUB_REF_NAME#v} \
+            --output ./nupkg/${{ matrix.arch }}
+
+      - name: Push NuGet for ${{ matrix.arch }}
+        run: |
+          dotnet nuget push ./nupkg/${{ matrix.arch }}/*.nupkg \
+            --api-key ${{ secrets.GITHUB_TOKEN }} \
+            --source "https://nuget.pkg.github.com/erfg12/index.json"
+
+  release:
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload x86 DLL
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build/x86/Memory.dll
+          asset_name: Memory-x86.dll
+          asset_content_type: application/octet-stream
+
+      - name: Upload x64 DLL
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build/x64/Memory.dll
+          asset_name: Memory-x64.dll
+          asset_content_type: application/octet-stream

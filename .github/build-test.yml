@@ -1,0 +1,27 @@
+name: Build and test Memory.dll
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x86, x64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore ./Memory.csproj
+
+      - name: Build for ${{ matrix.arch }}
+        run: |
+          dotnet build ./Memory.csproj -r win-${{ matrix.arch }} --self-contained false
