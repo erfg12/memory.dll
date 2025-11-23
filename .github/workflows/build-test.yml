@@ -24,8 +24,10 @@ jobs:
 
       - name: Build for ${{ matrix.arch }}
         shell: pwsh
+        env:
+          MATRIX_ARCH: ${{ matrix.arch }}
         run: |
-          if ($env:matrix_arch -eq "x86") {
+          if ($env:MATRIX_ARCH -eq "x86") {
               dotnet build memory/Memory.csproj -c Release -r win-x86 --self-contained false
           } else {
               dotnet build memory/Memory.csproj -c Release -r win-x64 --self-contained false
