@@ -1,4 +1,4 @@
-name: Build and test Memory.dll
+name: Build Memory.dll x86/x64
 
 on:
   push:
@@ -20,8 +20,8 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore "${{ github.workspace }}/Memory.csproj"
+        run: dotnet restore Memory.csproj
 
       - name: Build for ${{ matrix.arch }}
         run: |
-          dotnet build "${{ github.workspace }}/Memory.csproj" -c Release -r win-${{ matrix.arch }} --self-contained false
+          dotnet build Memory.csproj -c Release -r win-${{ matrix.arch }} --self-contained false
