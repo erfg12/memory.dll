@@ -20,8 +20,8 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore ./Memory.csproj
+        run: dotnet restore "${{ github.workspace }}/Memory.csproj"
 
       - name: Build for ${{ matrix.arch }}
         run: |
-          dotnet build ./Memory.csproj -r win-${{ matrix.arch }} --self-contained false
+          dotnet build "${{ github.workspace }}/Memory.csproj" -c Release -r win-${{ matrix.arch }} --self-contained false
