@@ -23,4 +23,9 @@ jobs:
         run: dotnet restore memory/Memory.csproj
 
       - name: Build for ${{ matrix.arch }}
-        run: dotnet build memory/Memory.csproj -c Release -r win-${{ matrix.arch }} --self-contained false
+        run: |
+          if [ "${{ matrix.arch }}" == "x86" ]; then
+            dotnet build memory/Memory.csproj -c Release -r win-x86 --self-contained false
+          else
+            dotnet build memory/Memory.csproj -c Release -r win-x64 --self-contained false
+          fi
