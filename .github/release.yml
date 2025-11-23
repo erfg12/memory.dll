@@ -38,7 +38,7 @@ jobs:
       - name: Push NuGet for ${{ matrix.arch }}
         run: |
           dotnet nuget push ./nupkg/${{ matrix.arch }}/*.nupkg \
-            --api-key ${{ secrets.GITHUB_TOKEN }} \
+            --api-key ${{ secrets.TOKEN }} \
             --source "https://nuget.pkg.github.com/erfg12/index.json"
 
   release:
