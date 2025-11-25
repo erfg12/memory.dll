@@ -22,15 +22,15 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore dependencies
-        run: dotnet restore ./Memory.csproj
+        run: dotnet restore memory/Memory.csproj
 
       - name: Build for ${{ matrix.arch }}
         run: |
-          dotnet build ./Memory.csproj -c Release -r win-${{ matrix.arch }} --self-contained false --output ./build/${{ matrix.arch }}
+          dotnet build memory/Memory.csproj -c Release -r win-${{ matrix.arch }} --self-contained false --output ./build/${{ matrix.arch }}
 
       - name: Pack NuGet for ${{ matrix.arch }}
         run: |
-          dotnet pack ./Memory.csproj -c Release \
+          dotnet pack memory/Memory.csproj -c Release \
             -p:PackageId=Memory-${{ matrix.arch }} \
             -p:Version=${GITHUB_REF_NAME#v} \
             --output ./nupkg/${{ matrix.arch }}
