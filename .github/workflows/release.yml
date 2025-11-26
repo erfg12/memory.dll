@@ -75,6 +75,12 @@ jobs:
           name: x64-dll
           path: ./artifacts/x64
 
+      - name: List all artifacts
+        run: |
+          Write-Host "All artifacts:"
+          Get-ChildItem -Path ./artifacts -Recurse | ForEach-Object { Write-Host $_.FullName }
+        shell: pwsh
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
@@ -90,7 +96,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./artifacts/x86/Memory.dll
-            ./artifacts/x64/Memory.dll
+            ./memory.dll/artifacts/x86/Memory.dll
+            ./memory.dll/artifacts/x64/Memory.dll
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
