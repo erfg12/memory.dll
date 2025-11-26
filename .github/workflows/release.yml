@@ -25,6 +25,7 @@ jobs:
           $buildNumber=(Get-Date).Second
           $version = "$date.$buildNumber"
           "VERSION=$version" >> $env:GITHUB_ENV
+          "VERSION=$version" >> $env:GITHUB_OUTPUT
 
       - name: Restore
         run: dotnet restore memory/Memory.csproj
@@ -56,7 +57,6 @@ jobs:
   release:
     needs: build-and-publish
     runs-on: windows-latest
-    needs: build-and-publish
     env:
       VERSION: ${{ needs.build-and-publish.outputs.VERSION }}
 
