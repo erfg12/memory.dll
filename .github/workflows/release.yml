@@ -1,3 +1,8 @@
+name: Build and Publish x86/x64
+
+on:
+  workflow_dispatch:
+
 jobs:
   build-and-publish:
     runs-on: windows-latest
@@ -6,6 +11,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 8.0.x
@@ -22,7 +28,31 @@ jobs:
           Write-Host "TIMESTAMP=$ts" >> $GITHUB_ENV
         shell: pwsh
 
-      # ... rest of build steps using ${{ env.TIMESTAMP }} ...
+      # --- x86 ---
+      - name: Build x86
+        run: dotnet build memory/Memory.csproj -c Release -r win-x86 --self-contained false --output ./build/x86
+        shell: pwsh
+
+      - name: Pack x86
+        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x86 -p:Version="${{ env.TIMESTAMP }}" --output ./nupkg/x86
+        shell: pwsh
+
+      - name: Push x86
+        run: dotnet nuget push ./nupkg/x86/*.nupkg --api-key ${{ secrets.TOKEN }} --source "https://nuget.pkg.github.com/erfg12/index.json"
+        shell: pwsh
+
+      # --- x64 ---
+      - name: Build x64
+        run: dotnet build memory/Memory.csproj -c Release -r win-x64 --self-contained false --output ./build/x64
+        shell: pwsh
+
+      - name: Pack x64
+        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x64 -p:Version="${{ env.TIMESTAMP }}" --output ./nupkg/x64
+        shell: pwsh
+
+      - name: Push x64
+        run: dotnet nuget push ./nupkg/x64/*.nupkg --api-key ${{ secrets.TOKEN }} --source "https://nuget.pkg.github.com/erfg12/index.json"
+        shell: pwsh
 
   release:
     needs: build-and-publish
@@ -37,5 +67,25 @@ jobs:
         with:
           tag_name: release-${{ needs.build-and-publish.outputs.timestamp }}
           name: Release ${{ needs.build-and-publish.outputs.timestamp }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload x86 DLL
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build/x86/Memory.dll
+          asset_name: Memory-x86.dll
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload x64 DLL
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build/x64/Memory.dll
+          asset_name: Memory-x64.dll
+          asset_content_type: application/octet-stream
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
