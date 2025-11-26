@@ -6,6 +6,8 @@ on:
 jobs:
   build-and-publish:
     runs-on: windows-latest
+    outputs:
+      VERSION: ${{ steps.setver.outputs.VERSION }}
 
     steps:
       - uses: actions/checkout@v3
@@ -52,6 +54,9 @@ jobs:
   release:
     needs: build-and-publish
     runs-on: windows-latest
+    needs: build-and-publish
+    env:
+      VERSION: ${{ needs.build-and-publish.outputs.VERSION }}
 
     steps:
       - uses: actions/checkout@v3
