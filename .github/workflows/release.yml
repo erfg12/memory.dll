@@ -21,7 +21,7 @@ jobs:
       - name: Set timestamp
         run: |
           $ts = Get-Date -Format yyyyMMddHHmmss
-          Write-Host "TIMESTAMP=$ts" >> $env:GITHUB_ENV
+          Write-Host "TIMESTAMP=$ts" >> $GITHUB_ENV
         shell: pwsh
 
       # --- x86 ---
