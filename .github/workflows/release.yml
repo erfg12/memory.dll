@@ -102,7 +102,6 @@ jobs:
           tag_name: v${{ env.VERSION }}
           name: Release v${{ env.VERSION }}
           body: |
-            Current working directory: ${{ steps.getdir.outputs.CWD }}
             Automated release for build ${{ env.VERSION }}
             
             ## Packages
