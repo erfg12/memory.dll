@@ -8,42 +8,51 @@ on:
 jobs:
   build-and-publish:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        arch: [x86, x64]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 8.0.x
 
-      - name: Restore dependencies
+      - name: Restore
         run: dotnet restore memory/Memory.csproj
 
-      - name: Build for ${{ matrix.arch }}
-        run: |
-          dotnet build memory/Memory.csproj -c Release -r win-${{ matrix.arch }} --self-contained false --output ./build/${{ matrix.arch }}
+      # x86
+      - name: Build x86
+        run: dotnet build memory/Memory.csproj -c Release -r win-x86 --self-contained false --output ./build/x86
 
-      - name: Pack NuGet for ${{ matrix.arch }}
-        run: |
-          dotnet pack memory/Memory.csproj -c Release \
-            -p:PackageId=Memory-${{ matrix.arch }} \
-            -p:Version=${GITHUB_REF_NAME#v} \
-            --output ./nupkg/${{ matrix.arch }}
+      - name: Pack x86
+        run: dotnet pack memory/Memory.csproj -c Release `
+          -p:PackageId=Memory-x86 `
+          -p:Version=${env:GITHUB_REF_NAME#v} `
+          --output ./nupkg/x86
 
-      - name: Push NuGet for ${{ matrix.arch }}
-        run: |
-          dotnet nuget push ./nupkg/${{ matrix.arch }}/*.nupkg \
-            --api-key ${{ secrets.TOKEN }} \
-            --source "https://nuget.pkg.github.com/erfg12/index.json"
+      - name: Push x86
+        run: dotnet nuget push ./nupkg/x86/*.nupkg `
+          --api-key ${{ secrets.TOKEN }} `
+          --source "https://nuget.pkg.github.com/erfg12/index.json"
+
+      # x64
+      - name: Build x64
+        run: dotnet build memory/Memory.csproj -c Release -r win-x64 --self-contained false --output ./build/x64
+
+      - name: Pack x64
+        run: dotnet pack memory/Memory.csproj -c Release `
+          -p:PackageId=Memory-x64 `
+          -p:Version=${env:GITHUB_REF_NAME#v} `
+          --output ./nupkg/x64
+
+      - name: Push x64
+        run: dotnet nuget push ./nupkg/x64/*.nupkg `
+          --api-key ${{ secrets.TOKEN }} `
+          --source "https://nuget.pkg.github.com/erfg12/index.json"
 
   release:
     needs: build-and-publish
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
+
     steps:
       - uses: actions/checkout@v3
 
