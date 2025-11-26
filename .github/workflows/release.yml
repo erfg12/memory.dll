@@ -105,7 +105,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./artifacts/x86/Memory.dll
-            ./artifacts/x64/Memory.dll
+            artifacts/x86/Memory.dll
+            artifacts/x64/Memory.dll
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
