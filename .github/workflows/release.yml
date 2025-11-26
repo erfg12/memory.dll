@@ -25,7 +25,7 @@ jobs:
         run: |
           $ts = Get-Date -Format yyyyMMddHHmmss
           $date = Get-Date -Format "yyyy.MMdd.HHmm"
-          $buildNumber=(Get-Date).ToString("ss")
+          $buildNumber=(Get-Date).Second
           $env:VERSION="$date.$buildNumber"
           echo "version is $env:VERSION"
           dotnet build memory/Memory.csproj -c Release -r win-x86 --self-contained false -p:AssemblyVersion="$env:VERSION" -p:Version="$env:VERSION" -p:NuGetVersion="$env:VERSION" --output ./build/x86
