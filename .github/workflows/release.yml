@@ -6,9 +6,6 @@ on:
 jobs:
   build-and-publish:
     runs-on: windows-latest
-    outputs:
-      timestamp: ${{ steps.set-timestamp.outputs.timestamp }}
-      version: ${{ steps.set-timestamp.outputs.version }}
 
     steps:
       - uses: actions/checkout@v3
@@ -75,14 +72,14 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ needs.build-and-publish.outputs.version }}
-          name: Release v${{ needs.build-and-publish.outputs.version }}
+          tag_name: v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
           body: |
-            Automated release for build ${{ needs.build-and-publish.outputs.timestamp }}
+            Automated release for build ${{ env.VERSION }}
             
             ## Packages
-            - Memory-x86 v${{ needs.build-and-publish.outputs.version }}
-            - Memory-x64 v${{ needs.build-and-publish.outputs.version }}
+            - Memory-x86 v${{ env.VERSION }}
+            - Memory-x64 v${{ env.VERSION }}
           draft: false
           prerelease: false
           files: |
