@@ -25,7 +25,9 @@ jobs:
         id: set-timestamp
         run: |
           $ts = Get-Date -Format yyyyMMddHHmmss
-          $version = "1.0.$ts"
+          $date = Get-Date -Format "yyyy.MMdd.HHmm"
+          $buildNumber = (Get-Date).ToString("ss")
+          $version = "$date.$buildNumber"
           echo "timestamp=$ts" >> $env:GITHUB_OUTPUT
           echo "version=$version" >> $env:GITHUB_OUTPUT
           echo "VERSION=$version" >> $env:GITHUB_ENV
