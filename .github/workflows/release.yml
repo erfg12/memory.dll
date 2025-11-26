@@ -21,40 +21,18 @@ jobs:
         run: dotnet restore memory/Memory.csproj
         shell: pwsh
 
-      - name: Set timestamp and version
-        id: set-timestamp
+      - name: build
         run: |
           $ts = Get-Date -Format yyyyMMddHHmmss
           $date = Get-Date -Format "yyyy.MMdd.HHmm"
           $buildNumber=(Get-Date).ToString("ss")
           $env:VERSION=$date.$buildNumber
-        shell: pwsh
-
-      # --- x86 ---
-      - name: Build x86
-        run: dotnet build memory/Memory.csproj -c Release -r win-x86 --self-contained false -p:AssemblyVersion="$env:VERSION" -p:Version="$env:VERSION" -p:NuGetVersion="$env:VERSION" --output ./build/x86
-        shell: pwsh
-
-      - name: Pack x86
-        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x86 -p:Version="$env:VERSION" -p:RuntimeIdentifier=win-x86 -p:NoBuild=true -p:OutputPath="$PWD/build/x86" --output ./nupkg/x86
-        shell: pwsh
-
-      - name: Push x86
-        run: dotnet nuget push ./nupkg/x86/*.nupkg --api-key ${{ secrets.TOKEN }} --source "https://nuget.pkg.github.com/erfg12/index.json" --skip-duplicate
-        shell: pwsh
-
-      # --- x64 ---
-      - name: Build x64
-        run: dotnet build memory/Memory.csproj -c Release -r win-x64 --self-contained false -p:AssemblyVersion="$env:VERSION" -p:Version="$env:VERSION" -p:NuGetVersion="$env:VERSION" --output ./build/x64
-        shell: pwsh
-
-      - name: Pack x64
-        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x64 -p:Version="$env:VERSION" -p:RuntimeIdentifier=win-x64 -p:NoBuild=true -p:OutputPath="$PWD/build/x64" --output ./nupkg/x64
-        shell: pwsh
-
-      - name: Push x64
-        run: dotnet nuget push ./nupkg/x64/*.nupkg --api-key ${{ secrets.TOKEN }} --source "https://nuget.pkg.github.com/erfg12/index.json" --skip-duplicate
-        shell: pwsh
+          dotnet build memory/Memory.csproj -c Release -r win-x86 --self-contained false -p:AssemblyVersion="$env:VERSION" -p:Version="$env:VERSION" -p:NuGetVersion="$env:VERSION" --output ./build/x86
+          dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x86 -p:Version="$env:VERSION" -p:RuntimeIdentifier=win-x86 -p:NoBuild=true -p:OutputPath="$PWD/build/x86" --output ./nupkg/x86
+          dotnet nuget push ./nupkg/x86/*.nupkg --api-key ${{ secrets.TOKEN }} --source "https://nuget.pkg.github.com/erfg12/index.json" --skip-duplicate
+          dotnet build memory/Memory.csproj -c Release -r win-x64 --self-contained false -p:AssemblyVersion="$env:VERSION" -p:Version="$env:VERSION" -p:NuGetVersion="$env:VERSION" --output ./build/x64
+          dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x64 -p:Version="$env:VERSION" -p:RuntimeIdentifier=win-x64 -p:NoBuild=true -p:OutputPath="$PWD/build/x64" --output ./nupkg/x64
+          dotnet nuget push ./nupkg/x64/*.nupkg --api-key ${{ secrets.TOKEN }} --source "https://nuget.pkg.github.com/erfg12/index.json" --skip-duplicate
 
       # Upload artifacts for the release job
       - name: Upload x86 artifact
