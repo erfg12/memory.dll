@@ -33,7 +33,7 @@ jobs:
       - name: Pack x86
         run: dotnet pack memory/Memory.csproj -c Release `
           -p:PackageId=Memory-x86 `
-          -p:Version=$env:TIMESTAMP `
+          -p:Version=${{ env.TIMESTAMP }} `
           --output ./nupkg/x86
         shell: pwsh
 
@@ -51,7 +51,7 @@ jobs:
       - name: Pack x64
         run: dotnet pack memory/Memory.csproj -c Release `
           -p:PackageId=Memory-x64 `
-          -p:Version=$env:TIMESTAMP `
+          -p:Version=${{ env.TIMESTAMP }} `
           --output ./nupkg/x64
         shell: pwsh
 
