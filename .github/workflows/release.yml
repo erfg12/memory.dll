@@ -39,7 +39,7 @@ jobs:
         shell: pwsh
 
       - name: Pack x86
-        run: dotnet pack memory/Memory.csproj -c Release -r win-x86 -p:PackageId=Memory-x86 -p:Version="$env:VERSION" -p:NoBuild=true -p:OutputPath="./build/x86" --output ./nupkg/x86
+        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x86 -p:Version="$env:VERSION" -p:RuntimeIdentifier=win-x86 -p:NoBuild=true -p:OutputPath="$PWD/build/x86" --output ./nupkg/x86
         shell: pwsh
 
       - name: Push x86
@@ -52,7 +52,7 @@ jobs:
         shell: pwsh
 
       - name: Pack x64
-        run: dotnet pack memory/Memory.csproj -c Release -r win-x64 -p:PackageId=Memory-x64 -p:Version="$env:VERSION" -p:NoBuild=true -p:OutputPath="./build/x64" --output ./nupkg/x64
+        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x64 -p:Version="$env:VERSION" -p:RuntimeIdentifier=win-x64 -p:NoBuild=true -p:OutputPath="$PWD/build/x64" --output ./nupkg/x64
         shell: pwsh
 
       - name: Push x64
