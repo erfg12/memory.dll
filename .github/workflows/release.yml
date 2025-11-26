@@ -1,9 +1,7 @@
 name: Build and Publish x86/x64
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build-and-publish:
@@ -19,6 +17,11 @@ jobs:
       - name: Restore
         run: dotnet restore memory/Memory.csproj
 
+      - name: Set timestamp
+        id: timestamp
+        run: echo "TIMESTAMP=$(Get-Date -Format yyyyMMddHHmmss)" >> $GITHUB_ENV
+        shell: powershell
+
       # x86
       - name: Build x86
         run: dotnet build memory/Memory.csproj -c Release -r win-x86 --self-contained false --output ./build/x86
@@ -26,7 +29,7 @@ jobs:
       - name: Pack x86
         run: dotnet pack memory/Memory.csproj -c Release `
           -p:PackageId=Memory-x86 `
-          -p:Version=${env:GITHUB_REF_NAME#v} `
+          -p:Version=${{ env.TIMESTAMP }} `
           --output ./nupkg/x86
 
       - name: Push x86
@@ -41,7 +44,7 @@ jobs:
       - name: Pack x64
         run: dotnet pack memory/Memory.csproj -c Release `
           -p:PackageId=Memory-x64 `
-          -p:Version=${env:GITHUB_REF_NAME#v} `
+          -p:Version=${{ env.TIMESTAMP }} `
           --output ./nupkg/x64
 
       - name: Push x64
@@ -60,8 +63,8 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
+          tag_name: release-${{ env.TIMESTAMP }}
+          name: Release ${{ env.TIMESTAMP }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
