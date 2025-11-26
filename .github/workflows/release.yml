@@ -89,6 +89,12 @@ jobs:
           Write-Host "Current directory is $cwd"
           echo "CWD=$cwd" >> $env:GITHUB_OUTPUT
 
+      - name: Rename artifacts for release
+        shell: pwsh
+        run: |
+          Copy-Item -Path "${{ steps.getdir.outputs.CWD }}\artifacts\x86\Memory.dll" -Destination "${{ steps.getdir.outputs.CWD }}\artifacts\x86\Memory-x86.dll" -Force
+          Copy-Item -Path "${{ steps.getdir.outputs.CWD }}\artifacts\x64\Memory.dll" -Destination "${{ steps.getdir.outputs.CWD }}\artifacts\x64\Memory-x64.dll" -Force
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
@@ -105,7 +111,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            artifacts/x86/Memory.dll
-            artifacts/x64/Memory.dll
+            ${{ steps.getdir.outputs.CWD }}\artifacts\x86\Memory-x86.dll
+            ${{ steps.getdir.outputs.CWD }}\artifacts\x64\Memory.dll
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
