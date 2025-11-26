@@ -81,6 +81,14 @@ jobs:
           Get-ChildItem -Path ./artifacts -Recurse | ForEach-Object { Write-Host $_.FullName }
         shell: pwsh
 
+      - name: Get current directory
+        id: getdir
+        shell: pwsh
+        run: |
+          $cwd = Get-Location
+          Write-Host "Current directory is $cwd"
+          echo "CWD=$cwd" >> $env:GITHUB_OUTPUT
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
@@ -88,6 +96,7 @@ jobs:
           tag_name: v${{ env.VERSION }}
           name: Release v${{ env.VERSION }}
           body: |
+            Current working directory: ${{ steps.getdir.outputs.CWD }}
             Automated release for build ${{ env.VERSION }}
             
             ## Packages
@@ -96,7 +105,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./memory.dll/artifacts/x86/Memory.dll
-            ./memory.dll/artifacts/x64/Memory.dll
+            ./artifacts/x86/Memory.dll
+            ./artifacts/x64/Memory.dll
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
