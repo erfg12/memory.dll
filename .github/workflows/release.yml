@@ -35,11 +35,11 @@ jobs:
 
       # --- x86 ---
       - name: Build x86
-        run: dotnet build memory/Memory.csproj -c Release -r win-x86 --self-contained false --output ./build/x86
+        run: dotnet build memory/Memory.csproj -c Release -r win-x86 --self-contained false -p:Version="$env:VERSION" --output ./build/x86
         shell: pwsh
 
       - name: Pack x86
-        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x86 -p:Version="$env:VERSION" --output ./nupkg/x86
+        run: dotnet pack memory/Memory.csproj -c Release -r win-x86 -p:PackageId=Memory-x86 -p:Version="$env:VERSION" -p:NoBuild=true -p:OutputPath="./build/x86" --output ./nupkg/x86
         shell: pwsh
 
       - name: Push x86
@@ -48,11 +48,11 @@ jobs:
 
       # --- x64 ---
       - name: Build x64
-        run: dotnet build memory/Memory.csproj -c Release -r win-x64 --self-contained false --output ./build/x64
+        run: dotnet build memory/Memory.csproj -c Release -r win-x64 --self-contained false -p:Version="$env:VERSION" --output ./build/x64
         shell: pwsh
 
       - name: Pack x64
-        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x64 -p:Version="$env:VERSION" --output ./nupkg/x64
+        run: dotnet pack memory/Memory.csproj -c Release -r win-x64 -p:PackageId=Memory-x64 -p:Version="$env:VERSION" -p:NoBuild=true -p:OutputPath="./build/x64" --output ./nupkg/x64
         shell: pwsh
 
       - name: Push x64
