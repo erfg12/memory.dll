@@ -59,13 +59,13 @@ jobs:
 
       # Upload artifacts for the release job
       - name: Upload x86 artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: x86-dll
           path: ./build/x86/Memory.dll
 
       - name: Upload x64 artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: x64-dll
           path: ./build/x64/Memory.dll
@@ -78,13 +78,13 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Download x86 artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: x86-dll
           path: ./artifacts/x86
 
       - name: Download x64 artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: x64-dll
           path: ./artifacts/x64
