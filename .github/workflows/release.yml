@@ -17,6 +17,8 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: set env vars
+        id: setver
+        shell: pwsh
         run: |
           $ts = Get-Date -Format yyyyMMddHHmmss
           $date = Get-Date -Format "yyyy.MMdd.HHmm"
