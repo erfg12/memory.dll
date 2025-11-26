@@ -24,8 +24,8 @@ jobs:
         id: set-timestamp
         run: |
           $ts = Get-Date -Format yyyyMMddHHmmss
-          Write-Host "timestamp=$ts" >> $GITHUB_OUTPUT
-          Write-Host "TIMESTAMP=$ts" >> $GITHUB_ENV
+          echo "timestamp=$ts" >> $env:GITHUB_OUTPUT
+          echo "TIMESTAMP=$ts" >> $env:GITHUB_ENV
         shell: pwsh
 
       # --- x86 ---
@@ -34,7 +34,7 @@ jobs:
         shell: pwsh
 
       - name: Pack x86
-        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x86 -p:Version="${{ env.TIMESTAMP }}" --output ./nupkg/x86
+        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x86 -p:Version="$env:TIMESTAMP" --output ./nupkg/x86
         shell: pwsh
 
       - name: Push x86
@@ -47,7 +47,7 @@ jobs:
         shell: pwsh
 
       - name: Pack x64
-        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x64 -p:Version="${{ env.TIMESTAMP }}" --output ./nupkg/x64
+        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x64 -p:Version="$env:TIMESTAMP" --output ./nupkg/x64
         shell: pwsh
 
       - name: Push x64
