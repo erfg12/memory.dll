@@ -75,12 +75,6 @@ jobs:
           name: x64-dll
           path: ./artifacts/x64
 
-      - name: List all artifacts
-        run: |
-          Write-Host "All artifacts:"
-          Get-ChildItem -Path ./artifacts -Recurse | ForEach-Object { Write-Host $_.FullName }
-        shell: pwsh
-
       - name: Get current directory
         id: getdir
         shell: pwsh
@@ -92,8 +86,14 @@ jobs:
       - name: Rename artifacts for release
         shell: pwsh
         run: |
-          Copy-Item -Path "${{ steps.getdir.outputs.CWD }}\artifacts\x86\Memory.dll" -Destination "${{ steps.getdir.outputs.CWD }}\artifacts\x86\Memory-x86.dll" -Force
-          Copy-Item -Path "${{ steps.getdir.outputs.CWD }}\artifacts\x64\Memory.dll" -Destination "${{ steps.getdir.outputs.CWD }}\artifacts\x64\Memory-x64.dll" -Force
+          Copy-Item -Path "artifacts\x86\Memory.dll" -Destination "artifacts\x86\Memory-x86.dll" -Force
+          Copy-Item -Path "artifacts\x64\Memory.dll" -Destination "artifacts\x64\Memory-x64.dll" -Force
+
+      - name: List all artifacts
+        run: |
+          Write-Host "All artifacts:"
+          Get-ChildItem -Path ./artifacts -Recurse | ForEach-Object { Write-Host $_.FullName }
+        shell: pwsh
 
       - name: Create Release
         id: create_release
@@ -111,7 +111,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ${{ steps.getdir.outputs.CWD }}\artifacts\x86\Memory-x86.dll
-            ${{ steps.getdir.outputs.CWD }}\artifacts\x64\Memory.dll
+            artifacts\x86\Memory-x86.dll
+            artifacts\x64\Memory-x64.dll
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
