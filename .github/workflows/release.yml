@@ -19,7 +19,6 @@ jobs:
         shell: pwsh
 
       - name: Set timestamp
-        id: timestamp
         run: |
           $ts = Get-Date -Format yyyyMMddHHmmss
           Write-Host "TIMESTAMP=$ts" >> $env:GITHUB_ENV
@@ -31,16 +30,11 @@ jobs:
         shell: pwsh
 
       - name: Pack x86
-        run: dotnet pack memory/Memory.csproj -c Release `
-          -p:PackageId=Memory-x86 `
-          -p:Version=${{ env.TIMESTAMP }} `
-          --output ./nupkg/x86
+        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x86 -p:Version="${{ env.TIMESTAMP }}" --output ./nupkg/x86
         shell: pwsh
 
       - name: Push x86
-        run: dotnet nuget push ./nupkg/x86/*.nupkg `
-          --api-key ${{ secrets.TOKEN }} `
-          --source "https://nuget.pkg.github.com/erfg12/index.json"
+        run: dotnet nuget push ./nupkg/x86/*.nupkg --api-key ${{ secrets.TOKEN }} --source "https://nuget.pkg.github.com/erfg12/index.json"
         shell: pwsh
 
       # --- x64 ---
@@ -49,16 +43,11 @@ jobs:
         shell: pwsh
 
       - name: Pack x64
-        run: dotnet pack memory/Memory.csproj -c Release `
-          -p:PackageId=Memory-x64 `
-          -p:Version=${{ env.TIMESTAMP }} `
-          --output ./nupkg/x64
+        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x64 -p:Version="${{ env.TIMESTAMP }}" --output ./nupkg/x64
         shell: pwsh
 
       - name: Push x64
-        run: dotnet nuget push ./nupkg/x64/*.nupkg `
-          --api-key ${{ secrets.TOKEN }} `
-          --source "https://nuget.pkg.github.com/erfg12/index.json"
+        run: dotnet nuget push ./nupkg/x64/*.nupkg --api-key ${{ secrets.TOKEN }} --source "https://nuget.pkg.github.com/erfg12/index.json"
         shell: pwsh
 
   release:
