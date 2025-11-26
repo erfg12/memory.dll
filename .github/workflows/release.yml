@@ -8,6 +8,7 @@ jobs:
     runs-on: windows-latest
     outputs:
       timestamp: ${{ steps.set-timestamp.outputs.timestamp }}
+      version: ${{ steps.set-timestamp.outputs.version }}
 
     steps:
       - uses: actions/checkout@v3
@@ -20,12 +21,14 @@ jobs:
         run: dotnet restore memory/Memory.csproj
         shell: pwsh
 
-      - name: Set timestamp
+      - name: Set timestamp and version
         id: set-timestamp
         run: |
           $ts = Get-Date -Format yyyyMMddHHmmss
+          $version = "1.0.$ts"
           echo "timestamp=$ts" >> $env:GITHUB_OUTPUT
-          echo "TIMESTAMP=$ts" >> $env:GITHUB_ENV
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "VERSION=$version" >> $env:GITHUB_ENV
         shell: pwsh
 
       # --- x86 ---
@@ -34,11 +37,11 @@ jobs:
         shell: pwsh
 
       - name: Pack x86
-        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x86 -p:Version="$env:TIMESTAMP" --output ./nupkg/x86
+        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x86 -p:Version="$env:VERSION" --output ./nupkg/x86
         shell: pwsh
 
       - name: Push x86
-        run: dotnet nuget push ./nupkg/x86/*.nupkg --api-key ${{ secrets.TOKEN }} --source "https://nuget.pkg.github.com/erfg12/index.json"
+        run: dotnet nuget push ./nupkg/x86/*.nupkg --api-key ${{ secrets.TOKEN }} --source "https://nuget.pkg.github.com/erfg12/index.json" --skip-duplicate
         shell: pwsh
 
       # --- x64 ---
@@ -47,12 +50,25 @@ jobs:
         shell: pwsh
 
       - name: Pack x64
-        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x64 -p:Version="$env:TIMESTAMP" --output ./nupkg/x64
+        run: dotnet pack memory/Memory.csproj -c Release -p:PackageId=Memory-x64 -p:Version="$env:VERSION" --output ./nupkg/x64
         shell: pwsh
 
       - name: Push x64
-        run: dotnet nuget push ./nupkg/x64/*.nupkg --api-key ${{ secrets.TOKEN }} --source "https://nuget.pkg.github.com/erfg12/index.json"
+        run: dotnet nuget push ./nupkg/x64/*.nupkg --api-key ${{ secrets.TOKEN }} --source "https://nuget.pkg.github.com/erfg12/index.json" --skip-duplicate
         shell: pwsh
+
+      # Upload artifacts for the release job
+      - name: Upload x86 artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: x86-dll
+          path: ./build/x86/Memory.dll
+
+      - name: Upload x64 artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: x64-dll
+          path: ./build/x64/Memory.dll
 
   release:
     needs: build-and-publish
@@ -61,31 +77,34 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Download x86 artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: x86-dll
+          path: ./artifacts/x86
+
+      - name: Download x64 artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: x64-dll
+          path: ./artifacts/x64
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: release-${{ needs.build-and-publish.outputs.timestamp }}
-          name: Release ${{ needs.build-and-publish.outputs.timestamp }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload x86 DLL
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/x86/Memory.dll
-          asset_name: Memory-x86.dll
-          asset_content_type: application/octet-stream
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload x64 DLL
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/x64/Memory.dll
-          asset_name: Memory-x64.dll
-          asset_content_type: application/octet-stream
+          tag_name: v${{ needs.build-and-publish.outputs.version }}
+          name: Release v${{ needs.build-and-publish.outputs.version }}
+          body: |
+            Automated release for build ${{ needs.build-and-publish.outputs.timestamp }}
+            
+            ## Packages
+            - Memory-x86 v${{ needs.build-and-publish.outputs.version }}
+            - Memory-x64 v${{ needs.build-and-publish.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            ./artifacts/x86/Memory.dll
+            ./artifacts/x64/Memory.dll
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
