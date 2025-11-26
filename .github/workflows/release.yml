@@ -86,8 +86,8 @@ jobs:
       - name: Rename artifacts for release
         shell: pwsh
         run: |
-          Copy-Item -Path "./artifacts\x86\Memory.dll" -Destination "./artifacts\x86\Memory-x86.dll" -Force
-          Copy-Item -Path "./artifacts\x64\Memory.dll" -Destination "./artifacts\x64\Memory-x64.dll" -Force
+          Copy-Item -Path "./artifacts/x86/Memory.dll" -Destination "./artifacts/x86/Memory-x86.dll" -Force
+          Copy-Item -Path "./artifacts/x64/Memory.dll" -Destination "./artifacts/x64/Memory-x64.dll" -Force
 
       - name: List all artifacts
         run: |
@@ -110,7 +110,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./artifacts\x86\Memory-x86.dll
-            ./artifacts\x64\Memory-x64.dll
+            ./artifacts/x86/Memory-x86.dll
+            ./artifacts/x64/Memory-x64.dll
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
